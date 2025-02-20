@@ -1,0 +1,14 @@
+discord.py==2.4.0
+jishaku
+datetime
+python-dotenv
+motor
+topggpy
+validators
+aiohttp
+chat_exporter
+psutil
+fuzzywuzzy
+fastapi
+uvicorn
+
