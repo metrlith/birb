@@ -35,8 +35,9 @@ class Buttons(discord.ui.View):
     async def OpenTicket(
         self, interaction: discord.Interaction, member: discord.Member, type: int
     ):
-        t = await T.find_one({"UserID": member.id, "closed": None})
-        if t:
+        AlreadyOpen = await T.count_documents({"UserID": interaction.user.id, "closed": None, "panel": {'$exists': False}})
+
+        if AlreadyOpen > 3:
             return await interaction.response.send_message(
                 f"{no} **{member.display_name}**, you already have a ticket open! If this is a mistake contact a developer.",
                 ephemeral=True,

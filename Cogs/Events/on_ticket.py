@@ -247,12 +247,12 @@ class TicketsPublic(commands.Cog):
         Roles = [role for role in Roles if role]
         Overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            author: discord.PermissionOverwrite(read_messages=True),
-            cli: discord.PermissionOverwrite(read_messages=True),
+            author: discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True),
+            cli: discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True),
         }
 
         for role in Roles:
-            Overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+            Overwrites[role] = discord.PermissionOverwrite(read_messages=True, send_messages=True, read_message_history=True)
         try:
             channel = await category.create_text_channel(
                 name=f"ticket-{author.name}", overwrites=Overwrites
