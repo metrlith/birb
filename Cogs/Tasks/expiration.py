@@ -45,8 +45,7 @@ class expiration(commands.Cog):
                 ).to_list(length=None)
             if infractions:
                 for infraction in infractions:
-                    if not infraction:
-                        continue
+
                     if infraction.get("expired", False) is True:
                         continue
                     try:
@@ -71,9 +70,9 @@ class expiration(commands.Cog):
                     
                     if infractiontype:
                         infractionaction = await self.client.db['infractiontypeactions'].find_one(
-                            {"name": infraction["action"], "guild_id": guild.id}
+                            {"name": infraction.get("action"), "guild_id": guild.id}
                         )
-                        if infractionaction.get("channel_id"):
+                        if infractionaction and infractionaction.get("channel_id"):
                             typechannel = self.client.get_channel(
                                 infractionaction["channel_id"]
                             )
