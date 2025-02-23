@@ -65,7 +65,7 @@ class expiration(commands.Cog):
                     if not Config.get('Infraction', {}).get('types', None):
                         continue
                     typechannel = None
-                    infractiontype = infractions.get("action", None)
+                    infractiontype = infraction.get("action", None)
                     
                     if infractiontype:
                         infractionaction = await self.client.db['infractiontypeactions'].find_one(
