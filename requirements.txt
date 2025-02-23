@@ -11,4 +11,5 @@ psutil
 fuzzywuzzy
 fastapi
 uvicorn
+memory_profiler 
 
