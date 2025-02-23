@@ -386,7 +386,7 @@ class client(commands.AutoShardedBot):
         else:
             print("[⚠️] STATUS not defined in .env, bot will not set a custom status.")
         if not environment == "custom":
-            Modmail = await self.client.config.find({"Modules.Modmail": True}).to_list(length=None)
+            Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
             Guilds = 0
             DevServers = [1092976553752789054]
             for server in DevServers:
