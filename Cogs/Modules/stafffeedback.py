@@ -7,6 +7,7 @@ import os
 import utils.Paginator as Paginator
 from utils.permissions import *
 from discord import app_commands
+from utils.permissions import check_admin_and_staff
 from motor.motor_asyncio import AsyncIOMotorClient
 from utils.Module import ModuleCheck
 from dotenv import load_dotenv
@@ -134,7 +135,7 @@ class Feedback(commands.Cog):
             )
             return
 
-        has_staff_role = await self.staffcheck(ctx, staff)
+        has_staff_role = await check_admin_and_staff(ctx.guild, staff)
 
         if not has_staff_role:
             await ctx.send(
