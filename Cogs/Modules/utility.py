@@ -29,16 +29,7 @@ class Utility(commands.Cog):
         client.launch_time = datetime.now()
         self.client.help_command = None
 
-    async def modulecheck(self, ctx):
-        modulesdata = await modules.find_one({"guild_id": ctx.guild.id})
-        if modulesdata is None:
-            return True
-        if modulesdata["Utility"] is True:
-            return True
-        else:
-            return False
-
-    async def check_database_connection(self):
+    async def CheckDB(self):
         try:
 
             await db.command("ping")
@@ -46,11 +37,11 @@ class Utility(commands.Cog):
         except Exception as e:
             print(f"Error interacting with the database: {e}")
             return "Not Connected"
-        
+
     @commands.hybrid_group()
     async def custom(self, ctx: commands.Context):
         return
-    
+
     @custom.command(description="View our custom branding offer.")
     async def branding(self, ctx: commands.Context):
         embed = discord.Embed(color=0xFFFFFF)
@@ -290,7 +281,7 @@ class Utility(commands.Cog):
         server_icon = self.client.user.display_avatar
         discord_latency = self.client.latency * 1000
         discord_latency_message = f"**Latency:** {discord_latency:.0f}ms"
-        database_status = await self.check_database_connection()
+        database_status = await self.CheckDB()
         embed = discord.Embed(
             title="<:Network:1223063016677838878> Network Information",
             description=f"{discord_latency_message}\n**Database:** {database_status}\n**Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
@@ -348,7 +339,15 @@ class Utility(commands.Cog):
             """
 
         embed.set_thumbnail(url=self.client.user.display_avatar)
-        view = PRemium()
+        view = discord.ui.View()
+        view.add_item(
+            discord.ui.Button(
+                label="Premium",
+                emoji="<:sparkle:1233931758089666695>",
+                style=discord.ButtonStyle.link,
+                url="https://patreon.com/astrobirb",
+            )
+        )
         await ctx.send(embed=embed, view=view)
         return
 
@@ -421,19 +420,6 @@ class Utility(commands.Cog):
         await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
 
-class PRemium(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(
-            discord.ui.Button(
-                label="Premium",
-                emoji="<:sparkle:1233931758089666695>",
-                style=discord.ButtonStyle.link,
-                url="https://patreon.com/astrobirb",
-            )
-        )
-
-
 class NetWorkPage(discord.ui.View):
     def __init__(self, client, author):
         super().__init__(timeout=360)
@@ -504,13 +490,12 @@ class ShardsPage(discord.ui.View):
         self.client = client
         self.author = author
 
-    async def check_database_connection(self):
+    async def CheckDB(self):
         try:
 
             await db.command("ping")
             return "Connected"
         except Exception as e:
-            print(f"Error interacting with the database: {e}")
             return "Not Connected"
 
     @discord.ui.button(
@@ -534,7 +519,7 @@ class ShardsPage(discord.ui.View):
         server_icon = self.client.user.display_avatar
         discord_latency = self.client.latency * 1000
         discord_latency_message = f"**Latency:** {discord_latency:.0f}ms"
-        database_status = await self.check_database_connection()
+        database_status = await self.CheckDB()
         embed = discord.Embed(
             title="<:Network:1223063016677838878> Network Information",
             description=f"{discord_latency_message}\n**Database:** {database_status}\n**Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",

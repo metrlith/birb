@@ -20,7 +20,7 @@ async def ModuleCheck(id, module: str):
     elif "Modules" not in config:
         config["Modules"] = {}
 
-    if config["Modules"].get(module, False) is True:
+    if bool(config.get("Modules", {}).get(module)):
         return True
     else:
         return False

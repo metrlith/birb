@@ -223,7 +223,7 @@ class NoEmbed(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         view = Embed(interaction.user, self.finalfunc, self.typed, self.data)
-        if self.typed == "Promotions" or self.typed == "Infractions":
+        if self.typed in ("Promotions", "Infractions"):
             view.remove_item(view.Buttons)
             view.remove_item(view.ForumsChannel)
             view.remove_item(view.Permissions)
