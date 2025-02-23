@@ -1278,10 +1278,10 @@ class InfractionTypeSelection(discord.ui.Select):
         notes = None
         expiration = None
         anonymous = True
-        TypeActions = await self.client.db['infractiontypeactions'].find_one(
+        TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await self.client.config.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}**, the bot isn't setup you can do that in /config.",
@@ -1328,7 +1328,7 @@ class InfractionTypeSelection(discord.ui.Select):
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
-            InfractionResult = await self.client.db['infractions'].insert_one(
+            InfractionResult = await interaction.client.db['infractions'].insert_one(
                 {
                     "guild_id": interaction.guild.id,
                     "staff": user.id,
