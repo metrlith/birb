@@ -15,9 +15,9 @@ MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 environment = os.getenv("ENVIRONMENT")
-appeal = db["Ban Appeals Configuration"]
-appeallogs = db["Ban Appeal Logs"]
-appealsession = db["Appeal Sessions"]
+# appeal = db["Ban Appeals Configuration"]
+# appeallogs = db["Ban Appeal Logs"]
+# appealsession = db["Appeal Sessions"]
 
 
 class on_ban(commands.Cog):
@@ -27,13 +27,13 @@ class on_ban(commands.Cog):
 
     @tasks.loop(name="deletebitch", minutes=15)
     async def deletebitch(self):
-        await appealsession.delete_many(
+        await self.client.db['Appeal Sessions'].delete_many(
             {"time": {"$lt": datetime.datetime.utcnow() - datetime.timedelta(hours=1)}}
         )
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.Member):
-        result = await appeal.find_one({"guild_id": guild.id})
+        result = await self.client.db['Ban Appeals Configuratio'].find_one({"guild_id": guild.id})
         if result is None:
             return
         if not await ModuleCheck(guild.id, "Ban Appeal"):
@@ -52,7 +52,7 @@ class on_ban(commands.Cog):
             msg = await user.send(banmsg, view=view)
         except discord.Forbidden:
             return
-        await appeallogs.insert_one(
+        await self.client.db['Ban Appeal Logs'].insert_one(
             {
                 "guild_id": guild.id,
                 "user_id": user.id,
@@ -73,7 +73,7 @@ class AppealButton(discord.ui.View):
     async def appeal(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
 
-        result = await appeallogs.find_one(
+        result = await interaction.client.db['Ban Appeal Logs'].find_one(
             {"user_id": interaction.user.id, "msg_id": interaction.message.id}
         )
         if result is None:
@@ -96,7 +96,7 @@ class AppealButton(discord.ui.View):
             )
             return
 
-        result2 = await appeal.find_one({"guild_id": guild.id})
+        result2 = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": guild.id})
         if not result2:
             await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** I couldn't find the appeal configuration for this guild.",
@@ -115,7 +115,7 @@ class AppealButton(discord.ui.View):
             f"<:Application:1224722901328986183> **{interaction.user.display_name},** the appeal has started.",
             ephemeral=True,
         )
-        await appealsession.insert_one(
+        await interaction.client.db['Appeal Sessions'].insert_one(
             {"user_id": interaction.user.id, "time": datetime.datetime.utcnow()}
         )
 
@@ -142,7 +142,7 @@ class AppealButton(discord.ui.View):
                     )
                     responses[key] = message.content
                 except asyncio.TimeoutError:
-                    await appealsession.delete_one({"user_id": interaction.user.id})
+                    await interaction.client.db['Appeal Sessions'].delete_one({"user_id": interaction.user.id})
                     await interaction.followup.send(
                         f"{crisis} **{interaction.user.display_name},** you took too long to respond. Please start the appeal process again."
                     )
@@ -161,7 +161,7 @@ class AppealButton(discord.ui.View):
 
         channel = await guild.fetch_channel(result2.get("banchannel", 0))
         if channel is None:
-            await appealsession.delete_one({"user_id": interaction.user.id})
+            await  interaction.client.db['Appeal Sessions'].delete_one({"user_id": interaction.user.id})
             await interaction.followup.send(
                 f"{crisis} **{interaction.user.display_name},** I couldn't find the ban appeal channel for this guild."
             )
@@ -173,8 +173,8 @@ class AppealButton(discord.ui.View):
         await interaction.followup.send(
             f"{tick} Your appeal has been submitted. Thanks @{interaction.user.display_name}."
         )
-        await appealsession.delete_one({"user_id": interaction.user.id})
-        await appeallogs.insert_one(
+        await  interaction.client.db['Appeal Sessions'].delete_one({"user_id": interaction.user.id})
+        await  interaction.client.db['Ban Appeal Logs'].insert_one(
             {
                 "msg_id": msg.id,
                 "guild_id": guild.id,
@@ -197,7 +197,7 @@ class AppealButton(discord.ui.View):
     async def endappeal(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        await appealsession.delete_one({"user_id": interaction.user.id})
+        await interaction.client.db['Appeal Sessions'].delete_one({"user_id": interaction.user.id})
         view = AppealButton(self.client)
         view.remove_item(view.endappeal)
 
@@ -215,7 +215,7 @@ class AcceptOrDeny(discord.ui.View):
     )
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-        result = await appeallogs.find_one({"msg_id": interaction.message.id})
+        result = await  interaction.client.db['Ban Appeal Logs'].find_one({"msg_id": interaction.message.id})
         if not result:
             await interaction.response.send_message(
                 f"{no} I couldn't find the appeal data for this message.",
@@ -259,7 +259,7 @@ class AcceptOrDeny(discord.ui.View):
     )
     async def deny(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-        result = await appeallogs.find_one({"msg_id": interaction.message.id})
+        result = await interaction.client.db['Ban Appeal Logs'].find_one({"msg_id": interaction.message.id})
         if not result:
             await interaction.followup.send(
                 f"{no} I couldn't find the appeal data for this message.",

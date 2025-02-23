@@ -10,9 +10,9 @@ MONGO_URL = os.getenv("MONGO_URL")
 
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
-integrations = db["integrations"]
-Tokens = db["integrations"]
-PendingUsers = db["Pending"]
+# integrations = db["integrations"]
+# Tokens = db["integrations"]
+# PendingUsers = db["Pending"]
 
 
 class Integrations(discord.ui.Select):
@@ -41,7 +41,7 @@ class Integrations(discord.ui.Select):
         if self.values[0] == "ERM":
 
             code = await GetIdentifier()
-            result = await integrations.find_one(
+            result = await interaction.client.db['integrations'].find_one(
                 {"server": interaction.guild.id, "erm": {"$exists": True}}
             )
             if result and result.get("erm", None):
@@ -185,7 +185,7 @@ class KeyButton(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await integrations.update_one(
+        await interaction.client.db['integrations'].update_one(
             {"server": interaction.guild.id},
             {"$set": {"erm": self.key}},
             upsert=True,
@@ -206,7 +206,7 @@ async def integrationsEmbed(interaction: discord.Interaction, embed: discord.Emb
     )
     config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
-    ERM = await integrations.find_one(
+    ERM = await interaction.client.db['integrations'].find_one(
         {"server": int(interaction.guild.id), "erm": {"$exists": True}}
     )
     Groups = config.get("groups", {}).get("id", None) if config else None

@@ -9,11 +9,11 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-infractiontypeactions = DB["infractiontypeactions"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# infractiontypeactions = DB["infractiontypeactions"]
+# Customisation = DB["Customisation"]
 
 
 class LOAOptions(discord.ui.Select):

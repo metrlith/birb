@@ -10,9 +10,9 @@ from utils.permissions import premium
 from Cogs.Modules.customcommands import SyncCommand, Unsync
 from utils.HelpEmbeds import NoPremium, Support
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Commands = DB["Custom Commands"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Commands = DB["Custom Commands"]
 
 
 class CustomCommands(discord.ui.Select):
@@ -43,7 +43,7 @@ class CustomCommands(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1223062616872583289.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            commands = await Commands.find({"guild_id": interaction.guild.id}).to_list(
+            commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
                 length=None
             )
             for commands in commands:
@@ -91,7 +91,7 @@ class ManageCommands(discord.ui.View):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         
-        CustomCommands = await Commands.count_documents({"guild_id": interaction.guild.id})
+        CustomCommands = await interaction.client.db['Custom Commands'].count_documents({"guild_id": interaction.guild.id})
         IsPremium = await premium(interaction.guild.id)
 
         if CustomCommands > (10 if not IsPremium else float('inf')):
@@ -111,7 +111,7 @@ class ManageCommands(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        commands = await Commands.find({"guild_id": interaction.guild.id}).to_list(
+        commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
             length=None
         )
         Options = []
@@ -153,7 +153,7 @@ class ManageCommands(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        commands = await Commands.find({"guild_id": interaction.guild.id}).to_list(
+        commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
             length=None
         )
         Options = []
@@ -196,7 +196,7 @@ class CommandSelection(discord.ui.Select):
                 DisplayEmbed,
             )
 
-            command = await Commands.find_one(
+            command = await interaction.client.db['Custom Commands'].find_one(
                 {"name": self.values[0], "guild_id": interaction.guild.id}
             )
             data = {
@@ -244,7 +244,7 @@ class CommandSelection(discord.ui.Select):
                 )
 
         if self.typed == "delete":
-            await Commands.delete_one(
+            await interaction.client.db['Custom Commands'].delete_one(
                 {"name": self.values[0], "guild_id": interaction.guild.id}
             )
             await Unsync(interaction.client, self.values[0], interaction.guild.id)
@@ -264,7 +264,7 @@ class CreateCommand(discord.ui.Modal, title="Create Command"):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
-        command = await Commands.find_one(
+        command = await interaction.client.db['Custom Commands'].find_one(
             {"guild_id": interaction.guild.id, "name": self.name.value}
         )
         if command:
@@ -330,7 +330,7 @@ async def FinalFunc(interaction: discord.Interaction, datad: dict):
         if datad.get("permissionroles"):
             data["permissionroles"] = datad.get("permissionroles")
 
-    result = await Commands.update_one(
+    result = await interaction.client.db['Custom Commands'].update_one(
         {"name": datad.get("name"), "guild_id": interaction.guild.id},
         {"$set": data},
         upsert=True,

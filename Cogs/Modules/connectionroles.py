@@ -8,10 +8,10 @@ import typing
 import utils.Paginator as Paginator
 from utils.Module import ModuleCheck
 
-MONGO_URL = os.getenv("MONGO_URL")
-mongo = AsyncIOMotorClient(MONGO_URL)
-db = mongo["astro"]
-connectionroles = db["connectionroles"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# mongo = AsyncIOMotorClient(MONGO_URL)
+# db = mongo["astro"]
+# connectionroles = db["connectionroles"]
 
 
 class ConnectionRoles(commands.Cog):
@@ -28,7 +28,7 @@ class ConnectionRoles(commands.Cog):
         try:
             filter = {"guild": interaction.guild_id}
 
-            tag_names = await connectionroles.distinct("name", filter)
+            tag_names = await interaction.client.db['connectionroles'].distinct("name", filter)
 
             filtered_names = [
                 name for name in tag_names if current.lower() in name.lower()
@@ -57,7 +57,7 @@ class ConnectionRoles(commands.Cog):
             return
 
         await ctx.defer()
-        roleresult = await connectionroles.find({"guild": ctx.guild.id}).to_list(
+        roleresult = await self.client.db['connectionroles'].find({"guild": ctx.guild.id}).to_list(
             length=100000
         )
         if len(roleresult) == 0:
@@ -131,7 +131,7 @@ class ConnectionRoles(commands.Cog):
             )
             return
 
-        await connectionroles.insert_one(
+        await self.client.db['connectionroles'].insert_one(
             {
                 "guild": ctx.guild.id,
                 "parent": child.id,
@@ -155,7 +155,7 @@ class ConnectionRoles(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, the connection roles module isn't enabled.",
             )
             return
-        roleresult = await connectionroles.find_one(
+        roleresult = await self.client.db['connectionroles'].find_one(
             {"guild": ctx.guild.id, "name": name}
         )
         if roleresult is None:
@@ -164,7 +164,7 @@ class ConnectionRoles(commands.Cog):
             )
             return
 
-        await connectionroles.delete_many({"guild": ctx.guild.id, "name": name})
+        await self.client.db['connectionroles'].delete_many({"guild": ctx.guild.id, "name": name})
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, The connection role has been removed.",
         )
@@ -180,7 +180,7 @@ class ConnectionRoles(commands.Cog):
             )
             return
 
-        roleresult = await connectionroles.find({"guild": ctx.guild.id}).to_list(
+        roleresult = await self.client.db['connectionroles'].find({"guild": ctx.guild.id}).to_list(
             length=100000
         )
         if len(roleresult) == 0:

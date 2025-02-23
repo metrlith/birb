@@ -7,22 +7,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
 
-custom_commands = db["Custom Commands"]
-Config = db["Config"]
-infractions = db["infractions"]
-appeal = db["Ban Appeals Configuration"]
-promotions = db["promotions"]
-loa_collection = db["loa"]
-suggestions = db["suggestions"]
-forumsconfig = db["Forum Configuration"]
-staffdb = db["staff database"]
-stafffeedback = db["feedback"]
-Responders = db["Auto Responders"]
-suspensions = db["Suspensions"]
-connectionroles = db["connectionroles"]
+# custom_commands = db["Custom Commands"]
+# Config = db["Config"]
+# infractions = db["infractions"]
+# appeal = db["Ban Appeals Configuration"]
+# promotions = db["promotions"]
+# loa_collection = db["loa"]
+# suggestions = db["suggestions"]
+# forumsconfig = db["Forum Configuration"]
+# staffdb = db["staff database"]
+# stafffeedback = db["feedback"]
+# Responders = db["Auto Responders"]
+# suspensions = db["Suspensions"]
+# connectionroles = db["connectionroles"]
 
 
 class Data(commands.Cog):
@@ -39,7 +39,7 @@ class Data(commands.Cog):
         from Cogs.Configuration.Components.Modules import ModuleOptions
         from Cogs.Configuration.Configuration import DefaultEmbed
 
-        Configuration = await Config.find_one({"_id": ctx.guild.id})
+        Configuration = await self.client.config.find_one({"_id": ctx.guild.id})
         if not Configuration:
             return await ctx.send(
                 f"{no} **{ctx.author.display_name}**, the config is not setup please run `/config`."
@@ -104,7 +104,7 @@ class DataManage(discord.ui.Select):
         from Cogs.Configuration.Components.BanAppeal import BanAppealEmbed
         from Cogs.Configuration.Components.AutoResponse import AutoResponseEmbed
 
-        config = await Config.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         embed = discord.Embed(color=discord.Color.dark_embed())
         selection = self.values[0]
         view = ClearData(interaction.user, selection)
@@ -208,88 +208,88 @@ class ClearData(discord.ui.View):
 
         Embed = discord.Embed(color=discord.Color.dark_embed())
         if self.Type == "suspensions":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Modmail": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config =await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await SuspensionEmbed(interaction, config, Embed)
         elif self.Type == "infractions":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Infraction": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await InfractionEmbed(interaction, config, Embed)
 
         elif self.Type == "promotions":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Promotions": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await PromotionEmbed(interaction, config, Embed)
 
         elif self.Type == "loa":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"LOA": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await LOAEmbed(interaction, config, Embed)
 
         elif self.Type == "modmail":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Modmail": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await ModmailEmbed(interaction, config, Embed)
         elif self.Type == "Permissions":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Permissions": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await PermissionsEmbed(interaction, config, Embed)
         elif self.Type == "Quota":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Message Quota": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await MessageQuotaEmbed(interaction, config, Embed)
 
         elif self.Type == "customcommands":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Custom Commands": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await CustomCommandsEmbed(interaction, Embed)
 
         elif self.Type == "feedback":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Feedback": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await StaffFeedbackEmbed(interaction, config, Embed)
 
         elif self.Type == "qotd":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"QOTD": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await QOTDEMbed(interaction, Embed)
 
         elif self.Type == "staffdb":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Staff Database": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await StaffPanelEmbed(interaction, Embed)
 
         elif self.Type == "suggestions":
-            await Config.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Suggestions": 1}}
             )
-            config = await Config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             embed = await SuggestionsEmbed(interaction, config, Embed)
 
         elif self.Type == "banappeal":
-            await appeal.delete_one({"guild_id": interaction.guild.id})
+            await interaction.client.config.delete_one({"guild_id": interaction.guild.id})
             embed = await BanAppealEmbed(interaction, Embed)
 
         await interaction.response.edit_message(embed=embed)
@@ -334,7 +334,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await suggestions.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['suggestions'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all suggestions.", ephemeral=True
         )
@@ -349,7 +349,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await custom_commands.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['Custom Commands'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all custom commands.", ephemeral=True
         )
@@ -364,7 +364,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await loa_collection.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['loa'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all LOA.", ephemeral=True
         )
@@ -381,7 +381,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await forumsconfig.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['Forum Configuration'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all forum configurations.", ephemeral=True
         )
@@ -396,7 +396,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await staffdb.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['staff database'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all staff database.", ephemeral=True
         )
@@ -411,7 +411,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await stafffeedback.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['feedback'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all feedback.", ephemeral=True
         )
@@ -426,7 +426,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await Responders.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['Auto Responders'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all responders.", ephemeral=True
         )
@@ -441,7 +441,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await suspensions.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['Suspensions'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all suspensions.", ephemeral=True
         )
@@ -456,7 +456,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await connectionroles.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['connectionroles'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all connection roles.", ephemeral=True
         )

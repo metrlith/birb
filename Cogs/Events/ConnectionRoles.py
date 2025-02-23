@@ -5,10 +5,10 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from utils.Module import ModuleCheck
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-connectionroles = db["connectionroles"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# connectionroles = db["connectionroles"]
 
 
 class ConnectionRolesEvent(commands.Cog):
@@ -24,7 +24,7 @@ class ConnectionRolesEvent(commands.Cog):
             return
 
         for role in added_roles:
-            parent_roles_data = await connectionroles.find({"parent": role.id}).to_list(
+            parent_roles_data = await self.client.db['connectionroles'].find({"parent": role.id}).to_list(
                 length=1000
             )
             for parent_role_data in parent_roles_data:
@@ -38,13 +38,13 @@ class ConnectionRolesEvent(commands.Cog):
                         return
 
         for role in removed_roles:
-            parent_roles_data = await connectionroles.find({"parent": role.id}).to_list(
+            parent_roles_data = await self.client.db['connectionroles'].find({"parent": role.id}).to_list(
                 length=1000
             )
             for parent_role_data in parent_roles_data:
                 child_role_id = parent_role_data["child"]
                 child_role = after.guild.get_role(child_role_id)
-                parent_roles = await connectionroles.find(
+                parent_roles = await self.client.db['connectionroles'].find(
                     {"child": child_role_id}
                 ).to_list(length=1000)
                 has_other_parent_role = any(

@@ -5,21 +5,21 @@ from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
-load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
+# load_dotenv()
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
 
 import discord
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
-load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
-Configuration = DB["Config"]
+# load_dotenv()
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
+# Configuration = DB["Config"]
 
 class PermissionsDropdown(discord.ui.Select):
     def __init__(self, author: discord.Member):

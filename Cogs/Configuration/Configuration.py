@@ -6,14 +6,13 @@ from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from utils.permissions import premium
-from Cogs.Configuration.Components.QOTD import qotds
 from utils.HelpEmbeds import NoPremium, Support
 from utils.ui import PMButton
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
 
 
 class ConfigMenu(discord.ui.Select):
@@ -32,7 +31,7 @@ class ConfigMenu(discord.ui.Select):
 
         from Cogs.Configuration.Components.Modules import ModuleToggle, ModuleOptions
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "_id": interaction.guild.id,
@@ -258,7 +257,7 @@ class ConfigMenu(discord.ui.Select):
                 QOTDOptions,
             )
 
-            daily = await qotds.find_one({"guild_id": interaction.guild.id})
+            daily = await interaction.client.db['qotd'].find_one({"guild_id": interaction.guild.id})
 
             if daily and daily.get("nextdate", None):
                 options = [
@@ -521,7 +520,7 @@ class ConfigCog(commands.Cog):
     @commands.hybrid_command(description="Configure the bot for your servers needs")
     @commands.has_guild_permissions(manage_guild=True)
     async def config(self, ctx: commands.Context):
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if (
             not Config
             or "Infraction" not in Config
@@ -543,7 +542,7 @@ class ConfigCog(commands.Cog):
                 "Demotion",
                 "Termination",
             ]
-            await Configuration.update_one(
+            await self.client.config.update_one(
                 {"_id": ctx.guild.id}, {"$set": Config}, upsert=True
             )
 

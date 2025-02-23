@@ -17,14 +17,14 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
 load_dotenv()
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-promochannel = db["promo channel"]
-consent = db["consent"]
-Customisation = db["Customisation"]
-promotionroles = db["promotion roles"]
-promotions = db["promotions"]
-config = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# promochannel = db["promo channel"]
+# consent = db["consent"]
+# Customisation = db["Customisation"]
+# promotionroles = db["promotion roles"]
+# promotions = db["promotions"]
+# config = db["Config"]
 from utils.HelpEmbeds import (
     BotNotConfigured,
     NoPermissionChannel,
@@ -240,7 +240,7 @@ async def MultiHireachy(
         )
         return
 
-    Config = await config.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         return await msg.edit(
             embed=BotNotConfigured(),
@@ -402,7 +402,7 @@ async def issue(
         )
         return
 
-    Config = await config.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         return await msg.edit(
             embed=BotNotConfigured(),
@@ -466,7 +466,7 @@ async def SyncServer(self: commands.Bot, guild: discord.Guild):
             guild_ids=[guild.id],
         )
 
-    C = await config.find_one({"_id": guild.id})
+    C = await self.config.find_one({"_id": guild.id})
     if not C:
         command = DefaultCommand()
     elif not C.get("Promo", None):
@@ -510,7 +510,7 @@ async def SyncCommands(self: commands.Bot):
     Single = set()
     TheOG = set()
 
-    C = await config.find({}).to_list(length=None)
+    C = await self.config.find({}).to_list(length=None)
     for CO in C:
         if CO.get("_id") == 1092976553752789054:
             continue

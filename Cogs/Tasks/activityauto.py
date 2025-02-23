@@ -17,7 +17,6 @@ from utils.HelpEmbeds import (
     BotNotConfigured,
     Support,
 )
-from memory_profiler import profile
 
 
 load_dotenv()
@@ -27,21 +26,19 @@ guildid = os.getenv("CUSTOM_GUILD")
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-collection = db["infractions"]
-consent = db["consent"]
-customization = db["Customisation"]
-infractiontypeactions = db["infractiontypeactions"]
-staffdb = db["staff database"]
-integrations = db["integrations"]
-reasons = db["reasons"]
-config = db["Config"]
-AutoActivity = db["auto activity"]
+# collection = db["infractions"]
+# consent = db["consent"]
+# customization = db["Customisation"]
+# infractiontypeactions = db["infractiontypeactions"]
+# staffdb = db["staff database"]
+# integrations = db["integrations"]
+# reasons = db["reasons"]
+# config = db["Config"]
 
-
-# Message Quota DB
-dbq = mongo["quotadb"]
-mccollection = dbq["messages"]
-message_quota_collection = dbq["message_quota"]
+# # Message Quota DB
+# dbq = mongo["quotadb"]
+# mccollection = dbq["messages"]
+# message_quota_collection = dbq["message_quota"]
 
 
 class activityauto(commands.Cog):
@@ -50,15 +47,14 @@ class activityauto(commands.Cog):
         self.quota_activity.start()
 
     @tasks.loop(minutes=15, reconnect=True)
-    @profile
     async def quota_activity(self):
         print("[INFO] Checking for quota activity")
         if environment == "custom":
-            autoactivityresult = await AutoActivity.find(
+            autoactivityresult = await self.client.db['auto activity'].find(
                 {"guild_id": int(guildid)}
             ).to_list(length=None)
         else:
-            autoactivityresult = await AutoActivity.find({}).to_list(length=None)
+            autoactivityresult = await self.client.db['auto activity'].find({}).to_list(length=None)
         if autoactivityresult:
 
             for data in autoactivityresult:
@@ -109,7 +105,7 @@ class activityauto(commands.Cog):
                             continue
                         if not guild:
                             continue
-                        await AutoActivity.update_one(
+                        await self.client.AutoActivity.update_one(
                             {"guild_id": guild.id},
                             {
                                 "$set": {
@@ -123,7 +119,7 @@ class activityauto(commands.Cog):
                             f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!"
                         )
                         if guild:
-                            result = await mccollection.find(
+                            result = await self.qdb[''].find(
                                 {"guild_id": guild.id}
                             ).to_list(length=None)
                             passed = []
@@ -145,10 +141,10 @@ class activityauto(commands.Cog):
                                     if user:
                                         if not await check_admin_and_staff(guild, user):
                                             continue
-                                        result = await mccollection.find_one(
+                                        result = await self.client.qdb['messages'].find_one(
                                             {"guild_id": guild.id, "user_id": user.id}
                                         )
-                                        Config = await Configuration.find_one(
+                                        Config = await self.client.config.find_one(
                                             {"_id": guild.id}
                                         )
                                         if Config is None:
@@ -188,7 +184,7 @@ class activityauto(commands.Cog):
 
                             else:
                                 continue
-                            await AutoActivity.update_one(
+                            await self.client.AutoActivity.update_one(
                                 {"guild_id": guild.id}, {"$set": {"failed": failedids}}
                             )
                             passed.sort(
@@ -344,7 +340,7 @@ class ResetLeaderboard(discord.ui.View):
             return
         button.label = f"Reset By @{interaction.user.display_name}"
         button.disabled = True
-        await mccollection.update_many(
+        await self.client.qdb['messages'].update_many(
             {"guild_id": interaction.guild.id}, {"$set": {"message_count": 0}}
         )
         await interaction.response.edit_message(view=self)
@@ -361,7 +357,7 @@ class ResetLeaderboard(discord.ui.View):
         if not await self.has_admin_role(interaction, "Message Quota Permissions"):
             return
         if not self.failures:
-            result = await AutoActivity.find_one({"guild_id": interaction.guild.id})
+            result = await self.client.AutoActivity.find_one({"guild_id": interaction.guild.id})
             self.failures = result.get("failed", [])
             if not result or self.failures is None or len(self.failures) == 0:
                 await interaction.response.send_message(
@@ -393,10 +389,10 @@ class ActionModal(discord.ui.Modal, title="Action"):
         notes = None
         expiration = None
         anonymous = True
-        TypeActions = await infractiontypeactions.find_one(
+        TypeActions = await self.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": interaction.guild.id})
+        Config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}**, the bot isn't setup you can do that in /config.",
@@ -448,7 +444,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
-            InfractionResult = await collection.insert_one(
+            InfractionResult = await self.client.db['infractions'].insert_one(
                 {
                     "guild_id": interaction.guild.id,
                     "staff": user.id,

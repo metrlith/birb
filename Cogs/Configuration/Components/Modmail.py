@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
 
 
 class ModmailOptions(discord.ui.Select):

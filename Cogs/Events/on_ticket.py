@@ -11,19 +11,19 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Transcripts = db["Transcripts"]
-Panel = db["Panels"]
-T = db["Tickets"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Transcripts = db["Transcripts"]
+# Panel = db["Panels"]
+# interaction.client.db['Tickets'] = db["Tickets"]
 
 
 async def TicketPermissions(interaction: discord.Interaction):
-    t = await T.find_one({"ChannelID": interaction.channel.id})
+    t = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
     if not t:
         return False
-    P = await Panel.find_one({"name": t.get("panel"), "guild": interaction.guild.id})
+    P = await interaction.client.db['Panels'].find_one({"name": t.get("panel"), "guild": interaction.guild.id})
     if not P:
         return False
     if not P.get("permissions"):
@@ -67,7 +67,7 @@ class PTicketControl(discord.ui.View):
                 ephemeral=True,
             )
 
-        Result = await T.find_one({"MessageID": int(interaction.message.id)})
+        Result = await interaction.client.db['Tickets'].find_one({"MessageID": int(interaction.message.id)})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -89,7 +89,7 @@ class PTicketControl(discord.ui.View):
                 f"{no} **{interaction.user.display_name}** you don't have permission to close this ticket.",
                 ephemeral=True,
             )
-        Result = await T.find_one({"MessageID": int(interaction.message.id)})
+        Result = await interaction.client.db['Tickets'].find_one({"MessageID": int(interaction.message.id)})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -98,7 +98,7 @@ class PTicketControl(discord.ui.View):
             return await interaction.followup.send(
                 "This ticket is already claimed.", ephemeral=True
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"ChannelID": interaction.channel.id},
             {
                 "$set": {
@@ -129,7 +129,7 @@ class TicketsPublic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_pticket_claim(self, objectID: ObjectId, member: discord.Member):
-        Result = await T.find_one({"_id": objectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
@@ -155,7 +155,7 @@ class TicketsPublic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_unclaim(self, objectID: ObjectId):
-        Result = await T.find_one({"_id": objectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
@@ -180,11 +180,11 @@ class TicketsPublic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_pticket_open(self, objectID: ObjectId, Panelled: str):
-        Ticket = await T.find_one({"_id": objectID})
+        Ticket = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Ticket:
             return logging.critical("[on_pticket_open] I can't find the ticket.")
 
-        P = await Panel.find_one({"name": Panelled, "type": "single", "guild": Ticket.get("GuildID")})
+        P = await self.client.db['Panels'].find_one({"name": Panelled, "type": "single", "guild": Ticket.get("GuildID")})
         if not P:
             return logging.critical("[on_pticket_open] I can't find the panel.")
         guild_id = Ticket.get("GuildID")
@@ -284,7 +284,7 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to send messages in the channel {channel.id}"
             )
-        await T.update_one(
+        await self.client.db['Tickets'].update_one(
             {"_id": objectID}, {"$set": {"ChannelID": channel.id, "MessageID": msg.id}}
         )
 
@@ -292,7 +292,7 @@ class TicketsPublic(commands.Cog):
     async def on_pticket_close(
         self, ObjectID: ObjectId, reason: str, member: discord.Member
     ):
-        Result = await T.find_one({"_id": ObjectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": ObjectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {ObjectID} not found")
 
@@ -332,7 +332,7 @@ class TicketsPublic(commands.Cog):
                     "timestamp": message.created_at.timestamp(),
                 }
             )
-        await T.update_one(
+        await self.client.db['Tickets'].update_one(
             {"_id": ObjectID},
             {
                 "$push": {"transcript": {"messages": messages, "compact": compact}},
@@ -346,7 +346,7 @@ class TicketsPublic(commands.Cog):
                 },
             },
         )
-        P = await Panel.find_one({"name": Result.get("panel"), "guild": Guild.id})
+        P = await self.client.db['Panel'].find_one({"name": Result.get("panel"), "guild": Guild.id})
         if not P:
             return logging.critical("[on_pticket_close] I can't find the panel.")
         if P.get("TranscriptChannel"):

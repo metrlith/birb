@@ -12,17 +12,17 @@ from utils.emojis import *
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-infractions = db["infractions"]
-Customisation = db["Customisation"]
-integrations = db["integrations"]
-staffdb = db["staff database"]
-consent = db["consent"]
-Suspension = db["Suspensions"]
-config = db["Config"]
-infractiontypeactions = db["infractiontypeactions"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# infractions = db["infractions"]
+# Customisation = db["Customisation"]
+# integrations = db["integrations"]
+# staffdb = db["staff database"]
+# consent = db["consent"]
+# Suspension = db["Suspensions"]
+# config = db["Config"]
+# infractiontypeactions = db["infractiontypeactions"]
 
 
 async def CaseEmbed(data: str, staff: discord.Member, guild: discord.Guild):
@@ -63,7 +63,7 @@ class on_infraction_approval(commands.Cog):
 
     @commands.Cog.listener()
     async def on_infraction_approval(self, objectid: ObjectId, Settings: dict):
-        InfractionData = await infractions.find_one({"_id": objectid})
+        InfractionData = await self.client.db['infractions'].find_one({"_id": objectid})
         if not InfractionData:
             return
         Infraction = InfractItem(InfractionData)
@@ -136,7 +136,7 @@ class on_infraction_approval(commands.Cog):
         except (discord.Forbidden, discord.NotFound):
             print("[on_infraction_approval] couldn't set thread.")
             pass
-        await infractions.update_one(
+        await self.client.db['infractions'].update_one(
             {"_id": objectid}, {"$set": {"ApprovalMSG": msg.id}}
         )
 
@@ -151,8 +151,8 @@ class CaseApproval(discord.ui.View):
         custom_id="AcceptInf:Persistent",
     )
     async def Accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-        Result = await infractions.find_one({"ApprovalMSG": interaction.message.id})
-        Settings = await config.find_one({"_id": interaction.guild.id})
+        Result = await interaction.client.db['infractions'].find_one({"ApprovalMSG": interaction.message.id})
+        Settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Result:
             return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, I couldn't find the data for this."
@@ -192,7 +192,7 @@ class CaseApproval(discord.ui.View):
         view.Accept.disabled = True
         view.remove_item(view.Deny)
         await interaction.response.edit_message(embed=embed, view=view)
-        TypeActions = await infractiontypeactions.find_one(
+        TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": Infraction.action}
         )
         interaction.client.dispatch(
@@ -205,7 +205,7 @@ class CaseApproval(discord.ui.View):
         custom_id="DenyVoid:Persistent",
     )
     async def Deny(self, interaction: discord.Interaction, button: discord.ui.Button):
-        Result = await infractions.find_one({"ApprovalMSG": interaction.message.id})
+        Result = await interaction.client.db['infractions'].find_one({"ApprovalMSG": interaction.message.id})
         Settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Result:
             return await interaction.response.send_message(
@@ -246,7 +246,7 @@ class CaseApproval(discord.ui.View):
         view.Deny.disabled = True
         view.remove_item(view.Accept)
         await interaction.response.edit_message(embed=embed, view=view)
-        await infractions.delete_one({"_id": Result.get("_id")})
+        await interaction.client.db['infractions'].delete_one({"_id": Result.get("_id")})
 
 
 async def setup(client: commands.Bot) -> None:

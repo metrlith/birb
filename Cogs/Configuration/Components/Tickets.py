@@ -10,11 +10,11 @@ from utils.permissions import premium
 from typing import Literal
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-Customisation = DB["Customisation"]
-Panels = DB["Panels"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# Customisation = DB["Customisation"]
+# Panels = DB["Panels"]
 
 
 class Tickets(discord.ui.Select):
@@ -59,7 +59,7 @@ class CreateDeletePanel(discord.ui.Select):
             await interaction.response.send_modal(PanelCreationModal(self.PanelType))
 
         elif Action == "Delete":
-            PanelsList = await Panels.find(
+            PanelsList = await interaction.client.db['Panels'].find(
                 {"guild": interaction.guild.id, "type": self.PanelType}
             ).to_list(length=None)
             Options = [
@@ -78,7 +78,7 @@ class CreateDeletePanel(discord.ui.Select):
             await interaction.response.edit_message(view=View)
 
         elif Action == "Modify":
-            PanelsList = await Panels.find(
+            PanelsList = await interaction.client.db['Panels'].find(
                 {"guild": interaction.guild.id, "type": self.PanelType}
             ).to_list(length=None)
             Options = [
@@ -126,7 +126,7 @@ class PanelCreationModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         PanelName = self.name_input.value
-        await Panels.insert_one(
+        await interaction.client.db['Panels'].insert_one(
             {"guild": interaction.guild.id, "type": self.PanelType, "name": PanelName}
         )
 
@@ -146,7 +146,7 @@ class DeletePanelSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         SelectedPanel = self.values[0]
-        await Panels.delete_one(
+        await interaction.client.db['Panels'].delete_one(
             {
                 "guild": interaction.guild.id,
                 "type": self.PanelType,
@@ -193,7 +193,7 @@ class SingelPanelCustomisation(discord.ui.View):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         await interaction.response.send_modal(
@@ -211,7 +211,7 @@ class SingelPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         view = discord.ui.View()
@@ -234,7 +234,7 @@ class SingelPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
 
@@ -258,7 +258,7 @@ class SingelPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
 
@@ -286,7 +286,7 @@ class SingelPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         view = discord.ui.View()
@@ -313,7 +313,7 @@ class SingelPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         view = discord.ui.View()
@@ -335,7 +335,7 @@ class SingelPanelCustomisation(discord.ui.View):
     async def Finish(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         if not custom:
@@ -393,10 +393,10 @@ class MultiPanelCustomisation(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        panels = await Panels.find(
+        panels = await interaction.client.db['Panels'].find(
             {"guild": interaction.guild.id, "type": "single"}
         ).to_list(length=None)
-        panel = await Panels.find_one(
+        panel = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "multi", "name": self.name}
         )
         Default = panel.get("Panels", [])
@@ -419,7 +419,7 @@ class MultiPanelCustomisation(discord.ui.View):
     async def Finish(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        custom = await Panels.find_one(
+        custom = await interaction.client.db['Panels'].find_one(
             {"guild": interaction.guild.id, "type": "multi", "name": self.name}
         )
         if not custom:
@@ -450,7 +450,7 @@ class MultiPanelCustomisation(discord.ui.View):
 async def CustomiseEmbed(interaction: discord.Interaction, option, name):
     try:
         await interaction.response.defer()
-        custom = await Panels.find_one({"guild": interaction.guild.id, "name": name})
+        custom = await interaction.client.db['Panels'].find_one({"guild": interaction.guild.id, "name": name})
         embed = None
 
         from Cogs.Configuration.Components.EmbedBuilder import (
@@ -545,7 +545,7 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 },
             }
         }
-    await Panels.update_one(
+    await interaction.client.db['Panels'].update_one(
         {"guild": interaction.guild.id, "name": d.get("name")},
         {"$set": data},
         upsert=True,
@@ -599,7 +599,7 @@ class MultiToSingle(discord.ui.Select):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "multi", "name": self.name},
             {"$set": {"Panels": self.values}},
         )
@@ -641,7 +641,7 @@ class Permissions(discord.ui.RoleSelect):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         selected_roles = [role.id for role in self.values]
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": {"permissions": selected_roles}},
         )
@@ -669,7 +669,7 @@ class TranscriptChannel(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": {"TranscriptChannel": self.values[0].id}},
         )
@@ -700,7 +700,7 @@ class Category(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": {"Category": self.values[0].id}},
         )
@@ -729,7 +729,7 @@ class MentionsOnOpen(discord.ui.RoleSelect):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         selected_roles = [role.id for role in self.values]
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": {"MentionsOnOpen": selected_roles}},
         )
@@ -757,7 +757,7 @@ class AccessControl(discord.ui.RoleSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": {"AccessControl": [role.id for role in self.values]}},
         )
@@ -809,7 +809,7 @@ class CustomiseButton(discord.ui.Modal):
         import string
         import random
 
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {
                 "$set": {

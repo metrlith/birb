@@ -21,17 +21,17 @@ from utils.Module import ModuleCheck
 from utils.format import ordinal
 from utils.permissions import check_admin_and_staff
 
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-staffdb = db["staff database"]
-Customisation = db["Customisation"]
-config = db["Config"]
-infractiontypeactions = db["infractiontypeactions"]
-collection = db["infractions"]
-stafflist = db["Staff List"]
-activelists = db["Active Staff List"]
-Configuration = db["Config"]
-Views = db["Views"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# staffdb = db["staff database"]
+# Customisation = db["Customisation"]
+# config = db["Config"]
+# infractiontypeactions = db["infractiontypeactions"]
+# collection = db["infractions"]
+# stafflist = db["Staff List"]
+# activelists = db["Active Staff List"]
+# Configuration = db["Config"]
+# Views = db["Views"]
 
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
@@ -64,7 +64,7 @@ class SetMessages(discord.ui.Modal, title="Set Message Count"):
 
         filter = {"guild_id": guild_id, "user_id": self.user_id}
         update_data = {"$set": {"message_count": message_count_value}}
-        await mccollection.update_one(filter, update_data, upsert=True)
+        await interaction.client.dbq['messages'].update_one(filter, update_data, upsert=True)
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, I've set the users messages as `{message_count_value}`.",
             embed=None,
@@ -83,7 +83,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await mccollection.find_one(
+        result = await  interaction.client.dbq['messages'].find_one(
             {"guild_id": interaction.guild.id, "user_id": self.user_id}
         )
         message_count_value = int(self.message_count.value)
@@ -91,7 +91,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
         if result:
             message_count = int(result["message_count"]) + message_count_value
             filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await mccollection.update_one(
+            await  interaction.client.dbq['messages'].update_one(
                 filter, {"$set": {"message_count": message_count}}
             )
             await interaction.response.edit_message(
@@ -101,7 +101,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
             )
         else:
             message_count = message_count_value
-            await mccollection.insert_one(
+            await  interaction.client.dbq['messages'].insert_one(
                 {
                     "guild_id": guild_id,
                     "user_id": self.user_id,
@@ -121,7 +121,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await mccollection.find_one(
+        result = await  interaction.client.dbq['messages'].find_one(
             {"guild_id": interaction.guild.id, "user_id": self.user_id}
         )
         message_count_value = int(self.message_count.value)
@@ -129,7 +129,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
         if result:
             message_count = int(result["message_count"]) - message_count_value
             filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await mccollection.update_one(
+            await  interaction.client.dbq['messages'].update_one(
                 filter, {"$set": {"message_count": message_count}}
             )
             await interaction.response.edit_message(
@@ -139,7 +139,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
             )
         else:
             message_count = message_count_value
-            await mccollection.insert_one(
+            await  interaction.client.dbq['messages'].insert_one(
                 {"guild_id": guild_id, "user_id": self.user_id, "message_count": 0}
             )
 
@@ -214,7 +214,7 @@ class StaffManage(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         filter = {"guild_id": interaction.guild.id, "user_id": staff_id}
         update = {"$set": {"message_count": 0}}
-        await mccollection.update_one(filter, update)
+        await  interaction.client.dbq['messages'].update_one(filter, update)
 
         await interaction.response.edit_message(
             content=f"**{tick} {interaction.user.display_name}**, I have reset the staff member's ",
@@ -223,9 +223,9 @@ class StaffManage(discord.ui.View):
         )
 
 
-dbq = mongo["quotadb"]
-mccollection = dbq["messages"]
-message_quota_collection = dbq["message_quota"]
+# dbq = mongo["quotadb"]
+# mccollection = dbq["messages"]
+# message_quota_collection = dbq["message_quota"]
 
 
 class quota(commands.Cog):
@@ -254,14 +254,14 @@ class quota(commands.Cog):
             return
         if not await has_admin_role(ctx, "Staff List Permissions"):
             return
-        await stafflist.update_one(
+        await self.client.db['Staff List'].update_one(
             {"guild_id": ctx.guild.id, "position": position},
             {"$set": {"rank": rank.id}},
             upsert=True,
         )
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, I have added `@{rank.name}` to the staff list.",
-            allowed_mentions=discord.AllowedMentions().none(),
+            
         )
 
     @list.command(description="Remove a rank from the staff list")
@@ -274,10 +274,10 @@ class quota(commands.Cog):
             return
         if not await has_admin_role(ctx, "Staff List Permissions"):
             return
-        await stafflist.delete_one({"rank": rank.id})
+        await self.client.db['Staff List'].delete_one({"rank": rank.id})
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, I have removed `@{rank.name}` from the staff list.",
-            allowed_mentions=discord.AllowedMentions().none(),
+            
         )
 
     @list.command(description="Send the staff list")
@@ -291,7 +291,7 @@ class quota(commands.Cog):
         if not await has_admin_role(ctx, "Staff List Permissions"):
             return
 
-        results = await stafflist.find({"guild_id": ctx.guild.id}).to_list(length=None)
+        results = await self.client.db['Staff List'].find({"guild_id": ctx.guild.id}).to_list(length=None)
         results = sorted(results, key=lambda x: int(x.get("position", 0)))
         member_roles = {}
         highest_role_seen = {}
@@ -348,7 +348,7 @@ class quota(commands.Cog):
                 embed=embed, allowed_mentions=discord.AllowedMentions().none()
             )
 
-        await activelists.update_one(
+        await self.client.db['Active Staff List'].update_one(
             {"guild_id": ctx.guild.id},
             {"$set": {"msg": msg.id, "channel_id": ctx.channel.id}},
             upsert=True,
@@ -381,7 +381,7 @@ class quota(commands.Cog):
             return
 
         passed, failed, on_loa, failedmembers = [], [], [], []
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if not Config:
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
@@ -409,7 +409,7 @@ class quota(commands.Cog):
                 )
             )
         Users = (
-            await mccollection.find({"guild_id": ctx.guild.id})
+            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -480,7 +480,7 @@ class quota(commands.Cog):
             return
 
         passed, failed, on_loa = [], [], []
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if not Config:
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
@@ -505,7 +505,7 @@ class quota(commands.Cog):
                 )
             )
         Users = (
-            await mccollection.find({"guild_id": ctx.guild.id})
+            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -580,11 +580,11 @@ class quota(commands.Cog):
             return
         if not await has_admin_role(ctx, "Message Quota Permissions"):
             return
-        MessageData = await mccollection.find_one(
+        MessageData = await self.client.dbq['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": staff.id}
         )
 
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
 
             return await ctx.send(embed=BotNotConfigured(), view=Support())
@@ -618,7 +618,7 @@ class quota(commands.Cog):
                 )
             )
             users = (
-                await mccollection.find({"guild_id": ctx.guild.id})
+                await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
                 .sort("message_count", pymongo.DESCENDING)
                 .to_list(length=None)
             )
@@ -651,14 +651,14 @@ class quota(commands.Cog):
         if not await has_staff_role(ctx, "Message Quota Permissions"):
             return
         await ctx.defer()
-        MessageData = await mccollection.find_one(
+        MessageData = await self.client.dbq['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": staff.id}
         )
         if not MessageData:
             return await ctx.send(
                 f"{no} **{ctx.author.display_name}**, they haven't sent any messages."
             )
-        Config = await config.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if not Config.get("Message Quota"):
@@ -692,7 +692,7 @@ class quota(commands.Cog):
 
             if MessageData:
                 users = (
-                    await mccollection.find({"guild_id": ctx.guild.id})
+                    await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
                     .sort("message_count", pymongo.DESCENDING)
                     .to_list(length=None)
                 )
@@ -722,11 +722,11 @@ class quota(commands.Cog):
         await ctx.defer(ephemeral=True)
         msg = await ctx.send(f"<a:Loading:1167074303905386587> Exporting to CSV...")
         users = (
-            await mccollection.find({"guild_id": ctx.guild.id})
+            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=None)
         )
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if not Config.get("Message Quota"):
@@ -796,7 +796,7 @@ class quota(commands.Cog):
 
         if not await has_staff_role(ctx, "Message Quota Permissions"):
             return
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await msg.edit(embed=BotNotConfigured(), view=Support())
         if not Config.get("Message Quota"):
@@ -806,7 +806,7 @@ class quota(commands.Cog):
             )
         Quota = Config.get("Message Quota", {}).get("quota", 0)
         Users = (
-            await mccollection.find({"guild_id": ctx.guild.id})
+            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -815,7 +815,7 @@ class quota(commands.Cog):
                 content=f"{no} **{ctx.author.display_name},** there has been no messages sent yet.",
                 embed=None,
             )
-        YouProgress = await mccollection.find_one(
+        YouProgress = await self.client.dbq['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": ctx.author.id}
         )
         # Author Stats bit
@@ -1009,12 +1009,12 @@ class quota(commands.Cog):
         if not await has_admin_role(ctx, "Staff Database Permissions"):
             return
 
-        if await staffdb.find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
+        if await self.client.db['staff database'].find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
             return await ctx.send(
                 f"{no} **{ctx.author.display_name}**, this user is already a staff member.\n-#{arrow} You can always edit them using </staff edit:1165258229102682124>!"
             )
         try:
-            await staffdb.insert_one(
+            await self.client.db['staff database'].insert_one(
                 {
                     "guild_id": ctx.guild.id,
                     "staff_id": staff.id,
@@ -1043,12 +1043,12 @@ class quota(commands.Cog):
             return
         if not await has_admin_role(ctx, "Staff Database Permissions"):
             return
-        if not await staffdb.find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
+        if not await self.client.db['staff database'].find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
             return await ctx.send(
                 f"{no} **{ctx.author.display_name}**, this user has not been added to the staff team.\n{arrow} To add someone to the staff database use </staff add:1165258229102682124>!"
             )
         try:
-            await staffdb.delete_one({"guild_id": ctx.guild.id, "staff_id": staff.id})
+            await self.client.db['staff database'].delete_one({"guild_id": ctx.guild.id, "staff_id": staff.id})
         except Exception as e:
             print(e)
         await ctx.send(
@@ -1080,12 +1080,12 @@ class quota(commands.Cog):
         if not await has_admin_role(ctx, "Staff Database Permissions"):
             return
 
-        if not await staffdb.find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
+        if not await self.client.db['staff database'].find_one({"guild_id": ctx.guild.id, "staff_id": staff.id}):
             return await ctx.send(
                 f"{no} **{ctx.author.display_name}**, this user has not been added to the staff team.\n-#{arrow} To add someone to the staff database use </staff add:1165258229102682124>!"
             )
         try:
-            await staffdb.update_one(
+            await self.client.db['staff database'].update_one(
                 {"guild_id": ctx.guild.id, "staff_id": staff.id},
                 {
                     "$set": {
@@ -1112,7 +1112,7 @@ class quota(commands.Cog):
             return
         if not await has_staff_role(ctx, "Staff Database Permissions"):
             return
-        result = await staffdb.find_one(
+        result = await self.client.db['staff database'].find_one(
             {"guild_id": ctx.guild.id, "staff_id": staff.id}
         )
         if result is None:
@@ -1162,7 +1162,7 @@ class quota(commands.Cog):
                 view=Support(),
             )
             return
-        result = await staffdb.find_one(
+        result = await self.client.db['staff database'].find_one(
             {"guild_id": ctx.guild.id, "staff_id": ctx.author.id}
         )
         if not result:
@@ -1170,7 +1170,7 @@ class quota(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, you are not in the staff database."
             )
 
-        await staffdb.update_one(
+        await self.client.db['staff database'].update_one(
             {"guild_id": ctx.guild.id, "staff_id": ctx.author.id},
             {"$set": {"introduction": introduction}},
         )
@@ -1192,7 +1192,7 @@ class quota(commands.Cog):
             )
             return
 
-        custom = await Customisation.find_one(
+        custom = await self.client.db['Customisation'].find_one(
             {"guild_id": ctx.guild.id, "name": "Staff Panel"}
         )
 
@@ -1206,7 +1206,7 @@ class quota(commands.Cog):
         if custom and custom.get("embed"):
             from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
             embed = await DisplayEmbed(custom, ctx.author)        
-        People = await staffdb.find({"guild_id": ctx.guild.id}).to_list(length=None)
+        People = await self.client.db['staff database'].find({"guild_id": ctx.guild.id}).to_list(length=None)
         options = []
         Added = set()
         for person in People:
@@ -1252,7 +1252,7 @@ class quota(commands.Cog):
             )
             print(e)
             return
-        await Views.insert_one({"_id": msg.id, "type": "staff", "guild": ctx.guild.id})
+        await self.client.db['Views'].insert_one({"_id": msg.id, "type": "staff", "guild": ctx.guild.id})
 
 
 class InfractionTypeSelection(discord.ui.Select):
@@ -1278,10 +1278,10 @@ class InfractionTypeSelection(discord.ui.Select):
         notes = None
         expiration = None
         anonymous = True
-        TypeActions = await infractiontypeactions.find_one(
+        TypeActions = await self.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": interaction.guild.id})
+        Config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}**, the bot isn't setup you can do that in /config.",
@@ -1328,7 +1328,7 @@ class InfractionTypeSelection(discord.ui.Select):
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
-            InfractionResult = await collection.insert_one(
+            InfractionResult = await self.client.db['infractions'].insert_one(
                 {
                     "guild_id": interaction.guild.id,
                     "staff": user.id,
@@ -1374,7 +1374,7 @@ class StaffPanel(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if self.values[0] == "more":
-            people = await staffdb.find({"guild_id": interaction.guild.id}).to_list(length=None)
+            people = await interaction.client.db['staff database'].find({"guild_id": interaction.guild.id}).to_list(length=None)
             options = []
             Existing = {int(option.value) for option in self.options if option.value.isdigit()}
             Added = set()
@@ -1413,7 +1413,7 @@ class StaffPanel(discord.ui.Select):
                     content=f"{no} **{interaction.user.display_name},** I couldn't find that user.",
                     ephemeral=True,
                 )
-        result = await staffdb.find_one(
+        result = await interaction.client.db['staff database'].find_one(
             {"guild_id": interaction.guild.id, "staff_id": member.id}
         )
         if not result:
@@ -1473,7 +1473,7 @@ class ArmFire(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await mccollection.update_many(
+        await self.client.dbq['messages'].update_many(
             {"guild_id": interaction.guild.id},
             {"$set": {"message_count": 0}},
         )

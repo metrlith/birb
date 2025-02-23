@@ -22,9 +22,9 @@ guildid = os.getenv("CUSTOM_GUILD")
 from motor.motor_asyncio import AsyncIOMotorClient
 
 client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-suspensions = db["Suspensions"]
-Config = db["Config"]
+# db = client["astro"]
+# suspensions = db["Suspensions"]
+# Config = db["Config"]
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -91,7 +91,7 @@ class Suspensions(commands.Cog):
             return
 
         filter = {"guild_id": ctx.guild.id, "staff": staff.id, "active": True}
-        existing_suspensions = await suspensions.find_one(filter)
+        existing_suspensions = await self.client.db['Suspensions'].find_one(filter)
 
         if existing_suspensions:
             await ctx.send(
@@ -146,7 +146,7 @@ class Suspensions(commands.Cog):
 
         filter = {"guild_id": ctx.guild.id, "active": True}
 
-        loa_requests = await suspensions.find(filter).to_list(length=None)
+        loa_requests = await self.client.db['Suspensions'].find(filter).to_list(length=None)
 
         if len(loa_requests) == 0:
             await ctx.send(
@@ -189,7 +189,7 @@ class Suspensions(commands.Cog):
         if not await has_admin_role(ctx, "Suspension Permissions"):
             return
         filter = {"guild_id": ctx.guild.id, "staff": staff.id}
-        suspension_requests = suspensions.find(filter)
+        suspension_requests = self.client.db['Suspensions'].find(filter)
 
         suspension_records = []
 
@@ -260,7 +260,7 @@ class Suspension(discord.ui.RoleSelect):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         SelectedRoleIds = [role.id for role in self.values]
-        config = await Config.find_one({"_id": interaction.guild.id})
+        config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             return await interaction.response.send_message(
                 f"{no} **{interaction.user.display_name}**, you need to select at least one role.",
@@ -303,7 +303,7 @@ class Suspension(discord.ui.RoleSelect):
             "active": True,
             "notes": self.notes if self.notes else "N/A",
         }
-        RESULT = await suspensions.insert_one(RESULT)
+        RESULT = await self.client.db['Suspensions'].insert_one(RESULT)
         interaction.client.dispatch(
             "infraction", RESULT.inserted_id, config, None, "Suspension"
         )
@@ -365,7 +365,7 @@ class RoleTakeAwayYesOrNo(discord.ui.View):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        config = await Config.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             return await interaction.response.send_message(
                 embed=BotNotConfigured(),
@@ -406,7 +406,7 @@ class RoleTakeAwayYesOrNo(discord.ui.View):
             "active": True,
             "notes": self.notes if self.notes else "N/A",
         }
-        RESULT = await suspensions.insert_one(Suspension)
+        RESULT = await interaction.client.db['Suspensions'].insert_one(Suspension)
         interaction.client.dispatch(
             "infraction", RESULT.inserted_id, config, None, "Suspension"
         )
@@ -458,7 +458,7 @@ class SuspensionPanel(discord.ui.View):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        suspension_record = await suspensions.find_one(
+        suspension_record = await interaction.client.db['Suspensions'].find_one(
             {"guild_id": interaction.guild.id, "staff": self.user.id}
         )
         if suspension_record:
@@ -490,7 +490,7 @@ class SuspensionPanel(discord.ui.View):
                             view=None,
                             embed=None,
                         )
-                        await suspensions.delete_one(
+                        await self.client.db['Suspensions'].delete_one(
                             {"guild_id": interaction.guild.id, "staff": self.user.id}
                         )
 
@@ -510,7 +510,7 @@ class SuspensionPanel(discord.ui.View):
                         pass
             else:
                 member = await interaction.guild.fetch_member(self.user.id)
-                await suspensions.delete_one(
+                await interaction.client.db['Suspensions'].delete_one(
                     {"guild_id": interaction.guild.id, "staff": self.user.id}
                 )
                 await interaction.response.edit_message(

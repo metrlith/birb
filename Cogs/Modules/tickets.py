@@ -18,10 +18,10 @@ from utils.HelpEmbeds import ModuleNotEnabled, Support
 
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Panels = db["Panels"]
-T = db["Tickets"]
-Blacklists = db["Ticket Blacklists"]
+# db = client["astro"]
+# Panels = db["Panels"]
+# T = db["Tickets"]
+# Blacklists = db["Ticket Blacklists"]
 
 
 async def AccessControl(interaction: discord.Interaction, Panel: dict):
@@ -80,8 +80,8 @@ class Button(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        AlreadyOpen = await T.count_documents({"UserID": interaction.user.id, "closed": None, "panel": {'$exists': True}})
-        Blacklisted = await Blacklists.find_one(
+        AlreadyOpen = await self.client.db['Tickets'].count_documents({"UserID": interaction.user.id, "closed": None, "panel": {'$exists': True}})
+        Blacklisted = await self.client.db['Ticket Blacklists'].find_one(
             {"user": interaction.user.id, "guild": interaction.guild.id}
         )
         if Blacklisted:
@@ -103,7 +103,7 @@ class Button(discord.ui.Button):
             )
 
         TPanel = None
-        panel = await Panels.find({"guild": interaction.guild.id}).to_list(length=None)
+        panel = await self.client.db['Panels'].find({"guild": interaction.guild.id}).to_list(length=None)
         for p in panel:
             button = p.get("Button")
             if button:
@@ -117,7 +117,7 @@ class Button(discord.ui.Button):
             )
 
         if TPanel:
-            t = await T.insert_one(
+            t = await self.client.db['Tickets'].insert_one(
                 {
                     "_id": "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
@@ -154,7 +154,7 @@ class Debug(discord.ui.View):
 
     @discord.ui.button(label="Debug Issue", style=discord.ButtonStyle.red)
     async def debug(self, interaction: discord.Interaction, button: discord.ui.Button):
-        R = await T.find_one({"UserID": interaction.user.id, "closed": None})
+        R = await self.client.db['Tickets'].find_one({"UserID": interaction.user.id, "closed": None})
         if not R:
             return await interaction.response.send_message(
                 f"{no} **{interaction.user.display_name}**, no open ticket found to debug.",
@@ -174,10 +174,10 @@ class Debug(discord.ui.View):
             interaction.user,
         )
         await asyncio.sleep(3)
-        New = await T.find_one({"UserID": interaction.user.id, "closed": None})
+        New = await self.client.db['Tickets'].find_one({"UserID": interaction.user.id, "closed": None})
         if New:
             print(f"[Debug Issue] Ticket {R.get('_id')} has been purged.")
-            await T.delete_one({"_id": R.get("_id")})
+            await self.client.db['Tickets'].delete_one({"_id": R.get("_id")})
 
 
 class TicketsPub(commands.Cog):
@@ -191,7 +191,7 @@ class TicketsPub(commands.Cog):
     ) -> typing.List[app_commands.Choice[str]]:
         try:
             choices = []
-            P = await Panels.find(
+            P = await interaction.client.db['Panels'].find(
                 {"guild": interaction.guild.id, "type": {"$ne": "Welcome Message"}}
             ).to_list(length=None)
             for Panel in P:
@@ -221,7 +221,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Panel = await Panels.find_one(
+        Panel = await interaction.client.db['Panels'].find_one(
             {
                 "guild": interaction.guild.id,
                 "name": panel,
@@ -247,7 +247,7 @@ class TicketsPub(commands.Cog):
         buttons = []
         if Panel.get("type") == "multi":
             for panel_name in Panel.get("Panels"):
-                sub = await Panels.find_one(
+                sub = await interaction.client.db['Panels'].find_one(
                     {
                         "guild": interaction.guild.id,
                         "name": panel_name,
@@ -291,7 +291,7 @@ class TicketsPub(commands.Cog):
             ephemeral=True,
         )
 
-        await Panels.update_one(
+        await interaction.client.db['Panels'].update_one(
             {"guild": interaction.guild.id, "name": panel},
             {"$set": {"MsgID": msg.id, "ChannelID": interaction.channel.id}},
         )
@@ -309,12 +309,12 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"ChannelID": interaction.channel.id}, {"$set": {"name": name}}
         )
         try:
@@ -340,7 +340,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -364,7 +364,7 @@ class TicketsPub(commands.Cog):
         await interaction.followup.send(
             content=f"{tick} **{interaction.user.display_name},** you've blacklisted **@{user.display_name}** from the ticket system!"
         )
-        await Blacklists.insert_one({"user": user.id, "guild": interaction.guild.id})
+        await interaction.client.db['Ticket Blacklists'].insert_one({"user": user.id, "guild": interaction.guild.id})
 
     @tickets.command(description="Unblacklist a user from the ticket system.")
     async def unblacklist(self, interaction: discord.Interaction, user: discord.Member):
@@ -381,7 +381,7 @@ class TicketsPub(commands.Cog):
         await interaction.followup.send(
             content=f"{tick} **{interaction.user.display_name},** you've unblacklisted **@{user.display_name}** from the ticket system!"
         )
-        await Blacklists.delete_one({"user": user.id, "guild": interaction.guild.id})
+        await interaction.client.db['Ticket Blacklists'].delete_one({"user": user.id, "guild": interaction.guild.id})
 
     @tickets.command(description="Request to close a ticket.")
     async def closerequest(self, interaction: discord.Interaction, reason: str = None):
@@ -390,7 +390,7 @@ class TicketsPub(commands.Cog):
             return await interaction.followup.send(
                 content=f"{no} You don't have permission to use this command."
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -430,7 +430,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -464,7 +464,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -491,7 +491,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -500,7 +500,7 @@ class TicketsPub(commands.Cog):
             return await interaction.followup.send(
                 content=f"{no} This ticket is already claimed."
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"ChannelID": interaction.channel.id},
             {
                 "$set": {
@@ -528,7 +528,7 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -538,7 +538,7 @@ class TicketsPub(commands.Cog):
                 content=f"{no} This ticket isn't claimed."
             )
         await interaction.response.defer()
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"ChannelID": interaction.channel.id},
             {"$set": {"claimed": {"claimer": None, "claimedAt": None}}},
         )
@@ -564,7 +564,7 @@ class TicketsPub(commands.Cog):
         if not user:
             user = interaction.user
 
-        Tickets = await T.find({"GuildID": interaction.guild.id}).to_list(length=None)
+        Tickets = await interaction.client.db['Tickets'].find({"GuildID": interaction.guild.id}).to_list(length=None)
         ClaimedTickets = [
             ticket
             for ticket in Tickets
@@ -635,7 +635,7 @@ class CloseRequest(discord.ui.View):
                 f"{no} You can't close this ticket.", ephemeral=True
             )
         await interaction.response.defer()
-        Result = await T.find_one({"ChannelID": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 f"{no} This isn't a ticket channel.", ephemeral=True

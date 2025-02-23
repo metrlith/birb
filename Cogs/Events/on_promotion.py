@@ -12,14 +12,14 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 logger = logging.getLogger(__name__)
 
 MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-promotions = db["promotions"]
-Customisation = db["Customisation"]
-integrations = db["integrations"]
-staffdb = db["staff database"]
-consent = db["consent"]
-promotionroles = db["promotion roles"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# promotions = db["promotions"]
+# Customisation = db["Customisation"]
+# integrations = db["integrations"]
+# staffdb = db["staff database"]
+# consent = db["consent"]
+# promotionroles = db["promotion roles"]
 
 
 def replace_variables(message, replacements):
@@ -109,12 +109,12 @@ class Embed:
 
 
 async def PromotionSystem(
-    PromotionData: dict, settings: dict, guild: discord.Guild, member: discord.Member
+    self: commands.bot, PromotionData: dict, settings: dict, guild: discord.Guild, member: discord.Member
 ):
     if not settings.get('Module Options', {}).get('autorole', True):
-        return await promotions.find_one({"_id": PromotionData.get("_id")})
+        return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
     if not settings.get("Promo"):
-        return await promotions.find_one({"_id": PromotionData.get("_id")})
+        return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
     PromoSystemType = settings.get("Promo", {}).get("System", {}).get("type", "old")
 
@@ -141,10 +141,10 @@ async def PromotionSystem(
         
         DepartmentHierarchies = [dept for sublist in settings.get('Promo').get("System", {}).get("multi", {}).get("Departments", []) for dept in sublist]
         if not DepartmentHierarchies or not Department:
-            return await promotions.find_one({"_id": PromotionData.get("_id")})
+            return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
         DepartmentHierarchy = next((dept for dept in DepartmentHierarchies if dept.get("name") == Department), None)
         if not DepartmentHierarchy:
-            return await promotions.find_one({"_id": PromotionData.get("_id")})
+            return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
         RoleIDs = DepartmentHierarchy.get("ranks", [])
 
@@ -170,10 +170,10 @@ async def PromotionSystem(
                             )
                         except (discord.Forbidden, discord.HTTPException):
                             pass
-                await promotions.update_one(
+                await self.db['promotions'].update_one(
                     {"_id": PromotionData.get("_id")}, {"$set": {"new": SkipRole.id}}
                 )
-                return await promotions.find_one({"_id": PromotionData.get("_id")})
+                return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
         for Index, CurrentRole in enumerate(SortedRoles):
             if CurrentRole in MemberRoles and Index + 1 < len(SortedRoles):
@@ -195,7 +195,7 @@ async def PromotionSystem(
 
         RoleID = SkipRole.id if SkipTo else FirstRole.id if FirstRole else NextRole.id if NextRole else None
         if RoleID:
-            await promotions.update_one(
+            await self.db['promotions'].update_one(
                 {"_id": PromotionData.get("_id")}, {"$set": {"new": RoleID}}
             )
     if PromoSystemType == "single":
@@ -204,7 +204,7 @@ async def PromotionSystem(
 
         if not HierarchyRoles:
             logger.warning('[Single] No roles found')
-            return await promotions.find_one({"_id": PromotionData.get("_id")})
+            return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
         MemberRoles = set(member.roles)
         SortedRoles = [
@@ -228,8 +228,8 @@ async def PromotionSystem(
                             )
                         except (discord.Forbidden, discord.HTTPException):
                             pass
-                await promotions.update_one({"_id": PromotionData.get("_id")}, {"$set": {"new": SkipRole.id}})        
-                return await promotions.find_one({"_id": PromotionData.get("_id")})
+                await self.db['promotions'].update_one({"_id": PromotionData.get("_id")}, {"$set": {"new": SkipRole.id}})        
+                return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
         for Index, CurrentRole in enumerate(SortedRoles):
             if CurrentRole in MemberRoles and Index + 1 < len(SortedRoles):
@@ -252,9 +252,9 @@ async def PromotionSystem(
 
         RoleID = SkipRole.id if SkipTo else FirstRole.id if FirstRole else NextRole.id if NextRole else None
         if RoleID:
-            await promotions.update_one({"_id": PromotionData.get("_id")}, {"$set": {"new": RoleID}})
+            await self.db['promotions'].update_one({"_id": PromotionData.get("_id")}, {"$set": {"new": RoleID}})
 
-    return await promotions.find_one({"_id": PromotionData.get("_id")})
+    return await self.db['promotions'].find_one({"_id": PromotionData.get("_id")})
 
 class on_promotion(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -262,7 +262,7 @@ class on_promotion(commands.Cog):
 
     @commands.Cog.listener()
     async def on_promotion(self, objectid: ObjectId, Settings: dict):
-        PromotionData = await promotions.find_one({"_id": objectid})
+        PromotionData = await self.client.db['promotions'].find_one({"_id": objectid})
         Infraction = Promotion(PromotionData)
         guild = await self.client.fetch_guild(Infraction.guild_id)
 
@@ -314,11 +314,11 @@ class on_promotion(commands.Cog):
         if Options.get("promotionissuer", False) is True:
             view = PromotionIssuer()
             view.issuer.label = f"Issued By {manager.display_name}"
-        custom = await Customisation.find_one(
+        custom = await self.client.db['Customisation'].find_one(
             {"guild_id": Infraction.guild_id, "type": "Promotions"}
         )
         embed = discord.Embed()
-        PromotionData = await PromotionSystem(PromotionData, Settings, guild, staff)
+        PromotionData = await PromotionSystem(self.client, PromotionData, Settings, guild, staff)
         if PromotionData:
             Infraction = Promotion(PromotionData)
         if custom:
@@ -346,7 +346,7 @@ class on_promotion(commands.Cog):
         except (discord.Forbidden, discord.HTTPException, discord.NotFound):
             return
 
-        consreult = await consent.find_one({"user_id": staff.id})
+        consreult = await self.client.db['consent'].find_one({"user_id": staff.id})
         if not consreult or consreult.get("promotionalert") is not False:
             try:
                 await staff.send(

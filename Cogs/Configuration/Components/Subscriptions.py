@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from utils.emojis import *
 from utils.permissions import premium
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
-prem = DB["premium"]
-cfg = DB['Config']
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
+# prem = DB["premium"]
+# cfg = DB['Config']
 
 class PremiumButtons(discord.ui.View):
     def __init__(self, author: discord.Member):
@@ -30,8 +30,8 @@ class PremiumButtons(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         from Cogs.Configuration.Configuration import ConfigMenu, Options        
-        Config = await cfg.find_one({'_id': interaction.guild.id})        
-        await prem.update_one(
+        Config = await interaction.client.config.find_one({'_id': interaction.guild.id})        
+        await interaction.client.db['premium'].update_one(
             {"user_id": interaction.user.id},
             {"$set": {"guild_id": interaction.guild.id}},
         )
@@ -58,8 +58,8 @@ class PremiumButtons(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)        
         from Cogs.Configuration.Configuration import ConfigMenu, Options        
-        Config = await cfg.find_one({'_id': interaction.guild.id})
-        await prem.update_one(
+        Config = await interaction.client.config.find_one({'_id': interaction.guild.id})
+        await interaction.client.db['premium'].update_one(
             {"user_id": interaction.user.id}, {"$set": {"guild_id": None}}
         )
         view = PremiumButtons(interaction.user)
@@ -77,8 +77,8 @@ async def SubscriptionsEmbed(interaction: discord.Interaction):
     embed = discord.Embed(color=discord.Color.dark_embed())
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    result = await prem.find_one({"guild_id": interaction.guild.id})
-    user = await prem.find_one({"user_id": interaction.user.id})
+    result = await interaction.client.db['premium'].find_one({"guild_id": interaction.guild.id})
+    user = await interaction.client.db['premium'].find_one({"user_id": interaction.user.id})
     if not result and not user:
         embed.description = "> This server has **no active subscriptions**, and there are no premium slots available for you."
     if user and not result:

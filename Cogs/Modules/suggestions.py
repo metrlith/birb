@@ -9,15 +9,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Suggestions = db["suggestions"]
-Configuration = db["Config"]
-blacklist = db["blacklists"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Suggestions = db["suggestions"]
+# Configuration = db["Config"]
+# blacklist = db["blacklists"]
 from utils.Module import ModuleCheck
 from utils.emojis import *
 
-suggestschannel = db["suggestion channel"]
 from utils.HelpEmbeds import (
     BotNotConfigured,
     NoPermissionChannel,
@@ -65,7 +64,7 @@ class suggestions(commands.Cog):
         else:
             image = None
 
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.db['suggestions'].find_one({"_id": ctx.guild.id})
         if not Config:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
 
@@ -95,7 +94,7 @@ class suggestions(commands.Cog):
         msg = await ctx.send(
             f"<a:Loading:1167074303905386587>  **{ctx.author.display_name}**, submitting suggestion..."
         )
-        result = await Suggestions.insert_one(
+        result = await self.client.db['suggestions'].insert_one(
             {
                 "author_id": ctx.author.id,
                 "suggestion": suggestion,

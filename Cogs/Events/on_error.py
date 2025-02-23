@@ -8,11 +8,11 @@ import random
 from motor.motor_asyncio import AsyncIOMotorClient
 import traceback
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-errors = db["errors"]
-environment = os.getenv("ENVIRONMENT")
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# errors = db["errors"]
+# environment = os.getenv("ENVIRONMENT")
 
 
 class On_error(commands.Cog):
@@ -79,7 +79,7 @@ class On_error(commands.Cog):
                 traceback.format_exception(type(error), error, error.__traceback__)
             )
             ERROR = str(error)
-            await errors.insert_one(
+            await self.client.db['errors'].insert_one(
                 {
                     "error_id": error_id,
                     "error": ERROR,
@@ -116,7 +116,7 @@ class On_error(commands.Cog):
             )
             embed.set_footer(text=f"Error ID: {error_id}")
             msg = await Channel.send(embed=embed)
-            await errors.update_one(
+            await self.client.db['errors'].update_one(
                 {"error_id": error_id}, {"$set": {"MsgLink": msg.jump_url}}
             )
             return

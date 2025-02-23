@@ -10,10 +10,10 @@ from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-infractiontypeactions = DB["infractiontypeactions"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# infractiontypeactions = DB["infractiontypeactions"]
+# Customisation = DB["Customisation"]
 
 
 class InfractionOption(discord.ui.Select):
@@ -150,7 +150,7 @@ class InfractionOption(discord.ui.Select):
             view = ManageReasons(author=self.author, message=interaction.message)
         elif selection == "Customise Embed":
             try:
-                custom = await Customisation.find_one(
+                custom = await interaction.client.db['Customisation'].find_one(
                     {"guild_id": interaction.guild.id, "type": "Infractions"}
                 )
                 embed = None
@@ -284,7 +284,7 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 ],
             },
         }
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "type": "Infractions"},
         {"$set": data},
         upsert=True,
@@ -887,7 +887,7 @@ class InfractionTypesAction(discord.ui.Select):
         else:
             update_data[option.lower().replace(" ", "")] = True
 
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             filter, {"$set": update_data}, upsert=True
         )
         await interaction.response.edit_message(
@@ -940,7 +940,7 @@ class Escalate(discord.ui.Modal, title="Escalate"):
         self.type = type
 
     async def on_submit(self, interaction: discord.Interaction):
-        Result = await infractiontypeactions.find_one(
+        Result = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": self.type}
         )
         if not Result:
@@ -954,7 +954,7 @@ class Escalate(discord.ui.Modal, title="Escalate"):
         Result["Escalation"]["Reason"] = self.reason.value
         if "_id" in Result:
             del Result["_id"]        
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             {"guild_id": interaction.guild.id, "name": self.type}, {"$set": Result}
         )
         await interaction.response.edit_message(
@@ -982,7 +982,7 @@ class TypeChannel(discord.ui.ChannelSelect):
             )
 
         filter = {"guild_id": interaction.guild.id, "name": self.name}
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             filter, {"$set": {"channel": self.values[0].id}}, upsert=True
         )
         await interaction.response.edit_message(
@@ -1007,7 +1007,7 @@ class RemoveRoles(discord.ui.RoleSelect):
             )
 
         filter = {"guild_id": interaction.guild.id, "name": self.name}
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             filter,
             {"$set": {"removedroles": [role.id for role in self.values]}},
             upsert=True,
@@ -1034,7 +1034,7 @@ class GiveRoles(discord.ui.RoleSelect):
             )
 
         filter = {"guild_id": interaction.guild.id, "name": self.name}
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             filter,
             {"$set": {"givenroles": [role.id for role in self.values]}},
             upsert=True,
@@ -1063,7 +1063,7 @@ class ChangeGroupRole(discord.ui.Select):
             )
 
         filter = {"guild_id": interaction.guild.id, "name": self.name}
-        await infractiontypeactions.update_one(
+        await interaction.client.db['infractiontypeactions'].update_one(
             filter,
             {"$set": {"grouprole": self.values[0]}},
             upsert=True,

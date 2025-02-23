@@ -14,12 +14,12 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Customisation = db["Customisation"]
-feed = db["feedback"]
-Suggestions = db["suggestions"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Customisation = db["Customisation"]
+# feed = db["feedback"]
+# Suggestions = db["suggestions"]
 
 
 class On_suggestions_edit(commands.Cog):
@@ -28,8 +28,7 @@ class On_suggestions_edit(commands.Cog):
 
     @commands.Cog.listener()
     async def on_suggestion_edit(self, objectID: ObjectId, settings: dict, action):
-        print(objectID)
-        back = await Suggestions.find_one({"_id": objectID})
+        back = await self.client.db['suggestions'].find_one({"_id": objectID})
         if not back:
             return logging.critical("[on_suggestion] I can't find the feedback.")
 
@@ -64,7 +63,7 @@ class On_suggestions_edit(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} I can't access the suggestion."
             )
             return
-        custom = await Customisation.find_one({"guild_id": guild.id, "type": action})
+        custom = await self.client.db['Customisation'].find_one({"guild_id": guild.id, "type": action})
         view = Voting()
         if not custom:
 

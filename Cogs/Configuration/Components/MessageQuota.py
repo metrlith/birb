@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-autoactivity = DB["auto activity"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# autoactivity = DB["auto activity"]
 
-Configuration = DB["Config"]
+# Configuration = DB["Config"]
 
 
 class QuotaOptions(discord.ui.Select):
@@ -255,7 +255,7 @@ class PostDate(discord.ui.Modal, title="How often?"):
         if Days <= 0:
             Days += 7
         NextDate = datetime.utcnow() + timedelta(days=Days - 1)
-        await autoactivity.update_one(
+        await interaction.client.db['auto activity'].update_one(
             {"guild_id": interaction.guild.id},
             {"$set": {"day": self.postdate.value, "nextdate": NextDate}},
             upsert=True,
@@ -288,7 +288,7 @@ class PostChannel(discord.ui.ChannelSelect):
 
         filter = {"guild_id": interaction.guild.id}
         try:
-            await autoactivity.update_one(
+            await interaction.client.db['auto activity'].update_one(
                 filter, {"$set": {"channel_id": self.values[0].id}}, upsert=True
             )
             await interaction.edit_original_response(content=None)
@@ -321,7 +321,7 @@ class ActivityToggle(discord.ui.Select):
             await interaction.response.send_message(
                 content=f"{tick} Enabled", ephemeral=True
             )
-            await autoactivity.update_one(
+            await interaction.client.db['auto activity'].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"enabled": True}},
                 upsert=True,
@@ -331,7 +331,7 @@ class ActivityToggle(discord.ui.Select):
             await interaction.response.send_message(
                 content=f"{no} Disabled", ephemeral=True
             )
-            await autoactivity.update_one(
+            await interaction.client.db['auto activity'].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"enabled": False}},
                 upsert=True,

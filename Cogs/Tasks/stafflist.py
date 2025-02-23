@@ -3,20 +3,13 @@ from discord.ext import commands
 
 from discord.ext import tasks
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
 import discord
 from utils.emojis import *
 from discord.ext import commands
 from datetime import datetime
 from utils.Module import ModuleCheck
 
-from memory_profiler import profile
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-stafflist = db["Staff List"]
-activelists = db["Active Staff List"]
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
@@ -28,16 +21,15 @@ class StaffList(commands.Cog):
         print("[✅] Staff List loop started")
     
 
-    @profile
     @tasks.loop(minutes=10, reconnect=True)
     async def updatelist(self):
         print("Checking Staff List")
         if environment == "custom":
-            activelistresult = await activelists.find(
+            activelistresult = await self.client.db["Active Staff List"].find(
                 {"guild_id": int(guildid)}
             ).to_list(length=None)
         else:
-            activelistresult = await activelists.find({}).to_list(length=None)
+            activelistresult = await self.client.db["Active Staff List"].find({}).to_list(length=None)
 
         if activelistresult:
 
@@ -53,7 +45,7 @@ class StaffList(commands.Cog):
                     if not await ModuleCheck(guild.id, "Staff List"):
                         continue
 
-                    results = await stafflist.find({"guild_id": guild.id}).to_list(
+                    results = await self.client.db["Staff List"].find({"guild_id": guild.id}).to_list(
                         length=None
                     )
                     if not results:
@@ -121,7 +113,7 @@ class StaffList(commands.Cog):
                                     continue
                                 await msg.edit(
                                     embed=embed,
-                                    allowed_mentions=discord.AllowedMentions().none(),
+                                    
                                 )
                             except (discord.HTTPException, discord.NotFound):
                                 continue

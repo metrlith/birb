@@ -9,18 +9,16 @@ from datetime import datetime
 from utils.emojis import *
 import discord
 from discord.ext import tasks
-from memory_profiler import profile
 
 
 MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-loa_collection = db["loa"]
-consent = db["consent"]
-Configuration = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# loa_collection = db["loa"]
+# consent = db["consent"]
 
 
 class LOA(commands.Cog):
@@ -29,7 +27,6 @@ class LOA(commands.Cog):
         self.check_loa_status.start()
         print("[✅] LOA loop started")
 
-    @profile
     @tasks.loop(minutes=3, reconnect=True)
     async def check_loa_status(self):
         print("[👀] Checking LOA Status")
@@ -47,7 +44,7 @@ class LOA(commands.Cog):
                     "end_time": {"$lte": current_time},
                 }
 
-            loa_requests = await loa_collection.find(filter).to_list(length=None)
+            loa_requests = await self.client.db['loa'].find(filter).to_list(length=None)
             for request in loa_requests:
                 EndTime = request["end_time"]
                 UserID = request["user"]
@@ -60,12 +57,12 @@ class LOA(commands.Cog):
                     continue
 
                 if not guild or not user:
-                    await loa_collection.delete_one(
+                    await self.client.db['loa'].delete_one(
                         {"guild_id": guild_id, "user": UserID, "end_time": EndTime}
                     )
                     continue
 
-                Config = await Configuration.find_one({"_id": guild_id})
+                Config = await self.client.config.find_one({"_id": guild_id})
                 if not Config or not Config.get("LOA"):
                     continue
 
@@ -79,7 +76,7 @@ class LOA(commands.Cog):
                     continue
                 if current_time >= EndTime:
                     print(f"[LOA TASK] @{user.name}'s LOA has ended.")
-                    await loa_collection.update_many(
+                    await self.client.db['loa'].update_many(
                         {"guild_id": guild_id, "user": UserID},
                         {"$set": {"active": False}},
                     )
@@ -106,7 +103,7 @@ class LOA(commands.Cog):
                                 except discord.Forbidden:
                                     print(f"[⚠️] Failed to remove role from {UserID}.")
                         try:
-                            loanotification = await consent.find_one(
+                            loanotification = await self.client.db['consent'].find_one(
                                 {"user_id": user.id}
                             )
                             if (

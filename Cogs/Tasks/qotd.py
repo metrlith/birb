@@ -10,48 +10,45 @@ load_dotenv()
 import asyncio
 import logging
 from utils.Module import ModuleCheck
-from motor.motor_asyncio import AsyncIOMotorClient
-import gc
-from memory_profiler import profile
 
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-questiondb = db["qotd"]
-questionsa = db["Question Database"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# # questiondb = db["qotd"]
+# # questionsa = db["Question Database"]
 
 
 class qotd(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
     
-    @profile
+    
     async def fetch_question(self, used_questions, server: discord.Guild):
-        questionresult = await questionsa.find({}).to_list(length=None)
+        questionresult = await self.client.db[''].find({}).to_list(length=None)
         Unusued = [q for q in questionresult if q["question"] not in used_questions]
 
         if not Unusued:
-            await questiondb.update_one(
+            await self.client.db['qotd'].update_one(
                 {"guild_id": server.id}, {"$set": {"messages": []}}
             )
             return random.choice(questionresult).get("question")
         del questionresult
         return random.choice(Unusued).get("question")
-    @profile
+    
     @tasks.loop(minutes=15, reconnect=True)
     async def sendqotd(self) -> None:
         print("[👀] Checking QOTD")
-        if environment == "custom":
+        if bool(environment == "custom"):
 
-            result = await questiondb.find({"guild_id": int(guildid)}).to_list(
+            result = await self.client.db["qotd"].find({"guild_id": int(guildid)}).to_list(
                 length=None
             )
 
         else:
-            result = await questiondb.find({}).to_list(length=None)
+            result = await self.client.db['qotd'].find({}).to_list(length=None)
 
         if not result:
             logging.critical(
@@ -126,7 +123,7 @@ class qotd(commands.Cog):
                 except Exception as e:
                     continue
                 try:
-                    await questiondb.update_one(
+                    await self.client.db['qotd'].update_one(
                         {"guild_id": int(results["guild_id"])},
                         {
                             "$set": {

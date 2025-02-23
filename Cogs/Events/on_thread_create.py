@@ -4,13 +4,14 @@ import asyncio
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+from utils.permissions import has_staff_role
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-forumsconfig = db["Forum Configuration"]
-blacklist = db["blacklists"]
-Configuration = db["Config"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# forumsconfig = db["Forum Configuration"]
+# blacklist = db["blacklists"]
+# Configuration = db["Config"]
 
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -26,7 +27,7 @@ class ForumCreaton(commands.Cog):
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
         guild_id = thread.guild.id
-        config_data = await forumsconfig.find_one(
+        config_data = await self.client.db['Forum Configuration'].find_one(
             {"guild_id": guild_id, "channel_id": thread.parent_id}
         )
         if not config_data or "channel_id" not in config_data:
@@ -84,62 +85,6 @@ class CloseLock(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @staticmethod
-    async def has_staff_role(interaction: discord.Interaction, permissions=None):
-        blacklists = await blacklist.find_one({"user": interaction.user.id})
-        if blacklists:
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?",
-                ephemeral=True,
-            )
-            return False
-
-        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        if not Config:
-            await interaction.response.send_message(
-                embed=BotNotConfigured(), view=Support(), ephemeral=True
-            )
-            return False
-
-        if not Config.get("Permissions"):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the permissions haven't been set up yet, please run `/config`",
-                ephemeral=True,
-            )
-            return False
-
-        staff_role_ids = Config["Permissions"].get("staffrole", [])
-        staff_role_ids = (
-            staff_role_ids if isinstance(staff_role_ids, list) else [staff_role_ids]
-        )
-
-        admin_role_ids = Config["Permissions"].get("adminrole", [])
-        admin_role_ids = (
-            admin_role_ids if isinstance(admin_role_ids, list) else [admin_role_ids]
-        )
-
-        if any(
-            role.id in staff_role_ids + admin_role_ids
-            for role in interaction.user.roles
-        ):
-            return True
-
-        if interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the staff role isn't set, please run </config:1140463441136586784>!",
-                ephemeral=True,
-            )
-        else:
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the staff role is not set up. Please tell an admin to run </config:1140463441136586784> to fix it.",
-                ephemeral=True,
-            )
-
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Staff Role`",
-            ephemeral=True,
-        )
-        return False
 
     @discord.ui.button(
         label="Lock",
@@ -147,7 +92,7 @@ class CloseLock(discord.ui.View):
         emoji="<:close:1280576608125849731>",
     )
     async def lock(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self.has_staff_role(interaction):
+        if not await has_staff_role(interaction):
             return
         if not isinstance(interaction.channel, discord.Thread):
             await interaction.response.send_message(
@@ -180,7 +125,7 @@ class CloseLock(discord.ui.View):
         emoji="<:close:1280577170233753650>",
     )
     async def Close(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self.has_staff_role(interaction):
+        if not await has_staff_role(interaction):
             return
         if not isinstance(interaction.channel, discord.Thread):
             await interaction.response.send_message(
@@ -197,7 +142,7 @@ class CloseLock(discord.ui.View):
 
             await interaction.channel.send(
                 content=f"<:close:1280577170233753650> **@{interaction.user.display_name}**, has closed the thread.",
-                allowed_mentions=discord.AllowedMentions().none(),
+                
             )
 
             self.Close.style = discord.ButtonStyle.green
@@ -208,7 +153,7 @@ class CloseLock(discord.ui.View):
 
             await interaction.channel.send(
                 content=f"<:Add:1163095623600447558> **@{interaction.user.display_name}**, has reopened the thread.",
-                allowed_mentions=discord.AllowedMentions().none(),
+                
             )
             self.Close.style = discord.ButtonStyle.red
 

@@ -11,16 +11,16 @@ from utils.erm import voidShift
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-infractions = db["infractions"]
-Customisation = db["Customisation"]
-integrations = db["integrations"]
-staffdb = db["staff database"]
-consent = db["consent"]
-Suspension = db["Suspensions"]
-config = db["Config"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# infractions = db["infractions"]
+# Customisation = db["Customisation"]
+# integrations = db["integrations"]
+# staffdb = db["staff database"]
+# consent = db["consent"]
+# Suspension = db["Suspensions"]
+# config = db["Config"]
 
 
 class on_infraction_edit(commands.Cog):
@@ -29,7 +29,7 @@ class on_infraction_edit(commands.Cog):
 
     @commands.Cog.listener()
     async def on_infraction_edit(self, after: dict):
-        InfractionData = await infractions.find_one({"_id": after.get("_id")})
+        InfractionData = await self.client.db['infractions'].find_one({"_id": after.get("_id")})
         Infraction = InfractItem(InfractionData)
         guild = await self.client.fetch_guild(Infraction.guild_id)
         if guild is None:
@@ -58,7 +58,7 @@ class on_infraction_edit(commands.Cog):
             )
             return
 
-        Settings = await config.find_one({"_id": Infraction.guild_id})
+        Settings = await self.client.config.find_one({"_id": Infraction.guild_id})
         ChannelID = Settings.get("Infraction", {}).get("channel")
         if not ChannelID:
             logging.warning(
@@ -77,7 +77,7 @@ class on_infraction_edit(commands.Cog):
             )
             return
 
-        custom = await Customisation.find_one(
+        custom = await self.client.db['Customisation'].find_one(
             {
                 "guild_id": Infraction.guild_id,
                 "type": "Infractions",

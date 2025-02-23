@@ -9,10 +9,10 @@ from utils.emojis import *
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-T = db["Tickets"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# T = db["Tickets"]
 
 
 class TicketOpen(commands.Cog):
@@ -28,7 +28,7 @@ class TicketOpen(commands.Cog):
                 "[TICKETS] The main ticket category isn't there buddy"
             )
 
-        Ticket = await db["Tickets"].find_one({"_id": ObjectID})
+        Ticket = await self.client.db["Tickets"].find_one({"_id": ObjectID})
         Guild = self.client.get_guild(Ticket.get("GuildID"))
         if not Guild:
             return logging.critical(
@@ -74,7 +74,7 @@ class TicketOpen(commands.Cog):
             category=Category,
             topic=f"Ticket opened by @{Member.display_name}",
         )
-        await T.update_one({"_id": ObjectID}, {"$set": {"channel": Channel.id}})
+        await self.client.db['Tickets'].update_one({"_id": ObjectID}, {"$set": {"channel": Channel.id}})
         view = TicketControl()
         await Channel.send(
             embed=Embeds.get(Type),
@@ -87,7 +87,7 @@ class TicketOpen(commands.Cog):
     async def on_ticket_close(
         self, ObjectID: ObjectId, reason: str, member: discord.Member
     ):
-        Result = await T.find_one({"_id": ObjectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": ObjectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {ObjectID} not found")
 
@@ -129,7 +129,7 @@ class TicketOpen(commands.Cog):
                     "timestamp": message.created_at.timestamp(),
                 }
             )
-        await T.update_one(
+        await self.client.db['Tickets'].update_one(
             {"_id": ObjectID},
             {
                 "$push": {"transcript": {"messages": messages, "compact": compact}},
@@ -195,7 +195,7 @@ class TicketControl(discord.ui.View):
             )
         await interaction.response.defer()
 
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -217,7 +217,7 @@ class TicketControl(discord.ui.View):
             )
         await interaction.response.defer()
 
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -226,7 +226,7 @@ class TicketControl(discord.ui.View):
             return await interaction.followup.send(
                 "This ticket is already claimed.", ephemeral=True
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"channel": interaction.channel.id},
             {
                 "$set": {
@@ -264,12 +264,12 @@ class TicketControl(discord.ui.View):
                 "You don't have permission to escalate this ticket.", ephemeral=True
             )
         await interaction.response.defer()
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db['Tickets'].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"channel": interaction.channel.id},
             {
                 "$set": {

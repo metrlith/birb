@@ -11,18 +11,18 @@ STATUS = os.getenv("STATUS")
 MONGO_URL = os.getenv("MONGO_URL")
 SENTRY_URL = os.getenv("SENTRY_URL")
 # quota
-mongo = AsyncIOMotorClient(MONGO_URL)
+# mongo = AsyncIOMotorClient(MONGO_URL)
 
 
-db2 = mongo["quotadb"]
-ignoredchannels = db2["Ignored Quota Channels"]
-mccollection = db2["messages"]
-ignoredchannels = db2["Ignored Quota Channels"]
-MONGO_URL = os.getenv("MONGO_URL")
-astro = AsyncIOMotorClient(MONGO_URL)
-db = astro["astro"]
-scollection2 = db["staffrole"]
-Config = db["Config"]
+# db2 = mongo["quotadb"]
+# ignoredchannels = db2["Ignored Quota Channels"]
+# mccollection = db2["messages"]
+# ignoredchannels = db2["Ignored Quota Channels"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# astro = AsyncIOMotorClient(MONGO_URL)
+# db = astro["astro"]
+# scollection2 = db["staffrole"]
+# Config = db["Config"]
 
 
 class messageevent(commands.Cog):
@@ -41,7 +41,7 @@ class messageevent(commands.Cog):
         if message.channel is None:
             return
 
-        config = await Config.find_one({"_id": message.guild.id})
+        config = await self.client.db['Config'].find_one({"_id": message.guild.id})
         if not config:
             return
         if config.get("Modules", {}).get("Quota", False) is False:
@@ -64,7 +64,7 @@ class messageevent(commands.Cog):
             guild_id = message.guild.id
             author_id = message.author.id
 
-            await mccollection.update_one(
+            await self.client.dbq['messages'].update_one(
                 {"guild_id": guild_id, "user_id": author_id},
                 {"$inc": {"message_count": 1}},
                 upsert=True,
@@ -74,7 +74,7 @@ class messageevent(commands.Cog):
             guild_id = message.guild.id
             author_id = message.author.id
 
-            await mccollection.update_one(
+            await self.client.dbq['messages'].update_one(
                 {"guild_id": guild_id, "user_id": author_id},
                 {"$inc": {"message_count": 1}},
                 upsert=True,

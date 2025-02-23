@@ -9,11 +9,11 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Customisation = db["Customisation"]
-feed = db["feedback"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Customisation = db["Customisation"]
+# feed = db["feedback"]
 
 
 class OnFEEDABCKS(commands.Cog):
@@ -22,7 +22,7 @@ class OnFEEDABCKS(commands.Cog):
 
     @commands.Cog.listener()
     async def on_feedback(self, objectID: ObjectId, settings: dict):
-        back = await feed.find_one({"_id": objectID})
+        back = await self.client.db['feedback'].find_one({"_id": objectID})
         if not back:
             return logging.critical("[on_feedback] I can't find the feedback.")
 
@@ -53,7 +53,7 @@ class OnFEEDABCKS(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} the feedback channel can't be found. [2]"
             )
             return
-        custom = await Customisation.find_one(
+        custom = await self.client.db['feedback'].find_one(
             {"guild_id": guild.id, "type": "Feedback"}
         )
         if not custom:

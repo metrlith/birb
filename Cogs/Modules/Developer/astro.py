@@ -5,16 +5,16 @@ import psutil
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = os.getenv("MONGO_URL")
-deploy_URL = os.getenv("deploy_url")
-mongo = AsyncIOMotorClient(MONGO_URL)
-db = mongo["astro"]
-badges = db["User Badges"]
-analytics = db["analytics"]
-blacklists = db["blacklists"]
-customroles = db["customroles"]
-premium = db["premium"]
-SupportVariables = db['Support Variables']
+# MONGO_URL = os.getenv("MONGO_URL")
+# deploy_URL = os.getenv("deploy_url")
+# mongo = AsyncIOMotorClient(MONGO_URL)
+# db = mongo["astro"]
+# badges = db["User Badges"]
+# analytics = db["analytics"]
+# blacklists = db["blacklists"]
+# customroles = db["customroles"]
+# premium = db["premium"]
+# SupportVariables = db['Support Variables']
 
 class management(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -24,17 +24,17 @@ class management(commands.Cog):
     @commands.is_owner()
     async def account(self, ctx: commands.Context, user: discord.User):
         await ctx.defer()
-        premiumresult = await premium.find_one({"user_id": user.id})
+        premiumresult = await self.client.db['premium'].find_one({"user_id": user.id})
         if premiumresult:
             premiums = tick
         else:
             premiums = no
-        blacklistsresult = await blacklists.find_one({"user": user.id})
+        blacklistsresult = await self.client.db['blacklists'].find_one({"user": user.id})
         if blacklistsresult:
             blacklistss = tick
         else:
             blacklistss = no
-        badgesresult = await badges.find({"user_id": user.id}).to_list(length=None)
+        badgesresult = await self.client.db["User Badges"].find({"user_id": user.id}).to_list(length=None)
         badgess = []
         if badgesresult:
             for x in badgesresult:
@@ -61,7 +61,7 @@ class management(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def version(self, ctx: commands.Context, v: str):
-        await SupportVariables.update_one({"_id": 1}, {'$set': {'version': v}}, upsert=True)
+        await self.client.db['Support Variables'].update_one({"_id": 1}, {'$set': {'version': v}}, upsert=True)
 
 
     @commands.command()
@@ -98,7 +98,7 @@ class management(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def analyticss(self, ctx: commands.Context):
-        result = await analytics.find({}).to_list(length=None)
+        result = await self.client.db["analytics"].find({}).to_list(length=None)
 
         description = ""
         for x in result:
@@ -136,18 +136,18 @@ class ManageAccount(discord.ui.View):
         self.user = user
         self.author = author
 
-    async def updateembed(self, user):
-        premiumresult = await premium.find_one({"user_id": user.id})
+    async def updateembed(self, user, interaction=None):
+        premiumresult = await interaction.client.db['premium'].find_one({"user_id": user.id})
         if premiumresult:
             premiums = tick
         else:
             premiums = no
-        blacklistsresult = await blacklists.find_one({"user": user.id})
+        blacklistsresult = await interaction.client.db['blacklists'].find_one({"user": user.id})
         if blacklistsresult:
             blacklistss = tick
         else:
             blacklistss = no
-        badgesresult = await badges.find({"user_id": user.id}).to_list(length=None)
+        badgesresult = await interaction.client.db['User Badges'].find({"user_id": user.id}).to_list(length=None)
         badgess = []
         if badgesresult:
             for x in badgesresult:
@@ -175,14 +175,14 @@ class ManageAccount(discord.ui.View):
                 color=discord.Colour.dark_embed(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        premiumresult = await premium.find_one({"user_id": self.user.id})
+        premiumresult = await interaction.client.db['premium'].find_one({"user_id": self.user.id})
         if premiumresult:
-            await premium.delete_one({"user_id": self.user.id})
+            await interaction.client.db['premium'].delete_one({"user_id": self.user.id})
             self.premium.style = discord.ButtonStyle.red
         else:
-            await premium.insert_one({"user_id": self.user.id})
+            await interaction.client.db['premium'].insert_one({"user_id": self.user.id})
             self.premium.style = discord.ButtonStyle.green
-        embed = await self.updateembed(self.user)
+        embed = await self.updateembed(self.user, interaction)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Blacklisted", style=discord.ButtonStyle.red)
@@ -196,12 +196,12 @@ class ManageAccount(discord.ui.View):
                 color=discord.Colour.dark_embed(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        blacklistsresult = await blacklists.find_one({"user": self.user.id})
+        blacklistsresult = await interaction.client.db['blacklists'].find_one({"user": self.user.id})
         if blacklistsresult:
-            await blacklists.delete_one({"user": self.user.id})
+            await interaction.client.db['blacklists'].delete_one({"user": self.user.id})
             self.blacklisted.style = discord.ButtonStyle.red
         else:
-            await blacklists.insert_one({"user": self.user.id})
+            await interaction.client.db['blacklists'].insert_one({"user": self.user.id})
             self.blacklisted.style = discord.ButtonStyle.green
 
         embed = await self.updateembed(self.user)

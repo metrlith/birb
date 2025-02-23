@@ -8,11 +8,11 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-promotionroles = DB["promotion roles"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# promotionroles = DB["promotion roles"]
+# Customisation = DB["Customisation"]
 
 import typing
 
@@ -130,7 +130,7 @@ class PSelect(discord.ui.Select):
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         elif Selected == "Customise Embed":
             try:
-                custom = await Customisation.find_one(
+                custom = await interaction.client.db['Customisation'].find_one(
                     {"guild_id": interaction.guild.id, "type": "Promotions"}
                 )
                 embed = None
@@ -341,7 +341,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
             },
         }
 
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "type": "Promotions"},
         {"$set": data},
         upsert=True,
