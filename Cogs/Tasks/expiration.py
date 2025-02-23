@@ -45,6 +45,8 @@ class expiration(commands.Cog):
                 ).to_list(length=None)
             if infractions:
                 for infraction in infractions:
+                    if not infraction:
+                        continue
                     if infraction.get("expired", False) is True:
                         continue
                     try:
