@@ -16,7 +16,6 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 collection = db["infractions"]
 loa_collection = db["loa"]
-infractiontypes = db["infractiontypes"]
 infractiontypeactions = db["infractiontypeactions"]
 config = db["Config"]
 
@@ -56,10 +55,19 @@ class expiration(commands.Cog):
                     if guild is None:
                         if not environment == "custom":
                             continue
+
+                    Config = await config.find_one({"_id": guild.id})
+                    if not Config:
+                        continue
+                    if not Config.get("Infraction", None):
+                        continue
+                    if not Config.get("Infraction", {}).get("channel"):
+                        continue
+                    if not Config.get('Infraction', {}).get('types', None):
+                        continue
                     typechannel = None
-                    infractiontype = await infractiontypes.find_one(
-                        {"name": infraction["action"]}
-                    )
+                    infractiontype = infractions.get("action", None)
+                    
                     if infractiontype:
                         infractionaction = await infractiontypeactions.find_one(
                             {"name": infraction["action"], "guild_id": guild.id}

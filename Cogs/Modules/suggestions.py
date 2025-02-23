@@ -11,14 +11,9 @@ load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
-modules = db["Modules"]
 Suggestions = db["suggestions"]
-suggestschannel2 = db["Suggestion Management Channel"]
 Configuration = db["Config"]
 blacklist = db["blacklists"]
-advancedpermissions = db["Advanced Permissions"]
 from utils.Module import ModuleCheck
 from utils.emojis import *
 
@@ -38,15 +33,6 @@ class suggestions(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @staticmethod
-    async def modulecheck(ctx: commands.Context):
-        modulesdata = await modules.find_one({"guild_id": ctx.guild.id})
-        if modulesdata is None:
-            return False
-        elif modulesdata.get("Suggestions", False) is True:
-            return True
-        else:
-            return False
 
     @commands.hybrid_command(description="Submit a suggestion for improvement")
     @app_commands.describe(suggestion="The suggestion to make.")

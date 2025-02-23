@@ -16,7 +16,6 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 environment = os.getenv("ENVIRONMENT")
 appeal = db["Ban Appeals Configuration"]
-Modules = db["Modules"]
 appeallogs = db["Ban Appeal Logs"]
 appealsession = db["Appeal Sessions"]
 

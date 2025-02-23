@@ -19,13 +19,9 @@ from dotenv import load_dotenv
 load_dotenv()
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
 promochannel = db["promo channel"]
 consent = db["consent"]
-modules = db["Modules"]
 Customisation = db["Customisation"]
-options = db["module options"]
 promotionroles = db["promotion roles"]
 promotions = db["promotions"]
 config = db["Config"]
@@ -92,7 +88,7 @@ async def SingleHierarchy(
         )
         return
 
-    Config = await config.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         return await msg.edit(
             embed=BotNotConfigured(),

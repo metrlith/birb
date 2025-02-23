@@ -21,9 +21,7 @@ ignoredchannels = db2["Ignored Quota Channels"]
 MONGO_URL = os.getenv("MONGO_URL")
 astro = AsyncIOMotorClient(MONGO_URL)
 db = astro["astro"]
-modules = db["Modules"]
 scollection2 = db["staffrole"]
-arole = db["adminrole"]
 Config = db["Config"]
 
 

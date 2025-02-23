@@ -39,13 +39,9 @@ guildid = os.getenv("CUSTOM_GUILD")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 collection = db["infractions"]
-infchannel = db["infraction channel"]
 consent = db["consent"]
-modules = db["Modules"]
 Customisation = db["Customisation"]
-infractiontypes = db["infractiontypes"]
 infractiontypeactions = db["infractiontypeactions"]
-options = db["module options"]
 staffdb = db["staff database"]
 integrations = db["integrations"]
 reasons = db["reasons"]
@@ -108,7 +104,7 @@ class Infractions(commands.Cog):
         ctx: commands.Context, interaction: discord.Interaction, current: str
     ):
         try:
-            Config = await config.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 return [
                     app_commands.Choice(name="Not Configured", value="Not Configured")
@@ -135,7 +131,7 @@ class Infractions(commands.Cog):
         ctx: commands.Context, interaction: discord.Interaction, current: str
     ) -> typing.List[app_commands.Choice[str]]:
         try:
-            Config = await config.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if Config is None:
                 return [
                     app_commands.Choice(name="Not Configured", value="Not Configured")
@@ -241,7 +237,7 @@ class Infractions(commands.Cog):
         TypeActions = await infractiontypeactions.find_one(
             {"guild_id": ctx.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if Config.get("Infraction", None) is None:
@@ -653,7 +649,7 @@ class InfractionMultiple(discord.ui.UserSelect):
         TypeActions = await infractiontypeactions.find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": interaction.guild.id})
+        Config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 embed=BotNotConfigured(),

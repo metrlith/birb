@@ -19,7 +19,6 @@ transcripts = db["Transcripts"]
 modmailblacklists = db["modmailblacklists"]
 modmailping = db["modmailping"]
 modmailalerts = db["modmailalerts"]
-options = db["module options"]
 appealsession = db["Appeal Sessions"]
 
 Configuration = db["Config"]

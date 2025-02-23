@@ -23,34 +23,19 @@ from utils.permissions import check_admin_and_staff
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-scollection = db["staffrole"]
-lcollection = db["LOA Role"]
-arole = db["adminrole"]
-modules = db["Modules"]
 staffdb = db["staff database"]
 Customisation = db["Customisation"]
-StaffPanelLabel = db["StaffPanel Label"]
-autoactivity = db["auto activity"]
-infchannel = db["infraction channel"]
-consent = db["consent"]
 config = db["Config"]
-modules = db["Modules"]
-Customisation = db["Customisation"]
-infractiontypes = db["infractiontypes"]
 infractiontypeactions = db["infractiontypeactions"]
 collection = db["infractions"]
-options = db["module options"]
 stafflist = db["Staff List"]
 activelists = db["Active Staff List"]
-integrations = db["integrations"]
-advancedpermissions = db["Advanced Permissions"]
-premiums = db["premium"]
 Configuration = db["Config"]
+Views = db["Views"]
 
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-blacklist = db["blacklists"]
-Views = db["Views"]
+
 
 from utils.HelpEmbeds import BotNotConfigured, ModuleNotEnabled, Support, ModuleNotSetup
 

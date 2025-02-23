@@ -24,7 +24,6 @@ custom_commands = db["Custom Commands"]
 CustomVoting = db["Commands Voting"]
 commandslogging = db["Commands Logging"]
 prefixdb = db["prefixes"]
-modules = db["Modules"]
 
 
 async def run(

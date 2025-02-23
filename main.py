@@ -53,7 +53,6 @@ guildid = os.getenv("CUSTOM_GUILD")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 prefixdb = db["prefixes"]
-modules = db["Modules"]
 qotdd = db["qotd"]
 Config = db["Config"]
 Views = db["Views"]
@@ -71,7 +70,6 @@ class client(commands.AutoShardedBot):
         self.promotions = db["promotions"]
         self.modmail = db["modmail"]
         self.suggestions = db["suggestions"]
-        self.module = db["Modules"]
         self.prefix = db["prefixes"]
 
         self.suspension = db["Suspensions"]
@@ -84,6 +82,8 @@ class client(commands.AutoShardedBot):
         self.qotd = db["qotd"]
         self.customisation = db["Customisation"]
         self.config = db["Config"]
+        self.infractiontypeactions = db["infractiontypeactions"]
+        
         # Set Values -----------------------
         self.infractions_maintenance = False
         self.promotions_maintenance = False
@@ -101,7 +101,7 @@ class client(commands.AutoShardedBot):
         if environment == "custom":
             print("Custom Branding Loaded")
             super().__init__(
-                command_prefix=commands.when_mentioned_or(self.get_prefix),
+                command_prefix=commands.when_entioned_or(self.get_prefix),
                 intents=intents,
                 shard_count=None,
                 chunk_guilds_at_startup=False,
@@ -213,8 +213,8 @@ class client(commands.AutoShardedBot):
         TicketViews = await Panels.find({}).to_list(length=None)
         V = await Views.find({}).to_list(length=None)
         print('[Views] Loading Any Views')
-
         for view in V:
+
             if not view:
                 continue
             if view.get("type") == "staff":
@@ -386,7 +386,7 @@ class client(commands.AutoShardedBot):
         else:
             print("[⚠️] STATUS not defined in .env, bot will not set a custom status.")
         if not environment == "custom":
-            Modmail = await Config.find({"Modules.Modmail": True}).to_list(length=None)
+            Modmail = await self.client.config.find({"Modules.Modmail": True}).to_list(length=None)
             Guilds = 0
             DevServers = [1092976553752789054]
             for server in DevServers:

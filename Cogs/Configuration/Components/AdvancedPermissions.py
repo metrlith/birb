@@ -9,7 +9,6 @@ load_dotenv()
 Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
 DB = Mongos["astro"]
 Customisation = DB["Customisation"]
-Configuration = DB["Config"]
 
 import discord
 import os
@@ -60,6 +59,7 @@ class ManagePermissions(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
+
         InvalidCommands = ['botinfo', 'server', 'sync', 'config', 'help', 'invite', 'mass', 'command', 'command run', 'infraction','modmail', 'support', 'docs', 'consent', 'ping', 'uptime', 'stats', 'github', 'vote', 'suggest', 'loa', 'staff', 'feedback', 'premium', 'donate', 'avatar', 'user', 'birb', 'suspension', 'connectionrole', 'feedback give', 'feedback ratings']
         commands = []
         Unused = []
@@ -87,7 +87,8 @@ class ManagePermissions(discord.ui.View):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer()
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None or "Advanced Permissions" not in config:
             return await interaction.followup.send(
                 content=f"{redx} There are no advanced permissions set.", ephemeral=True
@@ -120,7 +121,9 @@ class RemoveCommands(discord.ui.Select):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+
         if config is None or "Advanced Permissions" not in config:
             return await interaction.followup.send(
                 content=f"{redx} There are no advanced permissions set.", ephemeral=True
@@ -128,7 +131,7 @@ class RemoveCommands(discord.ui.Select):
         for command in self.values:
             if command in config["Advanced Permissions"]:
                 del config["Advanced Permissions"][command]
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.edit_original_response(
             content=f"{tick} Successfully reset advanced permissions.",
             view=None,
@@ -155,6 +158,8 @@ class Commands(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+
         if self.values[0] == "More Commands":
             if len(self.Unused) > 0:
                 commands = self.Unused[:24]
@@ -168,7 +173,6 @@ class Commands(discord.ui.Select):
             else:
                 return await interaction.followup.send(content=f"{tick} No more commands to add.", ephemeral=True)
             
-        config = await Configuration.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Advanced Permissions": {}}
         elif "Advanced Permissions" not in config:
@@ -204,7 +208,9 @@ class RoleSelect(discord.ui.RoleSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+
         if config is None:
             config = {"_id": interaction.guild.id, "Advanced Permissions": {}}
         elif "Advanced Permissions" not in config:
@@ -215,7 +221,7 @@ class RoleSelect(discord.ui.RoleSelect):
                 config["Advanced Permissions"][command] = []
             config["Advanced Permissions"][command].extend([role.id for role in self.values])
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} Successfully updated advanced permissions.",
             view=None,

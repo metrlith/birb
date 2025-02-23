@@ -13,7 +13,6 @@ db = mongo["astro"]
 integrations = db["integrations"]
 Tokens = db["integrations"]
 PendingUsers = db["Pending"]
-Configuration = db["Config"]
 
 
 class Integrations(discord.ui.Select):
@@ -118,7 +117,7 @@ class EnterGroup(discord.ui.Modal):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"_id": interaction.guild.id, "groups": {}}
         if not config.get("groups"):
@@ -154,7 +153,7 @@ class EnterGroup(discord.ui.Modal):
             )
 
         config["groups"]["id"] = self.group_id.value
-        await Configuration.update_one(
+        await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
         await interaction.response.edit_message(
@@ -205,7 +204,7 @@ async def integrationsEmbed(interaction: discord.Interaction, embed: discord.Emb
         "> Integrations are an easy way to connect external providers to the bot. "
         "You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     )
-    config = await Configuration.find_one({"_id": interaction.guild.id})
+    config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     ERM = await integrations.find_one(
         {"server": int(interaction.guild.id), "erm": {"$exists": True}}

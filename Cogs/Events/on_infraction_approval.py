@@ -206,7 +206,7 @@ class CaseApproval(discord.ui.View):
     )
     async def Deny(self, interaction: discord.Interaction, button: discord.ui.Button):
         Result = await infractions.find_one({"ApprovalMSG": interaction.message.id})
-        Settings = await config.find_one({"_id": interaction.guild.id})
+        Settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Result:
             return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, I couldn't find the data for this."

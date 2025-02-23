@@ -52,7 +52,7 @@ class QuotaOptions(discord.ui.Select):
             )
             return
         if selection == "Ignored Channels":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Message Quota": {}, "_id": interaction.guild.id}
             view.add_item(
@@ -93,7 +93,7 @@ class IgnoredChannels(discord.ui.ChannelSelect):
                 ephemeral=True,
             )
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id}) or {
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id}) or {
             "Message Quota": {"Ignored Channels": []},
             "_id": interaction.guild.id,
         }
@@ -115,10 +115,10 @@ class IgnoredChannels(discord.ui.ChannelSelect):
             if channel.id not in Config["Message Quota"]["Ignored Channels"]
         ]
 
-        await Configuration.update_one(
+        await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
         )
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         view = discord.ui.View()
         view.add_item(QuotaOptions(interaction.user))
         await interaction.response.edit_message(view=view)
@@ -155,16 +155,16 @@ class MessageQuota(discord.ui.Modal, title="Message Quota"):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Message Quota": {}, "_id": interaction.guild.id}
             if not Config.get('Message Quota'):
                 Config['Message Quota'] = {}
             Config["Message Quota"]["quota"] = int(self.Quota.value)
-            await Configuration.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
             )
-            Updated = await Configuration.find_one({"_id": interaction.guild.id})
+            Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
             await interaction.response.edit_message(content="")
             try:
                 await self.message.edit(
@@ -341,6 +341,7 @@ class ActivityToggle(discord.ui.Select):
 async def MessageQuotaEmbed(
     interaction: discord.Interaction, Config: dict, embed: discord.Embed
 ):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         Config = {"Message Quota": {}}
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)

@@ -12,7 +12,6 @@ from utils.HelpEmbeds import NoPremium, Support
 load_dotenv()
 Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
 DB = Mongos["astro"]
-Configuration = DB["Config"]
 infractiontypeactions = DB["infractiontypeactions"]
 Customisation = DB["Customisation"]
 
@@ -56,7 +55,7 @@ class InfractionOption(discord.ui.Select):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -290,7 +289,7 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
         {"$set": data},
         upsert=True,
     )
-    Config = await Configuration.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     view = discord.ui.View()
     view.add_item(InfractionOption(interaction.user))
@@ -329,7 +328,7 @@ class ApprovalChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Infraction": {}}
         elif "Infraction" not in config:
@@ -338,8 +337,8 @@ class ApprovalChannel(discord.ui.ChannelSelect):
             config["Infraction"]["Approval"] = {}
 
         config["Infraction"]["Approval"]["channel"] = self.values[0].id if self.values else None
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         await interaction.response.edit_message(content=None)
         try:
@@ -378,7 +377,7 @@ class ApprovalRole(discord.ui.RoleSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Infraction": {}}
         elif "Infraction" not in config:
@@ -387,8 +386,8 @@ class ApprovalRole(discord.ui.RoleSelect):
             config["Infraction"]["Approval"] = {}
 
         config["Infraction"]["Approval"]["Ping"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
 
         await interaction.response.edit_message(content=None)
@@ -429,7 +428,7 @@ class ManageReasons(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -469,7 +468,7 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -498,7 +497,7 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
                     embed=embed, ephemeral=True
                 )
             Config["Infraction"]["reasons"].remove(self.reason.value)
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, {self.reason.value} has been {'added' if self.type == 'add' else 'removed'} to the preset reasons!",
             view=None,
@@ -521,7 +520,7 @@ class Preferences(discord.ui.View):
     async def ToggleOption(
         self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
     ):
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -539,7 +538,7 @@ class Preferences(discord.ui.View):
             button.style = discord.ButtonStyle.green
             button.label = button.label.replace("(Disabled)", "(Enabled)")
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
@@ -612,7 +611,7 @@ class ManageTypes(discord.ui.Select):  # Infraction Types
             return
 
         elif selection == "Remove":
-            config = await Configuration.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if config.get("Infraction", {}).get("types") is not None:
                 await interaction.response.send_modal(
                     InfractionTypeModal(interaction.user, "remove", self.message)
@@ -653,7 +652,7 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Infraction": {}}
         elif "Infraction" not in config:
@@ -685,8 +684,8 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
                     )
                 config["Infraction"]["types"].remove(self.name.value)
         view = discord.ui.View()
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if self.type == "add":
             view = NoThanks()
             view.add_item(InfractionTypesAction(self.author, self.name.value))
@@ -734,7 +733,7 @@ class NoThanks(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await interaction.response.edit_message(
-            content=f"{tick} **{interaction.user.display_name}**, No problem! I've created the infraction type for you!",
+            content=f"{tick} **{interaction.user.display_name},** No problem! I've created the infraction type for you!",
             view=None,
         )
 
@@ -767,15 +766,15 @@ class InfractionChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Infraction": {}}
         elif "Infraction" not in config:
             config["Infraction"] = {}
 
         config["Infraction"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         await interaction.response.edit_message(content=None)
         try:
@@ -1078,6 +1077,7 @@ class ChangeGroupRole(discord.ui.Select):
 async def InfractionEmbed(
     interaction: discord.Interaction, Config: dict, embed: discord.Embed
 ):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         Config = {"Infraction": {}, "_id": interaction.guild.id}
 

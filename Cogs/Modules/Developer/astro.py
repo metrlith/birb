@@ -11,12 +11,8 @@ mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
 badges = db["User Badges"]
 analytics = db["analytics"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
 blacklists = db["blacklists"]
-modules = db["Modules"]
 customroles = db["customroles"]
-modules = db["Modules"]
 premium = db["premium"]
 SupportVariables = db['Support Variables']
 

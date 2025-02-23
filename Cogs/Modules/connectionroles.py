@@ -12,7 +12,6 @@ MONGO_URL = os.getenv("MONGO_URL")
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
 connectionroles = db["connectionroles"]
-modules = db["Modules"]
 
 
 class ConnectionRoles(commands.Cog):

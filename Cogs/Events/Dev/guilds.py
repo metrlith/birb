@@ -172,6 +172,6 @@ class GuildJoins(commands.Cog):
             },
         )
 
-
+        
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(GuildJoins(client))

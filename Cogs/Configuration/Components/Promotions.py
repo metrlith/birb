@@ -68,7 +68,7 @@ class PSelect(discord.ui.Select):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Promo": {},
@@ -222,7 +222,7 @@ class PSelect(discord.ui.Select):
             except Exception as e:
                 traceback.print_exc(e)
         elif Selected == "Promotions System":
-            config = await Configuration.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             system_type = config.get("Promo", {}).get("System", {}).get("type", "og")
             view = discord.ui.View()
             view.add_item(
@@ -308,6 +308,8 @@ class PSelect(discord.ui.Select):
                 ephemeral=True,
                 embed=embed,
             )
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.response.edit_message(view=self, content=None)
 
 
 async def FinalFunction(interaction: discord.Interaction, d=None):
@@ -344,7 +346,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
         {"$set": data},
         upsert=True,
     )
-    Config = await Configuration.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     view = discord.ui.View()
     view.add_item(
@@ -370,7 +372,7 @@ class Preferences(discord.ui.View):
     async def ToggleOption(
         self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
     ):
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -399,8 +401,8 @@ class Preferences(discord.ui.View):
             elif Option == "autorole":
                 button.label = f"Auto Role ({'Enabled' if Config.get('Module Options', {}).get('autorole', True) else 'Disabled'})"
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
-        await interaction.response.edit_message(view=self)
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.response.edit_message(content=None, view=self)
 
     @discord.ui.button(label="Auto Role (Enabled)", style=discord.ButtonStyle.green)
     async def AutoRole(
@@ -458,7 +460,7 @@ class CreateAndDelete(discord.ui.Select):
                 CreateDeleteDepartment(interaction.user, "create")
             )
         elif self.values[0] == "modify":
-            config = await Configuration.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not config:
                 config = {
                     "_id": interaction.guild.id,
@@ -500,6 +502,8 @@ class CreateAndDelete(discord.ui.Select):
             await interaction.response.send_modal(
                 CreateDeleteDepartment(interaction.user, "delete")
             )
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.response.edit_message(view=self, content=None)
 
 
 class SingleHierarchy(discord.ui.RoleSelect):
@@ -521,7 +525,7 @@ class SingleHierarchy(discord.ui.RoleSelect):
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Selected = [RoleID.id for RoleID in self.values]
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {
                 "_id": interaction.guild.id,
@@ -533,7 +537,7 @@ class SingleHierarchy(discord.ui.RoleSelect):
             config["Promo"]["System"]["single"] = {"Hierarchy": []}
 
         config["Promo"]["System"]["single"]["Hierarchy"] = Selected
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
 
         await interaction.response.edit_message(
             view=None,
@@ -557,7 +561,7 @@ class ModmailSystem(discord.ui.Select):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
         from Cogs.Modules.promotions import SyncServer
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {
                 "_id": interaction.guild.id,
@@ -575,13 +579,13 @@ class ModmailSystem(discord.ui.Select):
                 content=f"{crisis} **{interaction.user.display_name}**, no system type selected.",
                 ephemeral=True,
             )
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
 
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, the promotions system has been updated to {self.values[0]}!",
             view=None,
         )
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         view = discord.ui.View()
         view.add_item(
@@ -628,7 +632,7 @@ class ModifyDepartment(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         selected_department = self.values[0]
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {
                 "_id": interaction.guild.id,
@@ -688,7 +692,7 @@ class MultiHierarchy(discord.ui.RoleSelect):
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Selected = [role.id for role in self.values]
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {
                 "_id": interaction.guild.id,
@@ -705,7 +709,7 @@ class MultiHierarchy(discord.ui.RoleSelect):
                     department["ranks"] = Selected
                     break
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             view=None,
             content=f"{tick} **{interaction.user.display_name}**, the hierarchy for the department `{self.department}` has been updated!",
@@ -729,7 +733,7 @@ class CreateDeleteDepartment(discord.ui.Modal):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {
                 "_id": interaction.guild.id,
@@ -755,7 +759,7 @@ class CreateDeleteDepartment(discord.ui.Modal):
                 [{"name": DepartmentName, "ranks": []}]
             )
 
-            await Configuration.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": config}
             )
 
@@ -777,7 +781,7 @@ class CreateDeleteDepartment(discord.ui.Modal):
                 for departments_group in config["Promo"]["System"]["multi"]["Departments"]
             ]
 
-            await Configuration.update_one(
+            await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": config}
             )
 
@@ -815,15 +819,15 @@ class PromotionChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Promo": {}}
         elif "Promo" not in config:
             config["Promo"] = {}
 
         config["Promo"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         await interaction.response.edit_message(content=None)
         try:
@@ -841,6 +845,7 @@ class PromotionChannel(discord.ui.ChannelSelect):
 async def PromotionEmbed(
     interaction: discord.Interaction, Config: dict, embed: discord.Embed
 ):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         Config = {"Promo": {}, "_id": interaction.guild.id}
     Channel = (

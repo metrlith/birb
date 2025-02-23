@@ -39,7 +39,7 @@ class Suggestions(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         option = interaction.data["values"][0]
         if option == "Suggestions Channel":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Suggestions": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
@@ -89,7 +89,7 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Suggestions": {}}
         elif "Suggestions" not in config:

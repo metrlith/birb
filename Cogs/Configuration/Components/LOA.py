@@ -39,7 +39,7 @@ class LOAOptions(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "LOA": {},
@@ -87,15 +87,15 @@ class LOAChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "LOA": {}}
         elif "LOA" not in config:
             config["LOA"] = {}
 
         config["LOA"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
 
         await interaction.response.edit_message(content=None)
@@ -132,15 +132,15 @@ class LOARole(discord.ui.RoleSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "LOA": {}}
         elif "LOA" not in config:
             config["LOA"] = {}
 
         config["LOA"]["role"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
 
         await interaction.response.edit_message(content=None)
@@ -154,6 +154,7 @@ class LOARole(discord.ui.RoleSelect):
 async def LOAEmbed(
     interaction: discord.Interaction, config: dict, embed: discord.Embed
 ):
+    config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not config:
         config = {"LOA": {}}
     Channel = (

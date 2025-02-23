@@ -9,9 +9,7 @@ MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 forumsconfig = db["Forum Configuration"]
-modules = db["Modules"]
 blacklist = db["blacklists"]
-advancedpermissions = db["Advanced Permissions"]
 Configuration = db["Config"]
 
 from utils.HelpEmbeds import (
@@ -24,7 +22,6 @@ class ForumCreaton(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    # TODO: Fix this code aswell wtf
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: discord.Thread):
@@ -97,7 +94,7 @@ class CloseLock(discord.ui.View):
             )
             return False
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             await interaction.response.send_message(
                 embed=BotNotConfigured(), view=Support(), ephemeral=True

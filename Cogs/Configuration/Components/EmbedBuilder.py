@@ -15,7 +15,6 @@ load_dotenv()
 Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
 DB = Mongos["astro"]
 Customisation = DB["Customisation"]
-Configuration = DB["Config"]
 
 
 async def HandleButton(data: dict):
@@ -350,7 +349,7 @@ class NoEmbed(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            await Customisation.delete_one(
+            await interaction.client.config.delete_one(
                 {"guild_id": interaction.guild.id, "type": self.typed}
             )
             if self.typed == "Promotions":
@@ -363,7 +362,7 @@ class NoEmbed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(PSelect(interaction.user, Config.get("Promo", {}).get("System", {}).get("type", "og")))
@@ -386,7 +385,7 @@ class NoEmbed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(InfractionOption(interaction.user))
@@ -774,7 +773,7 @@ class Embed(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            await Customisation.delete_one(
+            await interaction.client.config.delete_one(
                 {"guild_id": interaction.guild.id, "type": self.typed}
             )
             if self.typed == "Promotions":
@@ -787,7 +786,7 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(PSelect(interaction.user))
@@ -810,7 +809,7 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(InfractionOption(interaction.user))
@@ -833,7 +832,7 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(SuspensionOptions(interaction.user))
@@ -856,7 +855,7 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(StaffFeedback(interaction.user))
@@ -883,7 +882,7 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await Configuration.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
                 view = discord.ui.View()
                 view.add_item(Suggestions(interaction.user))

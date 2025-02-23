@@ -24,9 +24,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 suspensions = db["Suspensions"]
-infchannel = db["infraction channel"]
-modules = db["Modules"]
-suschannel = db["Suspension Channel"]
 Config = db["Config"]
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import (
@@ -42,13 +39,6 @@ class Suspensions(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @staticmethod
-    async def modulecheck(ctx: commands.Context):
-        modulesdata = await modules.find_one({"guild_id": ctx.guild.id})
-        if modulesdata is None:
-            return False
-        elif modulesdata["Suspensions"] is True:
-            return True
 
     @commands.hybrid_command(description="Suspend a staff member")
     @app_commands.describe(

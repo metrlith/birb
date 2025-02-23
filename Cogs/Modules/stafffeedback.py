@@ -17,8 +17,6 @@ ENVIRONMENT = os.getenv('ENVIRONMENT')
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 stafffeedback = db["feedback"]
-modules = db["Modules"]
-options = db["module options"]
 Configuration = db["Config"]
 
 from utils.HelpEmbeds import (

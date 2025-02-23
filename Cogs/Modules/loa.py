@@ -33,11 +33,7 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 loa_collection = db["loa"]
 
-arole = db["adminrole"]
-modules = db["Modules"]
-scollection = db["staffrole"]
 consent = db["consent"]
-advancedpermissions = db["Advanced Permissions"]
 Configuration = db["Config"]
 blacklist = db["blacklists"]
 
@@ -509,15 +505,15 @@ class Confirm(discord.ui.View):
             )
             return False
 
-        advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-        if advancedresult:
-            for advanced in advancedresult:
-                if permissions in advanced.get("permissions", []):
-                    if any(
-                        role.id == advanced.get("role")
-                        for role in interaction.user.roles
-                    ):
-                        return True
+        # advancedresult = await advancedpermissions.find(filter).to_list(length=None)
+        # if advancedresult:
+        #     for advanced in advancedresult:
+        #         if permissions in advanced.get("permissions", []):
+        #             if any(
+        #                 role.id == advanced.get("role")
+        #                 for role in interaction.user.roles
+        #             ):
+        #                 return True
 
         if Config.get("Permissions").get("adminrole"):
             Ids = Config.get("Permissions").get("adminrole")

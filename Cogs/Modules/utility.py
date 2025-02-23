@@ -18,8 +18,6 @@ MONGO_URL = os.getenv("MONGO_URL")
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
 badges = db["User Badges"]
-modules = db["Modules"]
-
 premium = db["premium"]
 
 

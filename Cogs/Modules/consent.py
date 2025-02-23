@@ -11,8 +11,6 @@ load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
 consentdb = db["consent"]
 
 
@@ -24,7 +22,7 @@ class Consent(commands.Cog):
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def notifications(self, interaction: discord.Interaction):
-        consent_data = await consentdb.find_one({"user_id": interaction.user.id})
+        consent_data = await self.client.config.find_one({"user_id": interaction.user.id})
 
         if consent_data is None:
             await consentdb.insert_one(

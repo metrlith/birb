@@ -17,13 +17,10 @@ MONGO_URL = os.getenv("MONGO_URL")
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
 
-ReportModeratorRole = db["Report Moderator Role"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
 premiums = db["premium"]
-advancedpermissions = db["Advanced Permissions"]
 blacklist = db["blacklists"]
 Configuration = db["Config"]
+
 from utils.HelpEmbeds import (
     BotNotConfigured,
     Support,
@@ -190,12 +187,12 @@ async def has_admin_role(toy, permissions=None):
         )
         return False
 
-    advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-    if advancedresult:
-        for advanced in advancedresult:
-            if permissions in advanced.get("permissions", []):
-                if any(role.id == advanced.get("role") for role in author.roles):
-                    return True
+    # advancedresult = await advancedpermissions.find(filter).to_list(length=None)
+    # if advancedresult:
+    #     for advanced in advancedresult:
+    #         if permissions in advanced.get("permissions", []):
+    #             if any(role.id == advanced.get("role") for role in author.roles):
+    #                 return True
 
     if Config.get("Permissions").get("adminrole"):
         Ids = Config.get("Permissions").get("adminrole")

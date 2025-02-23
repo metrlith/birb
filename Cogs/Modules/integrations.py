@@ -164,7 +164,7 @@ class Link(commands.Cog):
         if not token:
             return await ctx.send(embed=NotRobloxLinked(), ephemeral=True)
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
         if not c.get("groups"):
             return 2
 
@@ -234,7 +234,7 @@ class Link(commands.Cog):
         if not token:
             return await ctx.send(embed=NotRobloxLinked(), ephemeral=True)
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
         if not c.get("groups"):
             return 2
 
@@ -281,7 +281,7 @@ class Link(commands.Cog):
             return
         from utils.roblox import UpdateMembership, GroupRoles, FetchRobloxUser
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
 
         Roles = await GroupRoles(ctx)
         if Roles == 0:

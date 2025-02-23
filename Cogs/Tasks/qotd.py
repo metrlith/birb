@@ -20,7 +20,6 @@ guildid = os.getenv("CUSTOM_GUILD")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 questiondb = db["qotd"]
-modules = db["Modules"]
 questionsa = db["Question Database"]
 
 

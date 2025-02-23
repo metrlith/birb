@@ -9,7 +9,6 @@ MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 connectionroles = db["connectionroles"]
-modules = db["Modules"]
 
 
 class ConnectionRolesEvent(commands.Cog):

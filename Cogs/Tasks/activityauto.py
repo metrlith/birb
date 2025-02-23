@@ -34,13 +34,9 @@ guildid = os.getenv("CUSTOM_GUILD")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 collection = db["infractions"]
-infchannel = db["infraction channel"]
 consent = db["consent"]
-modules = db["Modules"]
 customization = db["Customisation"]
-infractiontypes = db["infractiontypes"]
 infractiontypeactions = db["infractiontypeactions"]
-options = db["module options"]
 staffdb = db["staff database"]
 integrations = db["integrations"]
 reasons = db["reasons"]
@@ -305,15 +301,15 @@ class ResetLeaderboard(discord.ui.View):
             )
             return False
 
-        advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-        if advancedresult:
-            for advanced in advancedresult:
-                if permissions in advanced.get("permissions", []):
-                    if any(
-                        role.id == advanced.get("role")
-                        for role in interaction.user.roles
-                    ):
-                        return True
+        # advancedresult = await advancedpermissions.find(filter).to_list(length=None)
+        # if advancedresult:
+        #     for advanced in advancedresult:
+        #         if permissions in advanced.get("permissions", []):
+        #             if any(
+        #                 role.id == advanced.get("role")
+        #                 for role in interaction.user.roles
+        #             ):
+        #                 return True
 
         if Config.get("Permissions").get("adminrole"):
             Ids = Config.get("Permissions").get("adminrole")

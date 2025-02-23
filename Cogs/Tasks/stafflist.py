@@ -16,7 +16,6 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
 stafflist = db["Staff List"]
 activelists = db["Active Staff List"]
-modules = db["Modules"]
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

@@ -18,8 +18,6 @@ MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv('ENVIRONMENT')
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
 modmail = db["modmail"]
 modmailalerts = db["modmailalerts"]
 modmailblacklists = db["modmailblacklists"]
@@ -27,8 +25,6 @@ modmailcategory = db["modmailcategory"]
 modmailsnippets = db["Modmail Snippets"]
 transcriptschannel = db["transcriptschannel"]
 transcripts = db["Transcripts"]
-modules = db["Modules"]
-options = db["module options"]
 Configuration = db["Config"]
 from utils.permissions import has_admin_role, has_staff_role
 from utils.HelpEmbeds import (
@@ -42,15 +38,7 @@ class Modmail(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @staticmethod
-    async def modulecheck(ctx: commands.Context):
-        modulesdata = await modules.find_one({"guild_id": ctx.guild.id})
-        if modulesdata is None:
-            return False
-        elif modulesdata.get("Modmail", False) is True:
-            return True
-        else:
-            return False
+
 
     async def snippet_autocomplete(
         ctx: commands.Context, interaction: discord.Interaction, current: str
