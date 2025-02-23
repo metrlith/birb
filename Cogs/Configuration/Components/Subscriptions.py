@@ -3,7 +3,6 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from utils.emojis import *
-from utils.permissions import premium
 load_dotenv()
 # Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
 # DB = Mongos["astro"]

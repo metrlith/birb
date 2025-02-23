@@ -300,13 +300,12 @@ class ConfigMenu(discord.ui.Select):
         elif selection == "Subscriptions":
             from Cogs.Configuration.Components.Subscriptions import (
                 SubscriptionsEmbed,
-                prem,
                 PremiumButtons,
             )
 
-            result = await prem.find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db['premium'].find_one({"guild_id": interaction.guild.id})
             view = discord.ui.View()
-            user = await prem.find_one({"user_id": interaction.user.id})
+            user = await interaction.client.db['premium'].find_one({"user_id": interaction.user.id})
             if not user and not result:
                 view = PMButton()
             if user and not result:
