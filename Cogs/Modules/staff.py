@@ -64,7 +64,7 @@ class SetMessages(discord.ui.Modal, title="Set Message Count"):
 
         filter = {"guild_id": guild_id, "user_id": self.user_id}
         update_data = {"$set": {"message_count": message_count_value}}
-        await interaction.client.dbq['messages'].update_one(filter, update_data, upsert=True)
+        await interaction.client.qdb['messages'].update_one(filter, update_data, upsert=True)
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, I've set the users messages as `{message_count_value}`.",
             embed=None,
@@ -83,7 +83,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await  interaction.client.dbq['messages'].find_one(
+        result = await  interaction.client.qdb['messages'].find_one(
             {"guild_id": interaction.guild.id, "user_id": self.user_id}
         )
         message_count_value = int(self.message_count.value)
@@ -91,7 +91,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
         if result:
             message_count = int(result["message_count"]) + message_count_value
             filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await  interaction.client.dbq['messages'].update_one(
+            await  interaction.client.qdb['messages'].update_one(
                 filter, {"$set": {"message_count": message_count}}
             )
             await interaction.response.edit_message(
@@ -101,7 +101,7 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
             )
         else:
             message_count = message_count_value
-            await  interaction.client.dbq['messages'].insert_one(
+            await  interaction.client.qdb['messages'].insert_one(
                 {
                     "guild_id": guild_id,
                     "user_id": self.user_id,
@@ -121,7 +121,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await  interaction.client.dbq['messages'].find_one(
+        result = await  interaction.client.qdb['messages'].find_one(
             {"guild_id": interaction.guild.id, "user_id": self.user_id}
         )
         message_count_value = int(self.message_count.value)
@@ -129,7 +129,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
         if result:
             message_count = int(result["message_count"]) - message_count_value
             filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await  interaction.client.dbq['messages'].update_one(
+            await  interaction.client.qdb['messages'].update_one(
                 filter, {"$set": {"message_count": message_count}}
             )
             await interaction.response.edit_message(
@@ -139,7 +139,7 @@ class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
             )
         else:
             message_count = message_count_value
-            await  interaction.client.dbq['messages'].insert_one(
+            await  interaction.client.qdb['messages'].insert_one(
                 {"guild_id": guild_id, "user_id": self.user_id, "message_count": 0}
             )
 
@@ -214,7 +214,7 @@ class StaffManage(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         filter = {"guild_id": interaction.guild.id, "user_id": staff_id}
         update = {"$set": {"message_count": 0}}
-        await  interaction.client.dbq['messages'].update_one(filter, update)
+        await  interaction.client.qdb['messages'].update_one(filter, update)
 
         await interaction.response.edit_message(
             content=f"**{tick} {interaction.user.display_name}**, I have reset the staff member's ",
@@ -409,7 +409,7 @@ class quota(commands.Cog):
                 )
             )
         Users = (
-            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+            await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -505,7 +505,7 @@ class quota(commands.Cog):
                 )
             )
         Users = (
-            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+            await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -580,7 +580,7 @@ class quota(commands.Cog):
             return
         if not await has_admin_role(ctx, "Message Quota Permissions"):
             return
-        MessageData = await self.client.dbq['messages'].find_one(
+        MessageData = await self.client.qdb['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": staff.id}
         )
 
@@ -618,7 +618,7 @@ class quota(commands.Cog):
                 )
             )
             users = (
-                await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+                await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
                 .sort("message_count", pymongo.DESCENDING)
                 .to_list(length=None)
             )
@@ -651,7 +651,7 @@ class quota(commands.Cog):
         if not await has_staff_role(ctx, "Message Quota Permissions"):
             return
         await ctx.defer()
-        MessageData = await self.client.dbq['messages'].find_one(
+        MessageData = await self.client.qdb['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": staff.id}
         )
         if not MessageData:
@@ -692,7 +692,7 @@ class quota(commands.Cog):
 
             if MessageData:
                 users = (
-                    await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+                    await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
                     .sort("message_count", pymongo.DESCENDING)
                     .to_list(length=None)
                 )
@@ -722,7 +722,7 @@ class quota(commands.Cog):
         await ctx.defer(ephemeral=True)
         msg = await ctx.send(f"<a:Loading:1167074303905386587> Exporting to CSV...")
         users = (
-            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+            await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=None)
         )
@@ -806,7 +806,7 @@ class quota(commands.Cog):
             )
         Quota = Config.get("Message Quota", {}).get("quota", 0)
         Users = (
-            await self.client.dbq['messages'].find({"guild_id": ctx.guild.id})
+            await self.client.qdb['messages'].find({"guild_id": ctx.guild.id})
             .sort("message_count", pymongo.DESCENDING)
             .to_list(length=750)
         )
@@ -815,7 +815,7 @@ class quota(commands.Cog):
                 content=f"{no} **{ctx.author.display_name},** there has been no messages sent yet.",
                 embed=None,
             )
-        YouProgress = await self.client.dbq['messages'].find_one(
+        YouProgress = await self.client.qdb['messages'].find_one(
             {"guild_id": ctx.guild.id, "user_id": ctx.author.id}
         )
         # Author Stats bit
@@ -1473,7 +1473,7 @@ class ArmFire(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await self.client.dbq['messages'].update_many(
+        await self.client.qdb['messages'].update_many(
             {"guild_id": interaction.guild.id},
             {"$set": {"message_count": 0}},
         )
