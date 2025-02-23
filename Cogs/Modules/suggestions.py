@@ -64,7 +64,7 @@ class suggestions(commands.Cog):
         else:
             image = None
 
-        Config = await self.client.db['suggestions'].find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if not Config:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
 
