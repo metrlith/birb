@@ -10,6 +10,7 @@ from bson import ObjectId
 from utils.emojis import *
 import discord
 from discord.ext import tasks
+from memory_profiler import profile
 
 MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
@@ -28,7 +29,7 @@ class Shed(commands.Cog):
         self.check_scheduled_loas.start()
         print("[✅] LOA loop started")
 
-
+    @profile
     @tasks.loop(minutes=3, reconnect=True)
     async def check_scheduled_loas(self):
         print("[👀] Checking Scheduled LOAs")

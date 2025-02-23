@@ -2,6 +2,7 @@ import discord
 import platform
 import sys
 import gc
+from memory_profiler import profile
 
 sys.dont_write_bytecode = True
 from discord.ext import commands, tasks
@@ -184,12 +185,15 @@ class client(commands.AutoShardedBot):
         if not environment == "custom":
             self.cogslist.append("utils.api")
             self.cogslist.append("utils.dokploy")
-
+    
+    @profile
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension("jishaku")
         print("[🔄] Jishaku Loaded")
+    
 
+    @profile
     async def get_prefix(self, message: discord.Message) -> tasks.List[str] | str:
         if message.guild is None:
             return "!!"
@@ -202,7 +206,8 @@ class client(commands.AutoShardedBot):
         else:
             prefix = PREFIX
         return commands.when_mentioned_or(prefix)(self, message)
-
+    
+    @profile
     async def setup_hook(self):
 
         if update_channel_name.is_running():
@@ -333,12 +338,14 @@ class client(commands.AutoShardedBot):
             print(f"[✅] {ext} loaded")
         await self.CacheCommands()
 
+    @profile
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
         if not V:
             return "N/A"
         return V.get("version")
-
+    
+    @profile
     async def CacheCommands(self):
         self.cached_commands = []
 
@@ -351,7 +358,8 @@ class client(commands.AutoShardedBot):
 
         for command in self.tree.get_commands():
             recursive_cache(command)
-
+    
+    @profile
     async def on_ready(self):
         if environment == "custom":
             guild = await self.fetch_guild(guildid)
@@ -437,7 +445,7 @@ class client(commands.AutoShardedBot):
 
 client = client()
 
-
+@profile
 @tasks.loop(minutes=10, reconnect=True)
 async def update_channel_name():
     if environment == "development":
@@ -453,7 +461,7 @@ async def update_channel_name():
     except (discord.HTTPException, discord.Forbidden):
         return print("[⚠️] Failed to update channel name.")
 
-
+@profile
 async def GetUsers():
     total_members = sum(guild.member_count or 0 for guild in client.guilds)
     return total_members

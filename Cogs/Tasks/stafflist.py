@@ -10,6 +10,7 @@ from discord.ext import commands
 from datetime import datetime
 from utils.Module import ModuleCheck
 
+from memory_profiler import profile
 
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
@@ -25,8 +26,9 @@ class StaffList(commands.Cog):
         self.client = client
         self.updatelist.start()
         print("[✅] Staff List loop started")
+    
 
-
+    @profile
     @tasks.loop(minutes=10, reconnect=True)
     async def updatelist(self):
         print("Checking Staff List")

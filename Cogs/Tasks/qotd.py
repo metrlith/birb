@@ -12,6 +12,7 @@ import logging
 from utils.Module import ModuleCheck
 from motor.motor_asyncio import AsyncIOMotorClient
 import gc
+from memory_profiler import profile
 
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
@@ -26,7 +27,8 @@ questionsa = db["Question Database"]
 class qotd(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-
+    
+    @profile
     async def fetch_question(self, used_questions, server: discord.Guild):
         questionresult = await questionsa.find({}).to_list(length=None)
         Unusued = [q for q in questionresult if q["question"] not in used_questions]
@@ -38,7 +40,7 @@ class qotd(commands.Cog):
             return random.choice(questionresult).get("question")
         del questionresult
         return random.choice(Unusued).get("question")
-
+    @profile
     @tasks.loop(minutes=15, reconnect=True)
     async def sendqotd(self) -> None:
         print("[👀] Checking QOTD")

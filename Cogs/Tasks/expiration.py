@@ -18,6 +18,7 @@ collection = db["infractions"]
 loa_collection = db["loa"]
 infractiontypeactions = db["infractiontypeactions"]
 config = db["Config"]
+from memory_profiler import profile
 
 
 
@@ -27,7 +28,7 @@ class expiration(commands.Cog):
         self.check_infractions.start()
         print("[✅] Infraction Expiration loop started")
 
-
+    @profile
     @tasks.loop(minutes=30, reconnect=True)
     async def check_infractions(self):
         try:

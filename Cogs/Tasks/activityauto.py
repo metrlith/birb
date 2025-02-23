@@ -2,10 +2,8 @@ import os
 import random
 import string
 import re
-from typing import Literal, Optional
 
 import discord
-from discord import app_commands
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -17,13 +15,9 @@ from utils.permissions import *
 from datetime import timedelta, datetime
 from utils.HelpEmbeds import (
     BotNotConfigured,
-    NoPermissionChannel,
-    ChannelNotFound,
-    ModuleNotEnabled,
-    NoChannelSet,
     Support,
-    ModuleNotSetup,
 )
+from memory_profiler import profile
 
 
 load_dotenv()
@@ -56,6 +50,7 @@ class activityauto(commands.Cog):
         self.quota_activity.start()
 
     @tasks.loop(minutes=15, reconnect=True)
+    @profile
     async def quota_activity(self):
         print("[INFO] Checking for quota activity")
         if environment == "custom":

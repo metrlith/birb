@@ -6,6 +6,8 @@ import discord
 from utils.emojis import *
 from dotenv import load_dotenv
 from datetime import datetime
+from memory_profiler import profile
+
 
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
@@ -22,8 +24,8 @@ class EmptyCog(commands.Cog):
         self.client = client
         self.check_suspensions.start()
         print("[✅] Suspension loop started")
-
-
+    
+    @profile
     @tasks.loop(minutes=5, reconnect=True)
     async def check_suspensions(self):
 

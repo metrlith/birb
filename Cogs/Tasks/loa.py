@@ -9,6 +9,8 @@ from datetime import datetime
 from utils.emojis import *
 import discord
 from discord.ext import tasks
+from memory_profiler import profile
+
 
 MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
@@ -27,7 +29,7 @@ class LOA(commands.Cog):
         self.check_loa_status.start()
         print("[✅] LOA loop started")
 
-
+    @profile
     @tasks.loop(minutes=3, reconnect=True)
     async def check_loa_status(self):
         print("[👀] Checking LOA Status")
