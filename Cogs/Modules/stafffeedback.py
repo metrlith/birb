@@ -325,7 +325,7 @@ class ViewRatings(discord.ui.View):
             date = rating.get("date", 0)
             Id = rating.get("feedbackid", "N/A")
             feedback = rating.get("feedback", "Non Given")
-            value = f"> **Date:** <t:{int(date).timestamp()}>\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
+            value = f"> **Date:** <t:{int(date)}>\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
             if len(value) > 1021:
                 value = value[:1021] + "..."
 
