@@ -61,9 +61,19 @@ SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
 
-class client(commands.AutoShardedBot):
+class Client(commands.AutoShardedBot):
     def __init__(self):
-        # Databases -----------------------
+        self._initialize_databases()
+        self._initialize_maintenance_flags()
+        self.cached_commands = {}
+        intents = self._initialize_intents()
+        self._initialize_super(intents)
+        self.client = client
+        self.cogslist = self._initialize_cogslist()
+        if environment != "custom":
+            self.cogslist.extend(["utils.api", "utils.dokploy"])
+
+    def _initialize_databases(self):
         self.db = db
         self.qdb = qdb
         self.infractions = db["infractions"]
@@ -73,7 +83,6 @@ class client(commands.AutoShardedBot):
         self.modmail = db["modmail"]
         self.suggestions = db["suggestions"]
         self.prefix = db["prefixes"]
-
         self.suspension = db["Suspensions"]
         self.feedback = db["feedback"]
         self.customcommands = db["Custom Commands"]
@@ -85,21 +94,22 @@ class client(commands.AutoShardedBot):
         self.customisation = db["Customisation"]
         self.config = db["Config"]
         self.infractiontypeactions = db["infractiontypeactions"]
-        
-        # Set Values -----------------------
+
+    def _initialize_maintenance_flags(self):
         self.infractions_maintenance = False
         self.promotions_maintenance = False
         self.feedback_maintenance = False
         self.loa_maintenance = False
         self.suggestions_maintenance = False
         self.customcommands_maintenance = False
-        self.cached_commands = {}
-        # --------------------------------
 
+    def _initialize_intents(self):
         intents = discord.Intents.default()
         intents.members = True
         intents.message_content = True
-        print(environment)
+        return intents
+
+    def _initialize_super(self, intents):
         if environment == "custom":
             print("Custom Branding Loaded")
             super().__init__(
@@ -122,7 +132,6 @@ class client(commands.AutoShardedBot):
                     replied_user=False, everyone=False, roles=False
                 ),
             )
-
         else:
             print("Production Loaded")
             super().__init__(
@@ -134,8 +143,8 @@ class client(commands.AutoShardedBot):
                 ),
             )
 
-        self.client = client
-        self.cogslist = [
+    def _initialize_cogslist(self):
+        return [
             "Cogs.Modules.Developer.astro",
             "Cogs.Modules.suggestions",
             "Cogs.Modules.loa",
@@ -183,18 +192,12 @@ class client(commands.AutoShardedBot):
             "Cogs.Modules.tickets",
             "Cogs.Events.on_ticket",
         ]
-        if not environment == "custom":
-            self.cogslist.append("utils.api")
-            self.cogslist.append("utils.dokploy")
-    
-    
+
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension("jishaku")
         print("[🔄] Jishaku Loaded")
-    
 
-    
     async def get_prefix(self, message: discord.Message) -> tasks.List[str] | str:
         if message.guild is None:
             return "!!"
@@ -207,116 +210,117 @@ class client(commands.AutoShardedBot):
         else:
             prefix = PREFIX
         return commands.when_mentioned_or(prefix)(self, message)
-    
-    async def setup_hook(self):
-        if update_channel_name.is_running():
-            update_channel_name.restart()
-        else:
-            update_channel_name.start()
 
+    async def setup_hook(self):
+        UpdateChannelName.restart() if UpdateChannelName.is_running() else UpdateChannelName.start()
+        await self._load_views()
+        await self._load_cogs()
+        await self.CacheCommands()
+
+    async def _load_views(self):
         TicketViews = await self.db['Panels'].find({}).to_list(length=None)
         V = await Views.find({}).to_list(length=None)
         print('[Views] Loading Any Views')
         for view in V:
-
             if not view:
                 continue
             if view.get("type") == "staff":
-                DbResults = await staffdb.find({"guild_id": view.get("guild")}).to_list(
-                    length=None
-                )
-                if not DbResults:
-                    continue
-                options = []
-                guild = self.get_guild(int(view.get("guild")))
-                if not guild:
-                    continue
-                if not guild.chunked:
-                    try:
-                        await guild.chunk()
-                    except (discord.HTTPException, discord.Forbidden):
-                        continue
-                for staff in DbResults:
-                    member = guild.get_member(staff.get("staff_id"))
-                    if not member:
-                        continue
-                    options.append(
-                        discord.SelectOption(
-                            label=member.display_name,
-                            value=str(member.id),
-                            description=member.get("rolename"),
-                            emoji="<:staff:1206248655359840326>"
-                        )
-                    )
-                    if len (options) >= 24:
-                        options.append(
-                                discord.SelectOption(
-                                    label="View More",
-                                    value="more",
-                                    description="View more staff members",
-                                    emoji="<:List:1223063187063308328>"
-
-                                )
-                            )                        
-                        break
-    
-
-                view = Staffview(options=options[:25])
-                try:
-                    self.add_view(view, msg_id=int(view.get("MsgID")))
-                except:
-                    continue
+                await self._load_staff_view(view)
         print('[Views] Loading Ticket Views')
         for view in TicketViews:
-            view_handler = ButtonHandler()
-            if view.get("type") == "multi":
-                buttons = []
-                if not view.get("Panels"):
-                    continue
-                for panel_name in view.get("Panels"):
-                    sub = await self.db['Panels'].find_one(
-                        {
-                            "guild": view.get("guild"),
-                            "name": panel_name,
-                            "type": "single",
-                        }
-                    )
-                    if not sub:
-                        continue
-                    sub_button = sub.get("Button")
-                    if not sub_button:
-                        continue
-                    buttons.append(
-                        {
-                            "label": sub_button.get("label"),
-                            "style": sub_button.get("style"),
-                            "emoji": sub_button.get("emoji"),
-                            "custom_id": sub_button.get("custom_id"),
-                        }
-                    )
+            await self._load_ticket_view(view)
 
-                if buttons:
-                    view_handler.add_buttons(buttons)
-            else:
-                single_button = view.get("Button")
-              
-                if not single_button:
-                    continue
+    async def _load_staff_view(self, view):
+        DbResults = await staffdb.find({"guild_id": view.get("guild")}).to_list(length=None)
+        if not DbResults:
+            return
+        options = []
+        guild = self.get_guild(int(view.get("guild")))
+        if not guild:
+            return
+        if not guild.chunked:
+            try:
+                await guild.chunk()
+            except (discord.HTTPException, discord.Forbidden):
+                return
+        for staff in DbResults:
+            member = guild.get_member(staff.get("staff_id"))
+            if not member:
+                continue
+            options.append(
+                discord.SelectOption(
+                    label=member.display_name,
+                    value=str(member.id),
+                    description=member.get("rolename"),
+                    emoji="<:staff:1206248655359840326>"
+                )
+            )
+            if len(options) >= 24:
+                options.append(
+                    discord.SelectOption(
+                        label="View More",
+                        value="more",
+                        description="View more staff members",
+                        emoji="<:List:1223063187063308328>"
+                    )
+                )
+                break
 
-                view_handler.add_buttons(
-                    [
-                        {
-                            "label": single_button.get("label"),
-                            "style": single_button.get("style"),
-                            "emoji": single_button.get("emoji"),
-                            "custom_id": single_button.get("custom_id"),
-                        }
-                    ]
+        view = Staffview(options=options[:25])
+        try:
+            self.add_view(view, msg_id=int(view.get("MsgID")))
+        except:
+            return
+
+    async def _load_ticket_view(self, view):
+        view_handler = ButtonHandler()
+        if view.get("type") == "multi":
+            buttons = []
+            if not view.get("Panels"):
+                return
+            for panel_name in view.get("Panels"):
+                sub = await self.db['Panels'].find_one(
+                    {
+                        "guild": view.get("guild"),
+                        "name": panel_name,
+                        "type": "single",
+                    }
+                )
+                if not sub:
+                    continue
+                sub_button = sub.get("Button")
+                if not sub_button:
+                    continue
+                buttons.append(
+                    {
+                        "label": sub_button.get("label"),
+                        "style": sub_button.get("style"),
+                        "emoji": sub_button.get("emoji"),
+                        "custom_id": sub_button.get("custom_id"),
+                    }
                 )
 
-            msg_id = view.get("MsgID")
-            self.add_view(view_handler, message_id=int(msg_id) if msg_id else 0)
+            if buttons:
+                view_handler.add_buttons(buttons)
+        else:
+            single_button = view.get("Button")
+            if not single_button:
+                return
+            view_handler.add_buttons(
+                [
+                    {
+                        "label": single_button.get("label"),
+                        "style": single_button.get("style"),
+                        "emoji": single_button.get("emoji"),
+                        "custom_id": single_button.get("custom_id"),
+                    }
+                ]
+            )
 
+        msg_id = view.get("MsgID")
+        self.add_view(view_handler, message_id=int(msg_id) if msg_id else 0)
+
+    async def _load_cogs(self):
         self.add_view(Voting())
         self.add_view(Confirm())
         self.add_view(Voti())
@@ -335,16 +339,13 @@ class client(commands.AutoShardedBot):
         for ext in self.cogslist:
             await self.load_extension(ext)
             print(f"[✅] {ext} loaded")
-        await self.CacheCommands()
 
-    
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
         if not V:
             return "N/A"
         return V.get("version")
-    
-    
+
     async def CacheCommands(self):
         self.cached_commands = []
 
@@ -357,22 +358,30 @@ class client(commands.AutoShardedBot):
 
         for command in self.tree.get_commands():
             recursive_cache(command)
-    
-    
+
     async def on_ready(self):
         if environment == "custom":
-            guild = await self.fetch_guild(guildid)
-            if guild:
-                try:
-                    await guild.chunk(cache=True)
-                except (discord.NotFound, discord.HTTPException, discord.Forbidden):
-                    print(f"[❌] Failed to chunk guild {guild.name} ({guild.id})")
-                print(f"[✅] Connected to guild {guild.name} ({guild.id})")
-                try:
-                    await self.tree.sync()
-                except (discord.NotFound, discord.HTTPException, discord.Forbidden):
-                    print(f"[❌] Failed to sync commands")
+            await self._handle_custom_environment()
         await SyncCommands(self)
+        await self._print_startup_info()
+        await self._set_custom_status()
+        if environment != "custom":
+            await self._cache_modmail_enabled_servers()
+
+    async def _handle_custom_environment(self):
+        guild = await self.fetch_guild(guildid)
+        if guild:
+            try:
+                await guild.chunk(cache=True)
+            except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+                print(f"[❌] Failed to chunk guild {guild.name} ({guild.id})")
+            print(f"[✅] Connected to guild {guild.name} ({guild.id})")
+            try:
+                await self.tree.sync()
+            except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+                print(f"[❌] Failed to sync commands")
+
+    async def _print_startup_info(self):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
         prfx = f"[📖] {prfx}"
         print(prfx + " Logged in as " + self.user.name)
@@ -386,39 +395,42 @@ class client(commands.AutoShardedBot):
         except Exception as e:
             print(f"[❌] Failed to connect to MongoDB: {e}")
 
+    async def _set_custom_status(self):
         activity2 = discord.CustomActivity(name=f"{STATUS}")
         if STATUS:
             await self.change_presence(activity=activity2)
-
         else:
             print("[⚠️] STATUS not defined in .env, bot will not set a custom status.")
-        if not environment == "custom":
-            Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
-            Guilds = 0
-            DevServers = [1092976553752789054]
-            for server in DevServers:
-                try:
-                    guild = self.get_guild(server)
-                    if guild:
-                        await guild.chunk()
-                except:
-                    continue
-            for Servers in Modmail:
-                try:
-                    try:
-                        Guild = self.get_guild(int(Servers.get("_id")))
-                    except (discord.NotFound, discord.HTTPException):
-                        continue
-                    if not Guild:
-                        continue
 
-                    await Guild.chunk()
-                    Guilds += 1
-                except:
+    async def _cache_modmail_enabled_servers(self):
+        prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
+        prfx = f"[📖] {prfx}"
+        Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
+        Guilds = 0
+        DevServers = [1092976553752789054]
+        for server in DevServers:
+            try:
+                guild = self.get_guild(server)
+                if guild:
+                    await guild.chunk()
+            except:
+                continue
+        for Servers in Modmail:
+            try:
+                try:
+                    Guild = self.get_guild(int(Servers.get("_id")))
+                except (discord.NotFound, discord.HTTPException):
+                    continue
+                if not Guild:
                     continue
 
-            print(prfx + f" Succesfully cached {Guilds} modmail enabled servers.")
-            del Modmail
+                await Guild.chunk()
+                Guilds += 1
+            except:
+                continue
+
+        print(prfx + f" Succesfully cached {Guilds} modmail enabled servers.")
+        del Modmail
 
     async def on_disconnect(self):
         print("[⚠️] Disconnected from Discord Gateway!")
@@ -429,7 +441,6 @@ class client(commands.AutoShardedBot):
     async def is_owner(self, user: discord.User):
         if user.id in [795743076520820776]:
             return True
-
         return await super().is_owner(user)
 
     async def on_shard_ready(self, shard_id):
@@ -442,14 +453,12 @@ class client(commands.AutoShardedBot):
         print(f"[⚠️] Shard {shard_id} disconnected.")
 
 
-client = client()
+client = Client()
 
 
 @tasks.loop(minutes=10, reconnect=True)
-async def update_channel_name():
-    if environment == "development":
-        return
-    if environment == "custom":
+async def UpdateChannelName():
+    if environment in ["development", "custom"]:
         return
     channel = client.get_channel(1131245978704420964)
     if not channel:
@@ -458,7 +467,7 @@ async def update_channel_name():
     try:
         await channel.edit(name=f"{len(client.guilds)} Guilds | {users} Users")
     except (discord.HTTPException, discord.Forbidden):
-        return print("[⚠️] Failed to update channel name.")
+        print("[⚠️] Failed to update channel name.")
 
 
 async def GetUsers():
