@@ -246,7 +246,7 @@ class PSelect(discord.ui.Select):
                     interaction.message,
                 )
             )
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
             )

@@ -329,7 +329,7 @@ class ViewRatings(discord.ui.View):
             if date == "N/A":
                 date_str = "N/A"
             else:
-                date_str = datetime.utcfromtimestamp(date).strftime("%d/%m/%Y")
+                date_str = datetime.fromtimestamp(date, datetime.timezone.utc).strftime("%d/%m/%Y")
             value=f"> **Date:** {date_str}\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
             if len(value) > 1021:
                 value = value[:1021] + "..."
@@ -343,7 +343,7 @@ class ViewRatings(discord.ui.View):
             if (idx + 1) % 9 == 0 or idx == len(staff_ratings) - 1:
                 embeds.append(embed)
 
-        paginator = Paginator.Simple(
+        pag = Paginator.Simple(
             PreviousButton=discord.ui.Button(
             emoji="<:chevronleft:1220806425140531321>" if ENVIRONMENT != "custom" else None,
             label="<<" if ENVIRONMENT == "custom" else None
@@ -364,6 +364,7 @@ class ViewRatings(discord.ui.View):
             timeout=360,
         )
         button.disabled = True
+        await pag.start(self.ctx, embeds, msg=msg)
         await interaction.response.edit_message(view=self)
 
 
