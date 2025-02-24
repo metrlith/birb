@@ -103,7 +103,7 @@ class client(commands.AutoShardedBot):
         if environment == "custom":
             print("Custom Branding Loaded")
             super().__init__(
-                command_prefix=commands.when_entioned_or(self.get_prefix),
+                command_prefix=commands.when_mentioned_or(self.get_prefix),
                 intents=intents,
                 shard_count=None,
                 chunk_guilds_at_startup=False,
