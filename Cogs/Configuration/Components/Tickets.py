@@ -66,12 +66,6 @@ class TicketQuota(discord.ui.Modal):
             placeholder="Amount of claimed tickets.",
             default=config.get("Tickets", {}).get("quota", 0),
         )
-        self.TimeFrame = discord.ui.TextInput(
-            label="Time Frame",
-            placeholder="How long each quota lasts. (e.g. 3d, 7d, 1w etc)",
-            default=config.get("TimeFrame", "7d"),
-        )
-        self.add_item(self.TimeFrame)
         self.add_item(self.quota)
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -86,7 +80,6 @@ class TicketQuota(discord.ui.Modal):
             }
 
         Config["Tickets"]["quota"] = quota
-        Config["Tickets"]["TimeFrame"] = self.TimeFrame.value
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id},
             {"$set": Config},
