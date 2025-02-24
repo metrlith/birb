@@ -661,9 +661,9 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuota = await self.client.db["Ticket Quota"].find_one(
-            {"GuildID": server, "UserID": discord_id, "opened": {"$gte": Time.timestamp() or 0}}
-        )
+        TicketQuota = await self.client.db["Tickets"].find(
+            {"GuildID": server, "claimed.claimer": discord_id, "opened": {"$gte": Time.timestamp() if time else 0}}
+        ).to_list(length=None)
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
@@ -690,11 +690,12 @@ class APIRoutes:
                 detail="User does not have the required permissions",
             )
 
-        TicketQuota["_id"] = str(TicketQuota["_id"])
+        for ticket in TicketQuota:
+            ticket["_id"] = str(ticket["_id"])
 
         return {
             "status": "success",
-            "ClaimedTickets": TicketQuota,
+            "ClaimedTickets": len(TicketQuota),
             "user": {
                 "id": str(member.id),
                 "name": member.name,
@@ -728,7 +729,7 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuotas = await self.client.db["Ticket Quota"].find(
+        TicketQuotas = await self.client.db["Tickets"].find(
             {"GuildID": server, "opened": {"$gte": Time.timestamp() if time else 0}}
         ).to_list(length=None)
 
