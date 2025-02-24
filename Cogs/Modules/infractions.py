@@ -440,7 +440,7 @@ class Infractions(commands.Cog):
         }
         filter = {k: v for k, v in filter.items() if v is not None}
 
-        infractions = await self.client.config.find(filter).to_list(125)
+        infractions = await self.client.db['infractions'].find(filter).to_list(125)
         if not infractions:
             scope_text = (
                 "voided"
