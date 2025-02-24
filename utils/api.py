@@ -727,12 +727,11 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuota = await self.client.db["Ticket Quota"].find_one(
-            {"GuildID": server, "opened": {"$gte": Time.timestamp() or 0}}
-        )
+        TicketQuotas = await self.client.db["Ticket Quota"].find(
+            {"GuildID": server, "opened": {"$gte": Time.timestamp() if time else 0}}
+        ).to_list(length=None)
 
-
-        if not TicketQuota:
+        if not TicketQuotas:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
             )
@@ -745,7 +744,7 @@ class APIRoutes:
 
         leaderboard_data = {}
 
-        for ticket in TicketQuota:
+        for ticket in TicketQuotas:
             claimer_id = ticket.get("claimed", {}).get("claimer")
             if not claimer_id:
                 continue
