@@ -262,9 +262,13 @@ class Feedback(commands.Cog):
             name="Ratings",
             value=f"> **Average Rating**: {average_rating}/10\n> **Last Rating**: {last_rating}/10\n> **Overall**: {rating_text}",
         )
+        value=f"> **Author:** <@{staff_ratings[-1]['author']}>\n> **Feedback:** {staff_ratings[-1]['feedback']}",
+        if len(value) > 1021:
+            value = value[:1021] + "..."
         embed.add_field(
             name="Last Rating",
-            value=f"> **Author:** <@{staff_ratings[-1]['author']}>\n> **Feedback:** {staff_ratings[-1]['feedback']}",
+            value=value,
+            
         )
         embed.set_author(name=f"@{staff.display_name}", icon_url=staff.display_avatar)
         embed.set_footer(text=f"{scope.capitalize()} Ratings")

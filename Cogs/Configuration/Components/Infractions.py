@@ -772,6 +772,8 @@ class InfractionChannel(discord.ui.ChannelSelect):
             config = {"_id": interaction.guild.id, "Infraction": {}}
         elif "Infraction" not in config:
             config["Infraction"] = {}
+        elif "channel" not in config.get("Infraction", {}):
+            config["Infraction"]["channel"] = None
 
         config["Infraction"]["channel"] = self.values[0].id
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})

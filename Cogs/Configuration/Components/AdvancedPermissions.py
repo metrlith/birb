@@ -158,7 +158,7 @@ class Commands(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
-        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         if self.values[0] == "More Commands":
             if len(self.Unused) > 0:
