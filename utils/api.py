@@ -710,6 +710,7 @@ class APIRoutes:
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
                 )
         self.ratelimits[auth] = time.time() + 3
+        return True
     
     async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
         from utils.format import strtotime
