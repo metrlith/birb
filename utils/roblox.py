@@ -61,7 +61,7 @@ async def Fallback(user: discord.User):
 async def GetUser(user: discord.User):
     token = await GetValidToken(user=user)
     user_info = None
-    if token:
+    if (token):
         user_info = await GetInfo(token)
 
     if not user_info:
@@ -222,7 +222,7 @@ async def GetRequests(interaction: discord.Interaction):
     if not token:
         print("[GetRequests] No valid token found.")
         return None
-    result = await config.find_one({"_id": interaction.guild.id})
+    result = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not result.get("groups"):
         return 2
 
@@ -446,7 +446,7 @@ async def GroupRoles(interaction: discord.Interaction):
     if not token:
         return 0
 
-    result = await config.find_one({"_id": guild.id})
+    result = await interaction.client.config.find_one({"_id": guild.id})
     if not result.get("groups"):
         return 2
 

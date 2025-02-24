@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
 
 
 class ModmailOptions(discord.ui.Select):
@@ -68,31 +68,30 @@ class ModmailOptions(discord.ui.Select):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         option = interaction.data["values"][0]
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if option == "Category":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
             view.add_item(
                 Category(
                     self.author,
                     interaction.guild.get_channel(
-                        Config.get("Modmail", {}).get("category")
+                        config.get("Modmail", {}).get("category")
                     ),
                     interaction.message,
                 )
             )
             await interaction.response.send_message(view=view, ephemeral=True)
         elif option == "Transcripts Channel":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
             view.add_item(
                 Transcript(
                     self.author,
                     interaction.guild.get_channel(
-                        Config.get("Modmail", {}).get("transcripts")
+                        config.get("Modmail", {}).get("transcripts")
                     ),
                     interaction.message,
                 )
@@ -100,17 +99,16 @@ class ModmailOptions(discord.ui.Select):
 
             await interaction.response.send_message(view=view, ephemeral=True)
         elif option == "Modmail Pings":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
             Role = (
-                Config.get("Modmail", {}).get("ping", [])[0]
-                if Config.get("Modmail", {}).get("ping")
+                config.get("Modmail", {}).get("ping", [])[0]
+                if config.get("Modmail", {}).get("ping")
                 else []
             )
             if not isinstance(Role, list):
-                Role = Config.get("Modmail", {}).get("ping", [])
+                Role = config.get("Modmail", {}).get("ping", [])
 
             view.add_item(
                 ModmailPings(
@@ -121,15 +119,14 @@ class ModmailOptions(discord.ui.Select):
             )
             await interaction.response.send_message(view=view, ephemeral=True)
         elif option == "Threads Channel":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
             view.add_item(
                 ThreadsChannel(
                     self.author,
                     interaction.guild.get_channel(
-                        Config.get("Modmail", {}).get("threads")
+                        config.get("Modmail", {}).get("threads")
                     ),
                     interaction.message,
                 )
@@ -137,17 +134,16 @@ class ModmailOptions(discord.ui.Select):
             await interaction.response.send_message(view=view, ephemeral=True)
 
         elif option == "Preferences":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Module Options": {}, "_id": interaction.guild.id}
-            if not Config.get("Module Options"):
-                Config["Module Options"] = {}
+            if not config:
+                config = {"Module Options": {}, "_id": interaction.guild.id}
+            if not config.get("Module Options"):
+                config["Module Options"] = {}
             view = Preferences(self.author, interaction.message)
-            if Config.get("Module Options", {}).get("automessage"):
+            if config.get("Module Options", {}).get("automessage"):
                 view.ModmailButton.label = "Auto Message (Enabled)"
                 view.ModmailButton.style = discord.ButtonStyle.green
             if (
-                Config.get("Module Options", {}).get("MessageFormatting", "Embeds")
+                config.get("Module Options", {}).get("MessageFormatting", "Embeds")
                 == "Messages"
             ):
                 view.UseMessages.label = "Use Messages (Enabled)"
@@ -167,7 +163,6 @@ class ModmailOptions(discord.ui.Select):
             if os.getenv('ENVIRONMENT') == "custom":
                 view.create.label = "Create"
                 view.delete.label = "Delete"
-            config = await Configuration.find_one({"_id": interaction.guild.id})
             fields = []
             if config.get("Modmail", {}).get("Categories"):
                 for category_name, category in config["Modmail"]["Categories"].items():
@@ -243,16 +238,16 @@ class ThreadsChannel(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            Config = {"Modmail": {}, "_id": interaction.guild.id}
-        if not Config.get("Modmail"):
-            Config["Modmail"] = {}
-        Config["Modmail"]["threads"] = self.values[0].id
-        await Configuration.update_one(
-            {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not config:
+            config = {"Modmail": {}, "_id": interaction.guild.id}
+        if not config.get("Modmail"):
+            config["Modmail"] = {}
+        config["Modmail"]["threads"] = self.values[0].id
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(
@@ -275,32 +270,32 @@ class Preferences(discord.ui.View):
     async def ToggleOption(
         self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
     ):
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            Config = {"Module Options": {}, "_id": interaction.guild.id}
-        if not Config.get("Module Options"):
-            Config["Module Options"] = {}
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not config:
+            config = {"Module Options": {}, "_id": interaction.guild.id}
+        if not config.get("Module Options"):
+            config["Module Options"] = {}
 
         if Option == "automessage":
-            if Config.get("Module Options", {}).get("automessage"):
-                Config["Module Options"]["automessage"] = False
+            if config.get("Module Options", {}).get("automessage"):
+                config["Module Options"]["automessage"] = False
                 button.label = "Auto Message (Disabled)"
                 button.style = discord.ButtonStyle.red
             else:
-                Config["Module Options"]["automessage"] = True
+                config["Module Options"]["automessage"] = True
                 button.label = "Auto Message (Enabled)"
                 button.style = discord.ButtonStyle.green
         elif Option == "MessageFormatting":
-            if Config.get("Module Options", {}).get("MessageFormatting") == "Messages":
-                Config["Module Options"]["MessageFormatting"] = "Embeds"
+            if config.get("Module Options", {}).get("MessageFormatting") == "Messages":
+                config["Module Options"]["MessageFormatting"] = "Embeds"
                 button.label = "Use Messages (Disabled)"
                 button.style = discord.ButtonStyle.red
             else:
-                Config["Module Options"]["MessageFormatting"] = "Messages"
+                config["Module Options"]["MessageFormatting"] = "Messages"
                 button.label = "Use Messages (Enabled)"
                 button.style = discord.ButtonStyle.green
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="Auto Message (Disabled)", style=discord.ButtonStyle.red)
@@ -357,13 +352,13 @@ class SelectModmailType(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            Config = {"Module Options": {}, "_id": interaction.guild.id}
-        if not Config.get("Module Options"):
-            Config["Module Options"] = {}
-        Config["Module Options"]["ModmailType"] = self.values[0]
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not config:
+            config = {"Module Options": {}, "_id": interaction.guild.id}
+        if not config.get("Module Options"):
+            config["Module Options"] = {}
+        config["Module Options"]["ModmailType"] = self.values[0]
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} {interaction.user.display_name}, the modmail type has been updated to {self.values[0]}.",
             view=None,
@@ -377,10 +372,15 @@ class SelectModmailType(discord.ui.Select):
                     self.values[0],
                 )
             )
-            view.add_item(ConfigMenu(Options(Config), interaction.user))
+            view.add_item(ConfigMenu(Options(config), interaction.user))
 
             await self.message.edit(
-                embed=await ModmailEmbed(interaction, Config, discord.Embed()),
+                embed=await ModmailEmbed(interaction, config, discord.Embed()),
+                view=view,
+            )
+
+            await self.message.edit(
+                embed=await ModmailEmbed(interaction, config, discord.Embed()),
                 view=view,
             )
         except Exception as e:
@@ -403,7 +403,7 @@ class ModmailCategories(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
@@ -428,7 +428,7 @@ class ModmailCategories(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
@@ -463,7 +463,7 @@ class DeleteCategory(discord.ui.Modal):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         name = self.children[0].value
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
@@ -481,7 +481,7 @@ class DeleteCategory(discord.ui.Modal):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         del config["Modmail"]["Categories"][name]
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** the category `{name}` has been deleted.", view=None, embed=None
 
@@ -511,21 +511,21 @@ class CreateCategory(discord.ui.Modal):
 
         await interaction.response.defer()
         name = self.children[0].value
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            Config = {"Modmail": {}, "_id": interaction.guild.id}
-        if not Config.get("Modmail"):
-            Config["Modmail"] = {}
-        if not Config.get("Modmail").get("Categories"):
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not config:
+            config = {"Modmail": {}, "_id": interaction.guild.id}
+        if not config.get("Modmail"):
+            config["Modmail"] = {}
+        if not config.get("Modmail").get("Categories"):
 
-            Config["Modmail"]["Categories"] = []
-        if name in Config.get("Modmail", {}).get("Categories", []):
+            config["Modmail"]["Categories"] = []
+        if name in config.get("Modmail", {}).get("Categories", []):
             embed = discord.Embed(
                 description=f"{redx} **{interaction.user.display_name},** this category already exists!",
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        if Config.get("Module Options", {}).get("ModmailType") == "threads":
+        if config.get("Module Options", {}).get("ModmailType") == "threads":
             options = [
                 
                 discord.SelectOption(label="Ping", value=f"Ping", emoji="<:Ping:1298301862906298378>"),
@@ -583,7 +583,7 @@ class NoThanks(discord.ui.View):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
@@ -598,7 +598,7 @@ class NoThanks(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         config["Modmail"]["Categories"].append(self.name)
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
 
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, No problem! I've created the modmail category for you!",
@@ -656,7 +656,7 @@ class Threads(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if "Modmail" not in config:
@@ -666,7 +666,7 @@ class Threads(discord.ui.ChannelSelect):
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
         config["Modmail"]["Categories"][self.name]["threads"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set threads channel for `{self.name}`.",
             view=None
@@ -690,7 +690,7 @@ class TranscriptChannel(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if "Modmail" not in config:
@@ -700,7 +700,7 @@ class TranscriptChannel(discord.ui.ChannelSelect):
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
         config["Modmail"]["Categories"][self.name]["transcript"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set transcript channel for `{self.name}`.",
             view=None
@@ -723,7 +723,7 @@ class CategoryChannel(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if "Modmail" not in config:
@@ -733,7 +733,7 @@ class CategoryChannel(discord.ui.ChannelSelect):
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
         config["Modmail"]["Categories"][self.name]["category"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set category for `{self.name}`.",
             view=None
@@ -753,7 +753,7 @@ class PingRoles(discord.ui.RoleSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if "Modmail" not in config:
@@ -763,7 +763,7 @@ class PingRoles(discord.ui.RoleSelect):
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
         config["Modmail"]["Categories"][self.name]["ping"] = [role.id for role in self.values]
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set ping roles for `{self.name}`.",
             view=None
@@ -792,16 +792,16 @@ class ModmailPings(discord.ui.RoleSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            Config = {"Modmail": {}, "_id": interaction.guild.id}
-        if not Config.get("Modmail"):
-            Config["Modmail"] = {}
-        Config["Modmail"]["ping"] = [role.id for role in self.values]
-        await Configuration.update_one(
-            {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not config:
+            config = {"Modmail": {}, "_id": interaction.guild.id}
+        if not config.get("Modmail"):
+            config["Modmail"] = {}
+        config["Modmail"]["ping"] = [role.id for role in self.values]
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         try:
             await self.message.edit(
                 embed=await ModmailEmbed(
@@ -831,16 +831,16 @@ class Category(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
-            if not Config.get("Modmail"):
-                Config["Modmail"] = {}
-            Config["Modmail"]["category"] = self.values[0].id
-            await Configuration.update_one(
-                {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config.get("Modmail"):
+                config["Modmail"] = {}
+            config["Modmail"]["category"] = self.values[0].id
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": config}, upsert=True
             )
-            Updated = await Configuration.find_one({"_id": interaction.guild.id})
+            Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
             await self.message.edit(
                 embed=await ModmailEmbed(
                     interaction,
@@ -869,17 +869,17 @@ class Transcript(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
-            if not Config:
-                Config = {"Modmail": {}, "_id": interaction.guild.id}
-            if not Config.get("Modmail"):
-                Config["Modmail"] = {}
+            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            if not config:
+                config = {"Modmail": {}, "_id": interaction.guild.id}
+            if not config.get("Modmail"):
+                config["Modmail"] = {}
 
-            Config["Modmail"]["transcripts"] = self.values[0].id
-            await Configuration.update_one(
-                {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
+            config["Modmail"]["transcripts"] = self.values[0].id
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": config}, upsert=True
             )
-            Updated = await Configuration.find_one({"_id": interaction.guild.id})
+            Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
             await interaction.response.edit_message(content=None)
             try:
                 await self.message.edit(
@@ -898,27 +898,28 @@ class Transcript(discord.ui.ChannelSelect):
 async def ModmailEmbed(
     interaction: discord.Interaction, Config: dict, embed: discord.Embed
 ):
-    if not Config:
-        Config = {"Modmail": {}, "_id": interaction.guild.id}
+    config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+    if not config:
+        config = {"Modmail": {}, "_id": interaction.guild.id}
     Category = (
-        interaction.guild.get_channel(Config.get("Modmail", {}).get("category"))
+        interaction.guild.get_channel(config.get("Modmail", {}).get("category"))
         or "Not Configured"
     )
     if isinstance(Category, discord.TextChannel):
         Category = Category.mention
 
     Transcripts = (
-        interaction.guild.get_channel(Config.get("Modmail", {}).get("transcripts"))
+        interaction.guild.get_channel(config.get("Modmail", {}).get("transcripts"))
         or "Not Configured"
     )
 
     Role = (
-        Config.get("Modmail", {}).get("ping", [])[0]
-        if Config.get("Modmail", {}).get("ping")
+        config.get("Modmail", {}).get("ping", [])[0]
+        if config.get("Modmail", {}).get("ping")
         else "Not Configured"
     )
     if not isinstance(Role, list):
-        Role = Config.get("Modmail", {}).get("ping", [])
+        Role = config.get("Modmail", {}).get("ping", [])
 
     if isinstance(Role, list):
         ModmailRoles = [f"<@&{int(roleid)}>" for roleid in Role]
@@ -932,11 +933,11 @@ async def ModmailEmbed(
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's modmail settings! Modmail is a way for users to contact staff. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
-    if Config.get("Module Options", {}).get("ModmailType", "channel") == "channel":
+    if config.get("Module Options", {}).get("ModmailType", "channel") == "channel":
         value = f"{replytop} `Category:` {Category}\n{replymiddle} `Transcripts:` {Transcripts}\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
 
     else:
-        value = f"{replytop} `Threads Channel:` <#{Config.get('Modmail', {}).get('threads', 'Not Configured')}>\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
+        value = f"{replytop} `Threads Channel:` <#{config.get('Modmail', {}).get('threads', 'Not Configured')}>\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
 
     embed.add_field(
         name=f"<:settings:1207368347931516928> Modmail",

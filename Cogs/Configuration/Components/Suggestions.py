@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 import traceback
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# Customisation = DB["Customisation"]
 
 
 class Suggestions(discord.ui.Select):
@@ -39,7 +39,7 @@ class Suggestions(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         option = interaction.data["values"][0]
         if option == "Suggestions Channel":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Suggestions": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
@@ -89,15 +89,15 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Suggestions": {}}
         elif "Suggestions" not in config:
             config["Suggestions"] = {}
 
         config["Suggestions"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         await interaction.response.edit_message(content=None)
         try:
@@ -115,7 +115,7 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
 async def CustomiseEmbed(interaction: discord.Interaction, option):
     try:
         await interaction.response.defer()
-        custom = await Customisation.find_one(
+        custom = await interaction.client.db['Customisation'].find_one(
             {"guild_id": interaction.guild.id, "type": option}
         )
         embed = None
@@ -247,12 +247,12 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 ],
             },
         }
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "type": d.get("option")},
         {"$set": data},
         upsert=True,
     )
-    Config = await Configuration.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     view = discord.ui.View()
     view.add_item(Suggestions(interaction.user))

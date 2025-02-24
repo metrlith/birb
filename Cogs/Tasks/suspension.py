@@ -1,20 +1,19 @@
 import discord
 from discord.ext import commands, tasks
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
 import discord
 from utils.emojis import *
 from dotenv import load_dotenv
 from datetime import datetime
 
+
 load_dotenv()
-MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-suspensions = db["Suspensions"]
-Config = db["Config"]
+#client = AsyncIOMotorClient(MONGO_URL)
+#db = client["astro"]
+#suspensions = db["Suspensions"]
+#Config = db["Config"]
 
 
 class EmptyCog(commands.Cog):
@@ -22,8 +21,7 @@ class EmptyCog(commands.Cog):
         self.client = client
         self.check_suspensions.start()
         print("[✅] Suspension loop started")
-
-
+    
     @tasks.loop(minutes=5, reconnect=True)
     async def check_suspensions(self):
 
@@ -38,7 +36,7 @@ class EmptyCog(commands.Cog):
         else:
 
             filter = {"end_time": {"$lte": current_time}, "action": "Suspension"}
-
+        suspensions = self.client.db["Suspensions"]
         suspension_requests = suspensions.find(filter)
 
         async for request in suspension_requests:
@@ -109,12 +107,12 @@ class EmptyCog(commands.Cog):
                         )
                         continue
                 if request.get("msg_id"):
-                    config = await Config.find_one({"_id": request.get("guild_id")})
+                    config = await self.client.db["Config"].find_one({"_id": request.get("guild_id")})
                     if not config:
                         return
                     if not config.get("Suspensions", {}):
                         return
-                    if not Config.get("Suspensions", {}).get("channel"):
+                    if not self.client.db["Config"].get("Suspensions", {}).get("channel"):
                         return
                     channel = self.client.get_channel(
                         int(config.get("Suspensions", {}).get("channel"))

@@ -1,19 +1,6 @@
 import discord
 from discord.ext import commands
-import platform
-import psutil
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
-
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-infractions = db["infractions"]
-Suggestions = db["suggestions"]
-loa_collection = db["loa"]
-
-
-
 class botinfo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

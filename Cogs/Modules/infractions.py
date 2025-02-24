@@ -36,20 +36,16 @@ MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-collection = db["infractions"]
-infchannel = db["infraction channel"]
-consent = db["consent"]
-modules = db["Modules"]
-Customisation = db["Customisation"]
-infractiontypes = db["infractiontypes"]
-infractiontypeactions = db["infractiontypeactions"]
-options = db["module options"]
-staffdb = db["staff database"]
-integrations = db["integrations"]
-reasons = db["reasons"]
-config = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# collection = db["infractions"]
+# consent = db["consent"]
+# Customisation = db["Customisation"]
+# infractiontypeactions = db["infractiontypeactions"]
+# staffdb = db["staff database"]
+# integrations = db["integrations"]
+# reasons = db["reasons"]
+# config = db["Config"]
 
 
 async def InfractionEmbed(self: commands.Bot, infraction: dict):
@@ -108,7 +104,7 @@ class Infractions(commands.Cog):
         ctx: commands.Context, interaction: discord.Interaction, current: str
     ):
         try:
-            Config = await config.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 return [
                     app_commands.Choice(name="Not Configured", value="Not Configured")
@@ -135,7 +131,7 @@ class Infractions(commands.Cog):
         ctx: commands.Context, interaction: discord.Interaction, current: str
     ) -> typing.List[app_commands.Choice[str]]:
         try:
-            Config = await config.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if Config is None:
                 return [
                     app_commands.Choice(name="Not Configured", value="Not Configured")
@@ -238,10 +234,10 @@ class Infractions(commands.Cog):
             return
         isEscalated = False
 
-        TypeActions = await infractiontypeactions.find_one(
+        TypeActions = await self.client.db['infractiontypeactions'].find_one(
             {"guild_id": ctx.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if Config.get("Infraction", None) is None:
@@ -321,14 +317,14 @@ class Infractions(commands.Cog):
             Threshold = Escalation.get("Threshold", None)
             NextType = Escalation.get("Next Type")
             if Threshold and NextType:
-                InfractionsWithType = await collection.count_documents(
+                InfractionsWithType = await self.client.db['infractions'].count_documents(
                     {"guild_id": ctx.guild.id, "staff": staff.id, "action": action}
                 )
                 if len(Threshold) + 1 < InfractionsWithType:
                     isEscalated = True
 
         if Config.get("Module Options", {}).get("Infraction Confirmation", False):
-            custom = await Customisation.find_one(
+            custom = await self.client.db['Customisation'].find_one(
                 {"guild_id": ctx.guild.id, "type": "Infractions"}
             )
             from Cogs.Events.on_infraction import Replacements, DefaultEmbed
@@ -363,7 +359,7 @@ class Infractions(commands.Cog):
                     embed=None,
                 )
 
-        InfractionResult = await collection.insert_one(FormeData)
+        InfractionResult = await self.client.db['infractions'].insert_one(FormeData)
         if not InfractionResult.inserted_id:
             await msg.edit(
                 content=f"{crisis} **{ctx.author.display_name},** hi I had a issue submitting this infraction please head to support!",
@@ -444,7 +440,7 @@ class Infractions(commands.Cog):
         }
         filter = {k: v for k, v in filter.items() if v is not None}
 
-        infractions = await collection.find(filter).to_list(125)
+        infractions = await self.client.config.find(filter).to_list(125)
         if not infractions:
             scope_text = (
                 "voided"
@@ -609,7 +605,7 @@ class Infractions(commands.Cog):
         if voided:
             filter["voided"] = True
 
-        infraction = await collection.find_one(filter)
+        infraction = await self.client.db['infractions'].find_one(filter)
 
         if infraction is None:
             await ctx.send(
@@ -650,10 +646,10 @@ class InfractionMultiple(discord.ui.UserSelect):
         notes = self.notes
         expiration = self.expiration
         anonymous = self.anonymous
-        TypeActions = await infractiontypeactions.find_one(
+        TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await config.find_one({"_id": interaction.guild.id})
+        Config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 embed=BotNotConfigured(),
@@ -703,7 +699,7 @@ class InfractionMultiple(discord.ui.UserSelect):
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
-            InfractionResult = await collection.insert_one(
+            InfractionResult = await interaction.client.db['infractions'].insert_one(
                 {
                     "guild_id": interaction.guild.id,
                     "staff": user.id,
@@ -779,14 +775,14 @@ class ManageInfraction(discord.ui.View):
 
         infraction = self.infraction
         if infraction.get("voided", False):
-            await collection.delete_one({"_id": infraction["_id"]})
+            await interaction.client.db['infractions'].delete_one({"_id": infraction["_id"]})
             return await interaction.response.edit_message(
                 content=f"{tick} **{interaction.user.display_name}**, I've deleted the infraction permanently.",
                 view=None,
                 embed=None,
             )
 
-        await collection.update_one(
+        await interaction.client.db['infractions'].update_one(
             {"_id": infraction["_id"]},
             {"$set": {"voided": True}, "$unset": {"expiration": ""}},
             upsert=False,
@@ -890,19 +886,19 @@ class UpdateInfraction(discord.ui.Modal):
             if expiration:
                 expiration = await strtotime(expiration)
                 self.infraction["expiration"] = expiration
-                await collection.update_one(
+                await interaction.client.db['infractions'].update_one(
                     {"_id": self.infraction["_id"]},
                     {"$set": {"expiration": expiration}},
                 )
         elif self.reason:
             self.infraction["reason"] = self.reason.value
-            await collection.update_one(
+            await interaction.client.db['infractions'].update_one(
                 {"_id": self.infraction["_id"]},
                 {"$set": {"reason": self.reason.value}},
             )
         elif self.notes:
             self.infraction["notes"] = self.notes.value
-            await collection.update_one(
+            await interaction.client.db['infractions'].update_one(
                 {"_id": self.infraction["_id"]},
                 {"$set": {"notes": self.notes.value}},
             )
@@ -968,7 +964,7 @@ class UpdateAction(discord.ui.Select):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         self.infraction["action"] = self.values[0]
-        await collection.update_one(
+        await interaction.client.db['infractions'].update_one(
             {"_id": self.infraction["_id"]},
             {"$set": {"action": self.values[0]}},
         )

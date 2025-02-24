@@ -12,13 +12,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Customisation = db["Customisation"]
-feed = db["feedback"]
-Suggestions = db["suggestions"]
-Configuration = db["Config"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Customisation = db["Customisation"]
+# feed = db["feedback"]
+# Suggestions = db["suggestions"]
+# Configuration = db["Config"]
 
 
 class On_suggestions(commands.Cog):
@@ -27,7 +27,7 @@ class On_suggestions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_suggestion(self, objectID: ObjectId, settings: dict):
-        back = await Suggestions.find_one({"_id": objectID})
+        back = await self.client.db['suggestions'].find_one({"_id": objectID})
         if not back:
             return logging.critical("[on_suggestion] I can't find the feedback.")
 
@@ -55,7 +55,7 @@ class On_suggestions(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} the feedback channel can't be found. [2]"
             )
             return
-        custom = await Customisation.find_one(
+        custom = await self.client.db['Customisation'].find_one(
             {"guild_id": guild.id, "type": "Suggestion"}
         )
         if not custom:
@@ -100,7 +100,7 @@ class On_suggestions(commands.Cog):
             embed = await DisplayEmbed(custom, author, replacements=replacements)
         view = Voting()
         msg = await channel.send(embed=embed, view=view)
-        await Suggestions.update_one(
+        await self.client.db['suggestions'].update_one(
             {"_id": objectID}, {"$set": {"message_id": msg.id}}
         )
 
@@ -116,25 +116,25 @@ class Voting(discord.ui.View):
         emoji=f"<:UpVote:1223062893096996934>",
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
-        settings = await Configuration.find_one({"_id": interaction.guild.id})
-        result = await Suggestions.find_one({"message_id": interaction.message.id})
+        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
         if not result:
             return logging.critical(
                 f"[upvoting] in {interaction.guild.name} I couldn't find the suggestion data to update it."
             )
 
         if interaction.user.id in result.get("upvoters"):
-            await Suggestions.update_one(
+            await interaction.client.db['suggestions'].update_one(
                 {"message_id": interaction.message.id},
                 {"$pull": {"upvoters": interaction.user.id}},
             )
         else:
-            await Suggestions.update_one(
+            await interaction.client.db['suggestions'].update_one(
                 {"message_id": interaction.message.id},
                 {"$push": {"upvoters": interaction.user.id}},
             )
             if interaction.user.id in result.get("downvoters"):
-                await Suggestions.update_one(
+                await interaction.client.db['suggestions'].update_one(
                     {"message_id": interaction.message.id},
                     {"$pull": {"downvoters": interaction.user.id}},
                 )
@@ -153,25 +153,25 @@ class Voting(discord.ui.View):
     async def downvote(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        settings = await Configuration.find_one({"_id": interaction.guild.id})
-        result = await Suggestions.find_one({"message_id": interaction.message.id})
+        settings = await self.client.config.find_one({"_id": interaction.guild.id})
+        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
         if not result:
             return logging.critical(
                 f"[downvoting] in {interaction.guild.name} I couldn't find the suggestion data to update it."
             )
 
         if interaction.user.id in result.get("downvoters"):
-            await Suggestions.update_one(
+            await interaction.client.db['suggestions'].update_one(
                 {"message_id": interaction.message.id},
                 {"$pull": {"downvoters": interaction.user.id}},
             )
         else:
-            await Suggestions.update_one(
+            await interaction.client.db['suggestions'].update_one(
                 {"message_id": interaction.message.id},
                 {"$push": {"downvoters": interaction.user.id}},
             )
             if interaction.user.id in result.get("upvoters"):
-                await Suggestions.update_one(
+                await interaction.client.db['suggestions'].update_one(
                     {"message_id": interaction.message.id},
                     {"$pull": {"upvoters": interaction.user.id}},
                 )
@@ -186,7 +186,7 @@ class Voting(discord.ui.View):
         label="Voters", style=discord.ButtonStyle.gray, custom_id="VOTING;RESADADJ"
     )
     async def voters(self, interaction: discord.Interaction, button: discord.ui.Button):
-        result = await Suggestions.find_one({"message_id": interaction.message.id})
+        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
         if not result:
             return logging.critical(
                 f"[voters] in {interaction.guild.name} I couldn't find the suggestion data to display voters."
@@ -232,7 +232,7 @@ class Voting(discord.ui.View):
                 return
 
             await interaction.response.defer(ephemeral=True)
-            suggestion_data = await Suggestions.find_one(
+            suggestion_data = await interaction.client.db['suggestions'].find_one(
                 {"message_id": interaction.message.id}
             )
             if not suggestion_data:
@@ -278,8 +278,8 @@ class ManageSuggestion(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         selected_option = self.values[0]
-        settings = await Configuration.find_one({"_id": interaction.guild.id})
-        result = await Suggestions.find_one({"message_id": self.msg.id})
+        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        result = await interaction.client.db['suggestions'].find_one({"message_id": self.msg.id})
         if not result:
             return logging.critical(
                 f"[ManageSuggestion] in {interaction.guild.name} I couldn't find the suggestion data to manage it."
@@ -306,14 +306,14 @@ class DenialReason(discord.ui.Modal, title="Denial Reason"):
         self.msg = msg
 
     async def on_submit(self, interaction: discord.Interaction):
-        settings = await Configuration.find_one({"_id": interaction.guild.id})
-        result = await Suggestions.find_one({"message_id": self.msg.id})
+        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        result = await interaction.client.db['suggestions'].find_one({"message_id": self.msg.id})
         if not result:
             return logging.critical(
                 f"[DenialReason] in {interaction.guild.name} I couldn't find the suggestion data to manage it."
             )
 
-        await Suggestions.update_one(
+        await interaction.client.db['suggestions'].update_one(
             {"message_id": self.msg.id},
             {"$set": {"reason": self.reason.value}},
         )

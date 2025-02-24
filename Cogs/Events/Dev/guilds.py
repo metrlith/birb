@@ -6,11 +6,11 @@ from utils.emojis import *
 from Cogs.Modules.promotions import SyncServer
 from datetime import datetime
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-blacklists = db["blacklists"]
-Servers = db["Servers"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# blacklists = db["blacklists"]
+# Servers = db["Servers"]
 
 
 class GuildJoins(commands.Cog):
@@ -27,7 +27,7 @@ class GuildJoins(commands.Cog):
     async def LogJoin(self, guild: discord.Guild):
         if not guild:
             return
-        blacklist = await blacklists.find_one({"user": guild.owner_id})
+        blacklist = await self.client.db['blacklists'].find_one({"user": guild.owner_id})
 
         try:
             embed = discord.Embed(
@@ -92,7 +92,7 @@ class GuildJoins(commands.Cog):
     async def LogLeave(self, guild: discord.Guild):
         if not guild:
             return
-        blacklist = await blacklists.find_one({"user": guild.owner_id})
+        blacklist = await self.client.db['blacklists'].find_one({"user": guild.owner_id})
         try:
             embed = discord.Embed(
                 description=f"**Owner:** <@{guild.owner_id}>\n**Guild ID** {guild.id}\n**Members:** {guild.member_count}\n**Created:** <t:{guild.created_at.timestamp():.0f}:F>\n**Blacklisted:** {f'{tick}' if blacklist else f'{no}'}",
@@ -131,7 +131,7 @@ class GuildJoins(commands.Cog):
         await self.UpdateData(datetime.now().strftime("%Y-%m-%d"), "left")
 
     async def UpdateData(self, TodayDate, action):
-        Data = await Servers.find_one({"_id": "Data"})
+        Data = await self.client.db['Servers'].find_one({"_id": "Data"})
         if not Data:
             Data = {
                 "_id": "Data",
@@ -139,7 +139,7 @@ class GuildJoins(commands.Cog):
                 "total": {"new": 0, "left": 0},
                 "stats": [],
             }
-            await Servers.insert_one(Data)
+            await self.client.db['Servers'].insert_one(Data)
 
         TodayStat = next((stat for stat in Data["stats"] if TodayDate in stat), None)
         if TodayStat:
@@ -162,7 +162,7 @@ class GuildJoins(commands.Cog):
         elif action == "left":
             increment["today.left"] = 1
 
-        await Servers.update_one(
+        await self.client.db['Servers'].update_one(
             {"_id": "Data"},
             {
                 "$inc": increment,
@@ -172,6 +172,6 @@ class GuildJoins(commands.Cog):
             },
         )
 
-
+        
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(GuildJoins(client))

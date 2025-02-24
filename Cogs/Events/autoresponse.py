@@ -7,12 +7,12 @@ import random
 from fuzzywuzzy import fuzz
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Responders = db["Auto Responders"]
-environment = os.getenv("ENVIRONMENT")
-premium = db["Premium"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Responders = db["Auto Responders"]
+# environment = os.getenv("ENVIRONMENT")
+# premium = db["Premium"]
 from datetime import datetime
 
 
@@ -29,11 +29,11 @@ class autoresponse(commands.Cog):
         if message.author.bot:
             return
 
-        premiums = await premium.find_one({"guild_id": message.guild.id})
+        premiums = await self.client.db['premium'].find_one({"guild_id": message.guild.id})
         if premiums:
             return
 
-        autoresponses = await Responders.find(
+        autoresponses = await self.client.db['Auto Responders'].find(
             {"guild_id": message.guild.id}, limit=750
         ).to_list(length=None)
 

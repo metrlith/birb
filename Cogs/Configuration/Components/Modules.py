@@ -7,9 +7,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
 
 
 async def ModuleOptions(Config, data = None):
@@ -159,7 +159,7 @@ class ModuleToggle(discord.ui.Select):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"_id": interaction.guild.id, "Modules": {}}
         elif "Modules" not in config:
@@ -180,10 +180,10 @@ class ModuleToggle(discord.ui.Select):
             except:
                 pass
 
-        await Configuration.update_one(
+        await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         view = discord.ui.View()
         view.add_item(ModuleToggle(interaction.user, await ModuleOptions(Updated)))
         view.add_item(ConfigMenu(Options(Updated), interaction.user))

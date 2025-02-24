@@ -3,10 +3,10 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import time
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-analytics = db["analytics"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# analytics = db["analytics"]
 
 
 class analyticss(commands.Cog):
@@ -21,7 +21,7 @@ class analyticss(commands.Cog):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
 
         prfx = f"[🤖] {prfx}"
-        await analytics.update_one(
+        await self.client.db['analytics'].update_one(
             {}, {"$inc": {f"{ctx.command.qualified_name}": 1}}, upsert=True
         )
 

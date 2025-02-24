@@ -8,11 +8,11 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-infractiontypeactions = DB["infractiontypeactions"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# infractiontypeactions = DB["infractiontypeactions"]
+# Customisation = DB["Customisation"]
 
 
 class StaffPanelOptions(discord.ui.Select):
@@ -34,7 +34,7 @@ class StaffPanelOptions(discord.ui.Select):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Staff Utils": {},
@@ -45,7 +45,7 @@ class StaffPanelOptions(discord.ui.Select):
         if Selected == "Customise Embed":
             await interaction.response.defer()
             try:
-                custom = await Customisation.find_one(
+                custom = await interaction.client.db['Customisation'].find_one(
                     {"guild_id": interaction.guild.id, "name": "Staff Panel"}
                 )
                 embed = None
@@ -114,7 +114,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
             "name": "Staff Panel",
         }
 
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "name": "Staff Panel"},
         {"$set": data},
         upsert=True,
@@ -126,7 +126,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
     view.add_item(
         ConfigMenu(
             Options(
-                await Configuration.find_one({"_id": interaction.guild.id}),
+                await interaction.client.config.find_one({"_id": interaction.guild.id}),
             ),
             interaction.user,
         )
@@ -156,13 +156,13 @@ class DropDownLabel(discord.ui.Modal):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {"_id": interaction.guild.id, "Staff Utils": {"Label": ""}}
         if not Config.get("Staff Utils"):
             Config["Staff Utils"] = {}
         Config["Staff Utils"]["Label"] = self.label.value
-        await Configuration.update_one(
+        await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": Config}, upsert=True
         )
         embed = discord.Embed(

@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-T = db["Tickets"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# T = db["Tickets"]
 
 
 class Buttons(discord.ui.View):
@@ -35,7 +35,7 @@ class Buttons(discord.ui.View):
     async def OpenTicket(
         self, interaction: discord.Interaction, member: discord.Member, type: int
     ):
-        AlreadyOpen = await T.count_documents({"UserID": interaction.user.id, "closed": None, "panel": {'$exists': False}})
+        AlreadyOpen = await interaction.client.db["Tickets"].count_documents({"UserID": interaction.user.id, "closed": None, "panel": {'$exists': False}})
 
         if AlreadyOpen > 3:
             return await interaction.response.send_message(
@@ -111,10 +111,10 @@ class Tickets(commands.Cog):
                 content=f"{no} You don't have permission to use this command."
             )
 
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db["Tickets"].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(content=f"{no} This isn't a ticket channel.")
-        await T.update_one({"channel": interaction.channel.id}, {"$set": {"name": name}})
+        await interaction.client.db["Tickets"].update_one({"channel": interaction.channel.id}, {"$set": {"name": name}})
         await interaction.channel.edit(name=name)
         await interaction.followup.send(content=f"{tick} Successfully renamed ticket to {name}")
 
@@ -123,7 +123,7 @@ class Tickets(commands.Cog):
             return await interaction.response.send_message(
                 f"{no} You don't have permission to use this command."
             )
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db["Tickets"].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.response.send_message(f"{no} This isn't a ticket channel.")
         await interaction.response.defer()
@@ -134,7 +134,7 @@ class Tickets(commands.Cog):
             return await interaction.user.send(
                 f"{no} You don't have permission to use this command."
             )
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db["Tickets"].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.response.send_message(
                 f"{no} This isn't a ticket channel."
@@ -171,7 +171,7 @@ class CloseRequest(discord.ui.View):
                 f"{no} You can't close this ticket.", ephemeral=True
             )
         await interaction.response.defer()
-        Result = await T.find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db["Tickets"].find_one({"channel": interaction.channel.id})
         if not Result:
             return await interaction.followup.send(
                 f"{no} This isn't a ticket channel.", ephemeral=True
@@ -206,7 +206,7 @@ class Reason(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
-        t = await T.insert_one(
+        t = await interaction.client.db["Tickets"].insert_one(
             {
                 "_id": "".join(
                     random.choices(string.ascii_letters + string.digits, k=10)

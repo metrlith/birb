@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
 from utils.emojis import *
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class welcome(commands.Cog):
     def __init__(self, client):
@@ -9,6 +11,9 @@ class welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if os.getenv('ENVIRONMENT') == "development":
+            return
+        
         target_guild_id = 1092976553752789054
         guild_on_join = self.client.get_guild(target_guild_id)
 

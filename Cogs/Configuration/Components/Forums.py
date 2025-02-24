@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-forumsconfig = DB["Forum Configuration"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# forumsconfig = DB["Forum Configuration"]
 
 
 class ForumsOptions(discord.ui.Select):
@@ -41,7 +41,7 @@ class ForumsOptions(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1223062562782838815.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            Forums = await forumsconfig.find(
+            Forums = await interaction.client.db["Forum Configuration"].find(
                 {"guild_id": interaction.guild.id}
             ).to_list(length=None)
             for form in Forums:
@@ -83,7 +83,7 @@ class ForumManagent(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)        
         view = discord.ui.View()
-        Forums = await forumsconfig.find({"guild_id": interaction.guild.id}).to_list(
+        Forums = await interaction.client.db["Forum Configuration"].find({"guild_id": interaction.guild.id}).to_list(
             length=None
         )
         Options = []
@@ -114,7 +114,7 @@ class ForumManagent(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)        
         view = discord.ui.View()
-        Forums = await forumsconfig.find({"guild_id": interaction.guild.id}).to_list(
+        Forums = await interaction.client.db["Forum Configuration"].find({"guild_id": interaction.guild.id}).to_list(
             length=None
         )
         Options = []
@@ -153,7 +153,7 @@ class ForumSelection(discord.ui.Select):
         await interaction.response.defer()
         from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed, Embed
 
-        Forum = await forumsconfig.find_one(
+        Forum = await interaction.client.db["Forum Configuration"].find_one(
             {"guild_id": interaction.guild.id, "name": self.values[0]}
         )
         if not Forum:
@@ -162,7 +162,7 @@ class ForumSelection(discord.ui.Select):
                 ephemeral=True,
             )
         if self.typed == "Remove":
-            await forumsconfig.delete_one(
+            await interaction.client.db["Forum Configuration"].delete_one(
                 {"guild_id": interaction.guild.id, "name": self.values[0]}
             )
             return await interaction.edit_original_response(
@@ -199,7 +199,7 @@ class CreateForum(discord.ui.Modal, title="Create Forum"):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
-        Forum = await forumsconfig.find_one(
+        Forum = await interaction.client.db["Forum Configuration"].find_one(
             {"guild_id": interaction.guild.id, "name": self.name.value}
         )
         if Forum:
@@ -273,7 +273,7 @@ async def FinalFunc(interaction: discord.Interaction, datad: dict):
         if datad.get("ping"):
             data["role"] = datad["ping"]
 
-    result = await forumsconfig.update_one(
+    result = await interaction.client.db["Forum Configuration"].update_one(
         {"name": datad.get("name"), "guild_id": interaction.guild.id},
         {"$set": data},
         upsert=True,

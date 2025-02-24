@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 from utils.permissions import premium
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# Customisation = DB["Customisation"]
 
 
 class SuspensionOptions(discord.ui.Select):
@@ -37,7 +37,7 @@ class SuspensionOptions(discord.ui.Select):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {"Suspension": {}, "_id": interaction.guild.id}
         if self.values[0] == "Suspension Channel":
@@ -53,7 +53,7 @@ class SuspensionOptions(discord.ui.Select):
             )
         elif self.values[0] == "Customise Embed":
             try:
-                custom = await Customisation.find_one(
+                custom = await interaction.client.db['Customisation'].find_one(
                     {"guild_id": interaction.guild.id, "type": "Suspension"}
                 )
                 embed = None
@@ -192,12 +192,12 @@ async def FinalFunction2(interaction: discord.Interaction, d=None):
             },
         }
 
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "type": "Suspension"},
         {"$set": data},
         upsert=True,
     )
-    Config = await Configuration.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     view = discord.ui.View()
     view.add_item(SuspensionOptions(interaction.user))
@@ -237,15 +237,15 @@ class SuspensionChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Suspension": {}}
         elif "Suspension" not in config:
             config["Suspension"] = {}
 
         config["Suspension"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         await interaction.response.edit_message(content=None)
         try:

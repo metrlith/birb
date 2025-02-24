@@ -9,10 +9,10 @@ from dotenv import load_dotenv
 from discord.ui import Modal, TextInput
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
-appeal = DB["Ban Appeals Configuration"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
+# interaction.client.db["Ban Appeals Configuration"] = DB["Ban Appeals Configuration"]
 
 
 class BanAppealOptions(discord.ui.Select):
@@ -39,7 +39,7 @@ class BanAppealOptions(discord.ui.Select):
         await interaction.response.defer()
         option = interaction.data["values"][0]
         if option == "Manage Questions":
-            result = await appeal.find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
             if result and "questions" in result:
                 questions = result["questions"]
                 description = ""
@@ -66,7 +66,7 @@ class BanAppealOptions(discord.ui.Select):
             view = ManageQuestions(self.author)
             await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         elif option == "Channel":
-            result = await appeal.find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
             view = discord.ui.View()
             view.add_item(
                 AppealSubChannel(
@@ -133,7 +133,7 @@ class CreateQuestionModal(Modal):
 
         question = self.question.value
 
-        result = await appeal.find_one({"guild_id": interaction.guild.id})
+        result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
         if result and "questions" in result:
             questions = result["questions"]
             numeric_index = max(
@@ -148,18 +148,18 @@ class CreateQuestionModal(Modal):
 
             questions[f"question{next_index}"] = question
 
-            await appeal.update_one(
+            await interaction.client.db["Ban Appeals Configuration"].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"questions": questions}},
                 upsert=True,
             )
         else:
             data = {"guild_id": interaction.guild.id}
-            await appeal.update_one(
+            await interaction.client.db["Ban Appeals Configuration"].update_one(
                 data, {"$set": {"questions": {"question1": question}}}, upsert=True
             )
 
-        result = await appeal.find_one({"guild_id": interaction.guild.id})
+        result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
         if result and "questions" in result:
             questions = result["questions"]
             description = ""
@@ -198,7 +198,7 @@ class DeleteQuestionModal(Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         guild_id = interaction.guild.id
-        result = await appeal.find_one({"guild_id": guild_id})
+        result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": guild_id})
 
         if not result:
             return await interaction.response.send_message(
@@ -223,10 +223,10 @@ class DeleteQuestionModal(Modal):
         if question_id_to_delete:
             del questions[question_id_to_delete]
 
-        await appeal.update_one(
+        await interaction.client.db["Ban Appeals Configuration"].update_one(
             {"guild_id": guild_id}, {"$set": {"questions": questions}}, upsert=True
         )
-        result = await appeal.find_one({"guild_id": interaction.guild.id})
+        result = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
         if result and "questions" in result:
             questions = result.get("questions", {})
             description = ""
@@ -266,7 +266,7 @@ class AppealSubChannel(discord.ui.ChannelSelect):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer(ephemeral=True)
-        await appeal.update_one(
+        await interaction.client.db["Ban Appeals Configuration"].update_one(
             {"guild_id": interaction.guild.id},
             {"$set": {"banchannel": self.values[0].id}},
             upsert=True,
@@ -275,7 +275,7 @@ class AppealSubChannel(discord.ui.ChannelSelect):
 
 
 async def BanAppealEmbed(interaction: discord.Interaction, embed: discord.Embed):
-    config = await appeal.find_one({"guild_id": interaction.guild.id})
+    config = await interaction.client.db["Ban Appeals Configuration"].find_one({"guild_id": interaction.guild.id})
     if not config:
         config = {"banchannel": None}
     
@@ -288,7 +288,7 @@ async def BanAppealEmbed(interaction: discord.Interaction, embed: discord.Embed)
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is your server's Ban Appeal configuration. If the moderation bot you are using doesn't have ban appeals, you can use this. (Alert: Doesn't work if the user doesn't have mutual servers with the bot.) You can find out more at [the documentation](https://docs.astrobirb.dev/)"
+    embed.description = "> This is your server's Ban Appeal configuration. If the moderation bot you are using doesn't have ban appeal's, you can use this. (Alert: Doesn't work if the user doesn't have mutual servers with the bot.) You can find out more at [the documentation](https://docs.astrobirb.dev/)"
     embed.add_field(
         name=f"<:settings:1207368347931516928> Appeals",
         value=f"> `Appeal Channel:` {channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",

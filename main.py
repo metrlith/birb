@@ -24,7 +24,7 @@ import logging
 
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Events.Dev.on_ticket import TicketControl
-from Cogs.Modules.tickets import ButtonHandler, Panels
+from Cogs.Modules.tickets import ButtonHandler
 from Cogs.Modules.Developer.tickets import Buttons
 
 logging.basicConfig(
@@ -51,9 +51,9 @@ SHARDS = os.getenv("SHARDS")
 load_dotenv()
 guildid = os.getenv("CUSTOM_GUILD")
 client = AsyncIOMotorClient(MONGO_URL)
+qdb = client["quotadb"]
 db = client["astro"]
 prefixdb = db["prefixes"]
-modules = db["Modules"]
 qotdd = db["qotd"]
 Config = db["Config"]
 Views = db["Views"]
@@ -65,13 +65,13 @@ class client(commands.AutoShardedBot):
     def __init__(self):
         # Databases -----------------------
         self.db = db
+        self.qdb = qdb
         self.infractions = db["infractions"]
         self.premium = db["premium"]
         self.badges = db["badges"]
         self.promotions = db["promotions"]
         self.modmail = db["modmail"]
         self.suggestions = db["suggestions"]
-        self.module = db["Modules"]
         self.prefix = db["prefixes"]
 
         self.suspension = db["Suspensions"]
@@ -84,6 +84,8 @@ class client(commands.AutoShardedBot):
         self.qotd = db["qotd"]
         self.customisation = db["Customisation"]
         self.config = db["Config"]
+        self.infractiontypeactions = db["infractiontypeactions"]
+        
         # Set Values -----------------------
         self.infractions_maintenance = False
         self.promotions_maintenance = False
@@ -101,7 +103,7 @@ class client(commands.AutoShardedBot):
         if environment == "custom":
             print("Custom Branding Loaded")
             super().__init__(
-                command_prefix=commands.when_mentioned_or(self.get_prefix),
+                command_prefix=commands.when_entioned_or(self.get_prefix),
                 intents=intents,
                 shard_count=None,
                 chunk_guilds_at_startup=False,
@@ -184,12 +186,15 @@ class client(commands.AutoShardedBot):
         if not environment == "custom":
             self.cogslist.append("utils.api")
             self.cogslist.append("utils.dokploy")
-
+    
+    
     async def load_jishaku(self):
         await self.wait_until_ready()
         await self.load_extension("jishaku")
         print("[🔄] Jishaku Loaded")
+    
 
+    
     async def get_prefix(self, message: discord.Message) -> tasks.List[str] | str:
         if message.guild is None:
             return "!!"
@@ -202,19 +207,18 @@ class client(commands.AutoShardedBot):
         else:
             prefix = PREFIX
         return commands.when_mentioned_or(prefix)(self, message)
-
+    
     async def setup_hook(self):
-
         if update_channel_name.is_running():
             update_channel_name.restart()
         else:
             update_channel_name.start()
 
-        TicketViews = await Panels.find({}).to_list(length=None)
+        TicketViews = await self.db['Panels'].find({}).to_list(length=None)
         V = await Views.find({}).to_list(length=None)
         print('[Views] Loading Any Views')
-
         for view in V:
+
             if not view:
                 continue
             if view.get("type") == "staff":
@@ -270,7 +274,7 @@ class client(commands.AutoShardedBot):
                 if not view.get("Panels"):
                     continue
                 for panel_name in view.get("Panels"):
-                    sub = await Panels.find_one(
+                    sub = await self.db['Panels'].find_one(
                         {
                             "guild": view.get("guild"),
                             "name": panel_name,
@@ -333,12 +337,14 @@ class client(commands.AutoShardedBot):
             print(f"[✅] {ext} loaded")
         await self.CacheCommands()
 
+    
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
         if not V:
             return "N/A"
         return V.get("version")
-
+    
+    
     async def CacheCommands(self):
         self.cached_commands = []
 
@@ -351,7 +357,8 @@ class client(commands.AutoShardedBot):
 
         for command in self.tree.get_commands():
             recursive_cache(command)
-
+    
+    
     async def on_ready(self):
         if environment == "custom":
             guild = await self.fetch_guild(guildid)
@@ -386,7 +393,7 @@ class client(commands.AutoShardedBot):
         else:
             print("[⚠️] STATUS not defined in .env, bot will not set a custom status.")
         if not environment == "custom":
-            Modmail = await Config.find({"Modules.Modmail": True}).to_list(length=None)
+            Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
             Guilds = 0
             DevServers = [1092976553752789054]
             for server in DevServers:

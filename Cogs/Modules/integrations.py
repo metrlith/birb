@@ -11,15 +11,15 @@ from utils.permissions import has_admin_role
 from motor.motor_asyncio import AsyncIOMotorClient
 from discord import app_commands
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-infractions = db["infractions"]
-Suggestions = db["suggestions"]
-loa_collection = db["loa"]
-Tokens = db["integrations"]
-PendingUsers = db["Pending"]
-config = db["Config"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# infractions = db["infractions"]
+# Suggestions = db["suggestions"]
+# loa_collection = db["loa"]
+# Tokens = db["integrations"]
+# PendingUsers = db["Pending"]
+# config = db["Config"]
 
 
 class Link(commands.Cog):
@@ -164,7 +164,7 @@ class Link(commands.Cog):
         if not token:
             return await ctx.send(embed=NotRobloxLinked(), ephemeral=True)
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
         if not c.get("groups"):
             return 2
 
@@ -234,7 +234,7 @@ class Link(commands.Cog):
         if not token:
             return await ctx.send(embed=NotRobloxLinked(), ephemeral=True)
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
         if not c.get("groups"):
             return 2
 
@@ -281,7 +281,7 @@ class Link(commands.Cog):
             return
         from utils.roblox import UpdateMembership, GroupRoles, FetchRobloxUser
 
-        c = await config.find_one({"_id": ctx.guild.id})
+        c = await self.client.config.find_one({"_id": ctx.guild.id})
 
         Roles = await GroupRoles(ctx)
         if Roles == 0:
@@ -325,7 +325,7 @@ class Link(commands.Cog):
         interaction: discord.Interaction,
         service: Literal["Roblox Groups", "Roblox Auth"],
     ):
-        AlreadyRegistered = await Tokens.find_one(
+        AlreadyRegistered = await interaction.client.db['integrations'].find_one(
             {"discord_id": str(interaction.user.id)}
         )
         msg = None
@@ -352,7 +352,7 @@ class Link(commands.Cog):
                     f"{tick} cancelled.", ephemeral=True
                 )
 
-        await PendingUsers.update_one(
+        await self.client.db['Pending'].update_one(
             {"user": interaction.user.id},
             {"$set": {"user": str(interaction.user.id)}},
             upsert=True,
@@ -391,13 +391,13 @@ class Link(commands.Cog):
                 embed=embed, view=view, ephemeral=True
             )
 
-        await Tokens.delete_one({"discord_id": str(interaction.user.id)})
+        await interaction.client.db['integrations'].delete_one({"discord_id": str(interaction.user.id)})
 
         try:
             await asyncio.wait_for(
                 self.wait_for_token_verification(interaction), timeout=180
             )
-            if await Tokens.find_one({"discord_id": str(interaction.user.id)}):
+            if await interaction.client.db['integrations'].find_one({"discord_id": str(interaction.user.id)}):
                 if msg:
                     if service == "Roblox Groups":
                         embed = (
@@ -419,7 +419,7 @@ class Link(commands.Cog):
                             icon_url=interaction.user.display_avatar,
                         )
                     await msg.edit(view=None, embed=embed)
-                    await PendingUsers.delete_one({"user": interaction.user.id})
+                    await interaction.client.db['Pending'].delete_one({"user": interaction.user.id})
                 return
         except asyncio.TimeoutError:
             if msg:
@@ -431,7 +431,7 @@ class Link(commands.Cog):
     async def wait_for_token_verification(self, interaction: discord.Interaction):
         attempts = 0
         while attempts < 60:
-            if await Tokens.find_one({"discord_id": str(interaction.user.id)}):
+            if await interaction.client.db['integrations'].find_one({"discord_id": str(interaction.user.id)}):
                 return True
             attempts += 1
             print("Checking token...")

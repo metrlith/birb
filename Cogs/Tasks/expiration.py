@@ -12,13 +12,12 @@ MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-collection = db["infractions"]
-loa_collection = db["loa"]
-infractiontypes = db["infractiontypes"]
-infractiontypeactions = db["infractiontypeactions"]
-config = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# collection = db["infractions"]
+# loa_collection = db["loa"]
+# infractiontypeactions = db["infractiontypeactions"]
+# config = db["Config"]
 
 
 
@@ -28,17 +27,16 @@ class expiration(commands.Cog):
         self.check_infractions.start()
         print("[✅] Infraction Expiration loop started")
 
-
     @tasks.loop(minutes=30, reconnect=True)
     async def check_infractions(self):
         try:
             if self.client.infractions_maintenance is True:
              return            
-            infractions = await collection.find(
+            infractions = await self.client.db['infractions'].find(
                 {"expiration": {"$exists": True}, "voided": {"$ne": True}}
             ).to_list(length=None)
             if environment == "custom":
-                infractions = await collection.find(
+                infractions = await self.client.db['infractions'].find(
                     {
                         "expiration": {"$exists": True},
                         "guild_id": int(guildid),
@@ -47,6 +45,7 @@ class expiration(commands.Cog):
                 ).to_list(length=None)
             if infractions:
                 for infraction in infractions:
+
                     if infraction.get("expired", False) is True:
                         continue
                     try:
@@ -56,15 +55,24 @@ class expiration(commands.Cog):
                     if guild is None:
                         if not environment == "custom":
                             continue
+
+                    Config = await self.client.config.find_one({"_id": guild.id})
+                    if not Config:
+                        continue
+                    if not Config.get("Infraction", None):
+                        continue
+                    if not Config.get("Infraction", {}).get("channel"):
+                        continue
+                    if not Config.get('Infraction', {}).get('types', None):
+                        continue
                     typechannel = None
-                    infractiontype = await infractiontypes.find_one(
-                        {"name": infraction["action"]}
-                    )
+                    infractiontype = infraction.get("action", None)
+                    
                     if infractiontype:
-                        infractionaction = await infractiontypeactions.find_one(
-                            {"name": infraction["action"], "guild_id": guild.id}
+                        infractionaction = await self.client.db['infractiontypeactions'].find_one(
+                            {"name": infraction.get("action"), "guild_id": guild.id}
                         )
-                        if infractionaction.get("channel_id"):
+                        if infractionaction and infractionaction.get("channel_id"):
                             typechannel = self.client.get_channel(
                                 infractionaction["channel_id"]
                             )
@@ -73,7 +81,7 @@ class expiration(commands.Cog):
                     if infraction["expiration"] < datetime.now() and not infraction.get(
                         "expired", False
                     ):
-                        await collection.update_one(
+                        await self.client.db['infractions'].update_one(
                             {"random_string": infraction["random_string"]},
                             {"$set": {"expired": True}},
                         )
@@ -85,7 +93,7 @@ class expiration(commands.Cog):
                             if typechannel:
                                 Channel = typechannel
                             else:
-                                Config = await config.find_one({"_id": guild.id})
+                                Config = await self.client.config.find_one({"_id": guild.id})
                                 if Config:
                                     if not Config.get("Infraction", None):
                                         return

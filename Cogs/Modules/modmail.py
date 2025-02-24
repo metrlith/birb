@@ -16,20 +16,16 @@ load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv('ENVIRONMENT')
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
-modmail = db["modmail"]
-modmailalerts = db["modmailalerts"]
-modmailblacklists = db["modmailblacklists"]
-modmailcategory = db["modmailcategory"]
-modmailsnippets = db["Modmail Snippets"]
-transcriptschannel = db["transcriptschannel"]
-transcripts = db["Transcripts"]
-modules = db["Modules"]
-options = db["module options"]
-Configuration = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# modmail = db["modmail"]
+# modmailalerts = db["modmailalerts"]
+# modmailblacklists = db["modmailblacklists"]
+# modmailcategory = db["modmailcategory"]
+# modmailsnippets = db["Modmail Snippets"]
+# transcriptschannel = db["transcriptschannel"]
+# transcripts = db["Transcripts"]
+# Configuration = db["Config"]
 from utils.permissions import has_admin_role, has_staff_role
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -42,22 +38,14 @@ class Modmail(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @staticmethod
-    async def modulecheck(ctx: commands.Context):
-        modulesdata = await modules.find_one({"guild_id": ctx.guild.id})
-        if modulesdata is None:
-            return False
-        elif modulesdata.get("Modmail", False) is True:
-            return True
-        else:
-            return False
+
 
     async def snippet_autocomplete(
         ctx: commands.Context, interaction: discord.Interaction, current: str
     ) -> typing.List[app_commands.Choice[str]]:
         filter = {"guild_id": interaction.guild_id}
 
-        tag_names = await modmailsnippets.distinct("name", filter)
+        tag_names = await interaction.client.db['Modmail Snippets'].distinct("name", filter)
 
         filtered_names = [name for name in tag_names if current.lower() in name.lower()]
         filtered_names = filtered_names[:25]
@@ -85,7 +73,7 @@ class Modmail(commands.Cog):
             f"{tick} **{ctx.author.display_name},** you will be alerted for the next message.",
             ephemeral=True,
         )
-        await modmailalerts.update_one(
+        await self.client.db['modmailalerts'].update_one(
             {"channel_id": ctx.channel.id},
             {"$set": {"alert": ctx.author.id}},
             upsert=True,
@@ -101,11 +89,11 @@ class Modmail(commands.Cog):
             return
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
-        blacklist = await modmailblacklists.find_one({"guild_id": ctx.guild.id})
+        blacklist = await self.client.db['modmailblacklists'].find_one({"guild_id": ctx.guild.id})
         if blacklist and member.id in blacklist["blacklist"]:
             await ctx.send(f"{no} **{member.display_name}** is already blacklisted.")
             return
-        await modmailblacklists.update_one(
+        await self.client.db['modmailblacklists'].update_one(
             {"guild_id": ctx.guild.id}, {"$push": {"blacklist": member.id}}, upsert=True
         )
         await ctx.send(
@@ -125,13 +113,13 @@ class Modmail(commands.Cog):
             return
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
-        blacklist = await modmailblacklists.find_one({"guild_id": ctx.guild.id})
+        blacklist = await self.client.db['modmailblacklists'].find_one({"guild_id": ctx.guild.id})
         if blacklist and member.id not in blacklist["blacklist"]:
             await ctx.send(
                 f"{no} **{member.display_name}** is not blacklisted.",
             )
             return
-        await modmailblacklists.update_one(
+        await self.client.db['modmailblacklists'].update_one(
             {"guild_id": ctx.guild.id}, {"$pull": {"blacklist": member.id}}, upsert=True
         )
         await ctx.send(
@@ -182,7 +170,7 @@ class Modmail(commands.Cog):
 
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
-        result = await modmailsnippets.find_one(
+        result = await self.client.db['Modmail Snippets'].find_one(
             {"guild_id": ctx.guild.id, "name": name}
         )
         if result:
@@ -190,7 +178,7 @@ class Modmail(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, a snippet with that name already exists.",
             )
             return
-        await modmailsnippets.insert_one(
+        await self.client.db['Modmail Snippets'].insert_one(
             {"guild_id": ctx.guild.id, "name": name, "content": content}
         )
         await ctx.send(
@@ -204,7 +192,7 @@ class Modmail(commands.Cog):
         await ctx.defer()
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
-        result = await modmailsnippets.find_one(
+        result = await self.client.db['Modmail Snippets'].find_one(
             {"guild_id": ctx.guild.id, "name": name}
         )
         if not result:
@@ -212,7 +200,7 @@ class Modmail(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, a snippet with that name doesn't exist.",
             )
             return
-        await modmailsnippets.delete_many({"guild_id": ctx.guild.id, "name": name})
+        await self.client.db['Modmail Snippets'].delete_many({"guild_id": ctx.guild.id, "name": name})
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, I've deleted the snippet succesfully!",
         )
@@ -226,7 +214,7 @@ class Modmail(commands.Cog):
         await ctx.defer()
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
-        result = await modmailsnippets.find_one(
+        result = await self.client.db['Modmail Snippets'].find_one(
             {"guild_id": ctx.guild.id, "name": name}
         )
         if not result:
@@ -234,7 +222,7 @@ class Modmail(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, a snippet with that name doesn't exist.",
             )
             return
-        await modmailsnippets.update_one(
+        await self.client.db['Modmail Snippets'].update_one(
             {"guild_id": ctx.guild.id, "name": name}, {"$set": {"content": content}}
         )
         await ctx.send(
@@ -254,7 +242,7 @@ class Modmail(commands.Cog):
             return
         if not await has_staff_role(ctx, "Modmail Permissions"):
             return
-        result = await modmailsnippets.find_one(
+        result = await self.client.db['Modmail Snippets'].find_one(
             {"guild_id": ctx.guild.id, "name": name}
         )
         if not result:
@@ -278,7 +266,7 @@ class Modmail(commands.Cog):
 
         filter = {"guild_id": ctx.guild.id}
 
-        result = modmailsnippets.find(filter)
+        result = self.client.db['Modmail Snippets'].find(filter)
         if result is None:
             await ctx.send(
                 f"{no} {ctx.author.display_name}, there are no snippets in the server.\n{arrow} To create a new snippet, use </modmail snippets create:1226670215740264483>",
@@ -367,7 +355,7 @@ class Modmail(commands.Cog):
         if not await has_admin_role(ctx, "Modmail Permissions"):
             return
 
-        result = await transcripts.find({"author": member.id, "guild_id": ctx.guild.id}).to_list(None)
+        result = await self.client.db['Transcripts'].find({"author": member.id, "guild_id": ctx.guild.id}).to_list(None)
         if not result:
             await ctx.send(f"{no} No modmail logs found for this user.")
             return
@@ -439,7 +427,7 @@ class Modmail(commands.Cog):
             return
         if not await has_staff_role(ctx, "Modmail Permissions"):
             return
-        result = await modmailsnippets.find_one(
+        result = await self.client.db['Modmail Snippets'].find_one(
             {"guild_id": ctx.guild.id, "name": name}
         )
         if not result:
@@ -491,8 +479,8 @@ class Modmail(commands.Cog):
             if not isinstance(media, discord.Attachment):
                 media = None
             ChannelID = ctx.channel.id
-            Modmail = await modmail.find_one({"channel_id": ChannelID})
-            Config = await Configuration.find_one({"_id": ctx.guild.id})
+            Modmail = await self.client.db['modmail'].find_one({"channel_id": ChannelID})
+            Config = await self.client.config.find_one({"_id": ctx.guild.id})
             if not Config:
                 return await ctx.send(
                     embed=BotNotConfigured(),

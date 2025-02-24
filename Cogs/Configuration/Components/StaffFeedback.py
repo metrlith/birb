@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 import traceback
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
-Customisation = DB["Customisation"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
+# Customisation = DB["Customisation"]
 
 
 class StaffFeedback(discord.ui.Select):
@@ -41,7 +41,7 @@ class StaffFeedback(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         option = interaction.data["values"][0]
         if option == "Feedback Channel":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Feedback": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
@@ -56,7 +56,7 @@ class StaffFeedback(discord.ui.Select):
             )
             await interaction.response.send_message(view=view, ephemeral=True)
         elif option == "Preferences":
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {
                     "Infraction": {},
@@ -85,7 +85,7 @@ class StaffFeedback(discord.ui.Select):
         elif option == "Customise Embed":
             try:
                 await interaction.response.defer()
-                custom = await Customisation.find_one(
+                custom = await interaction.client.db['Customisation'].find_one(
                     {"guild_id": interaction.guild.id, "type": "Feedback"}
                 )
                 embed = None
@@ -207,12 +207,12 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 ],
             },
         }
-    await Customisation.update_one(
+    await interaction.client.db['Customisation'].update_one(
         {"guild_id": interaction.guild.id, "type": "Feedback"},
         {"$set": data},
         upsert=True,
     )
-    Config = await Configuration.find_one({"_id": interaction.guild.id})
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
     view = discord.ui.View()
     view.add_item(StaffFeedback(interaction.user))
@@ -233,7 +233,7 @@ class Preferences(discord.ui.View):
     async def ToggleOption(
         self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
     ):
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
                 "Infraction": {},
@@ -252,7 +252,7 @@ class Preferences(discord.ui.View):
                 button.label = "Multiple Feedback (Enabled)"
                 button.style = discord.ButtonStyle.green
 
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
@@ -289,15 +289,15 @@ class FeedbackChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Feedback": {}}
         elif "Feedback" not in config:
             config["Feedback"] = {}
 
         config["Feedback"]["channel"] = self.values[0].id
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(

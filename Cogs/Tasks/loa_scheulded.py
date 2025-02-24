@@ -15,11 +15,11 @@ MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-loa_collection = db["loa"]
-consent = db["consent"]
-Configuration = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# loa_collection = db["loa"]
+# consent = db["consent"]
+# Configuration = db["Config"]
 
 
 class Shed(commands.Cog):
@@ -27,7 +27,6 @@ class Shed(commands.Cog):
         self.client = client
         self.check_scheduled_loas.start()
         print("[✅] LOA loop started")
-
 
     @tasks.loop(minutes=3, reconnect=True)
     async def check_scheduled_loas(self):
@@ -46,7 +45,7 @@ class Shed(commands.Cog):
             if environment == "custom":
                 filter["guild_id"] = int(guildid)
 
-            loa_requests = await loa_collection.find(filter).to_list(length=None)
+            loa_requests = await self.client.db['loa'].find(filter).to_list(length=None)
             for request in loa_requests:
                 start_time = request["start_time"]
                 end_time = request["end_time"]
@@ -60,12 +59,12 @@ class Shed(commands.Cog):
                     continue
 
                 if not guild or not user:
-                    await loa_collection.delete_one(
+                    await self.client.db[''].delete_one(
                         {"guild_id": guild_id, "user": UserID, "start_time": start_time}
                     )
                     continue
 
-                Config = await Configuration.find_one({"_id": guild_id})
+                Config = await self.client.config.find_one({"_id": guild_id})
                 if not Config or not Config.get("LOA"):
                     continue
 
@@ -82,7 +81,7 @@ class Shed(commands.Cog):
                     role_id = Config.get("LOA", {}).get("role")
                     role = discord.utils.get(guild.roles, id=role_id)
                     if role:
-                        request = await loa_collection.update_one(
+                        request = await self.client.db['loa'].update_one(
                             {"_id": ObjectId(request.get("_id"))},
                             {"$set": {"active": True, "scheduled": False}},
                         )

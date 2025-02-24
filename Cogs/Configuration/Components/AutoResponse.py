@@ -7,12 +7,12 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
-Configuration = DB["Config"]
-Responders = DB["Auto Responders"]
-premium = DB["Premium"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
+# Configuration = DB["Config"]
+# interaction.client.db["Auto Responders"] = DB["Auto interaction.client.db["Auto Responders"]"]
+# premium = DB["Premium"]
 
 
 class AutoResponderOptions(discord.ui.Select):
@@ -43,7 +43,7 @@ class AutoResponderOptions(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1250481563615887391.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            Responses = await Responders.find(
+            Responses = await interaction.client.db["Auto Responders"].find(
                 {"guild_id": interaction.guild.id}
             ).to_list(length=None)
             for response in Responses:
@@ -106,7 +106,7 @@ class Create(discord.ui.Modal):
         self.add_item(self.snuzzy)
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await Responders.find_one(
+        result = await interaction.client.db["Auto Responders"].find_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
         if result:
@@ -122,7 +122,7 @@ class Create(discord.ui.Modal):
                 sim = None
         except ValueError:
             sim = None
-        await Responders.insert_one(
+        await interaction.client.db["Auto Responders"].insert_one(
             {
                 "guild_id": interaction.guild.id,
                 "trigger": self.trigger.value,
@@ -160,7 +160,7 @@ class EditModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        await Responders.update_one(
+        await interaction.client.db["Auto Responders"].update_one(
             {"guild_id": interaction.guild.id},
             {
                 "$set": {
@@ -202,7 +202,7 @@ class DeleteByTrigger2(discord.ui.Modal):
         self.add_item(self.trigger)
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await Responders.find_one(
+        result = await interaction.client.db["Auto Responders"].find_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
         if not result:
@@ -211,7 +211,7 @@ class DeleteByTrigger2(discord.ui.Modal):
                 ephemeral=True,
             )
             return
-        await Responders.delete_one(
+        await interaction.client.db["Auto Responders"].delete_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
         await interaction.response.edit_message(

@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import os
 from bson import ObjectId
 from utils.emojis import *
@@ -8,22 +8,24 @@ import logging
 from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import datetime
+import asyncio
+from utils.format import strtotime
 
 logger = logging.getLogger(__name__)
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-Transcripts = db["Transcripts"]
-Panel = db["Panels"]
-T = db["Tickets"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# Transcripts = db["Transcripts"]
+# Panel = db["Panels"]
+# interaction.client.db['Tickets'] = db["Tickets"]
 
 
 async def TicketPermissions(interaction: discord.Interaction):
-    t = await T.find_one({"ChannelID": interaction.channel.id})
+    t = await interaction.client.db['Tickets'].find_one({"ChannelID": interaction.channel.id})
     if not t:
         return False
-    P = await Panel.find_one({"name": t.get("panel"), "guild": interaction.guild.id})
+    P = await interaction.client.db['Panels'].find_one({"name": t.get("panel"), "guild": interaction.guild.id})
     if not P:
         return False
     if not P.get("permissions"):
@@ -67,7 +69,7 @@ class PTicketControl(discord.ui.View):
                 ephemeral=True,
             )
 
-        Result = await T.find_one({"MessageID": int(interaction.message.id)})
+        Result = await interaction.client.db['Tickets'].find_one({"MessageID": int(interaction.message.id)})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -89,7 +91,7 @@ class PTicketControl(discord.ui.View):
                 f"{no} **{interaction.user.display_name}** you don't have permission to close this ticket.",
                 ephemeral=True,
             )
-        Result = await T.find_one({"MessageID": int(interaction.message.id)})
+        Result = await interaction.client.db['Tickets'].find_one({"MessageID": int(interaction.message.id)})
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -98,7 +100,7 @@ class PTicketControl(discord.ui.View):
             return await interaction.followup.send(
                 "This ticket is already claimed.", ephemeral=True
             )
-        await T.update_one(
+        await interaction.client.db['Tickets'].update_one(
             {"ChannelID": interaction.channel.id},
             {
                 "$set": {
@@ -121,15 +123,93 @@ class PTicketControl(discord.ui.View):
         view.claim.label = f"Claimed by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
+        try:
+         await interaction.channel.edit(name=f"claimed-{interaction.channel.name.split('-')[1]}")
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_pticket_claim] Bot does not have permission to edit the channel {interaction.channel.id}"
+            )
 
 
 class TicketsPublic(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+        self.AutomAtions.start()
+
+    @tasks.loop(seconds=360)
+    async def AutomAtions(self):
+        Tickets = await self.client.db['Tickets'].find({"closed": None}).to_list(length=None)
+        async def SendAutoMation(Ticket, semaphore):
+            async with semaphore:
+                await asyncio.sleep(0.4)
+                Guild = self.client.get_guild(Ticket.get("GuildID"))
+                if not Guild:
+                    return logging.critical(
+                        f"[AutomAtions] Guild with ID {Ticket.get('GuildID')} not found"
+                    )
+                Channel = Guild.get_channel(Ticket.get("ChannelID"))
+                print(Channel)
+                print(Ticket.get("ChannelID"))
+
+                if not Channel:
+                    return logging.critical(
+                        f"[AutomAtions] Channel with ID {Ticket.get('ChannelID')} not found"
+                    )
+                P = await self.client.db['Panels'].find_one({"name": Ticket.get("panel"), "guild": Guild.id})
+                if not P:
+                    return logging.critical("[AutomAtions] I can't find the panel.")
+                if not P.get("Automations"):
+                    return
+                ActivityReminder = P.get("Automations", {}).get("Inactivity", {})
+                if not ActivityReminder:
+                    return
+
+                LastMessagSent = Ticket.get("lastMessageSent", None)
+                if not Ticket.get('automations', True):
+                    return
+                if not LastMessagSent or datetime.datetime.utcnow() - LastMessagSent > datetime.timedelta(minutes=ActivityReminder):
+                    await self.client.db['Tickets'].update_one(
+                        {"_id": Ticket.get("_id")},
+                        {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+                    )
+                    try:
+                        await Channel.send(
+                            embed=discord.Embed(
+                                title="⏰️ Activity Reminder",
+                                description="It's been a while since we've heard from you. If you still need assistance, please respond to this message.",
+                                color=discord.Color.dark_embed()
+                            ),
+                            content=f"<@{Ticket.get('UserID')}>"
+                        )
+                        
+                    except discord.Forbidden:
+                        return logging.critical(
+                            f"[AutomAtions] Bot does not have permission to send messages in the channel {Channel.id}"
+                        )
+                    
+        semaphore = asyncio.Semaphore(5)
+        await asyncio.gather(*[SendAutoMation(Ticket, semaphore) for Ticket in Tickets])
+                
+                
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if not message.guild:
+            return
+        Ticket = await self.client.db['Tickets'].find_one({"ChannelID": message.channel.id})
+        if not Ticket:
+            return
+        if not int(Ticket.get("UserID")) == int(message.author.id):
+            return
+        await self.client.db['Tickets'].update_one(
+            {"ChannelID": message.channel.id},
+            {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+        )
 
     @commands.Cog.listener()
     async def on_pticket_claim(self, objectID: ObjectId, member: discord.Member):
-        Result = await T.find_one({"_id": objectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
@@ -152,10 +232,18 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_pticket_claim] Bot does not have permission to edit the message {Message.id}"
             )
+        try:
+            await Channel.edit(
+                name=f"claimed-{Channel.name.split('-')[1]}",
+            )
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_pticket_claim] Bot does not have permission to edit the channel {Channel.id}"
+            )
 
     @commands.Cog.listener()
     async def on_unclaim(self, objectID: ObjectId):
-        Result = await T.find_one({"_id": objectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
@@ -177,14 +265,22 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_unclaim] Bot does not have permission to edit the message {Message.id}"
             )
+        try:
+            await Channel.edit(
+                name=f"ticket-{Channel.name.split('-')[1]}",
+            )
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_unclaim] Bot does not have permission to edit the channel {Channel.id}"
+            )
 
     @commands.Cog.listener()
     async def on_pticket_open(self, objectID: ObjectId, Panelled: str):
-        Ticket = await T.find_one({"_id": objectID})
+        Ticket = await self.client.db['Tickets'].find_one({"_id": objectID})
         if not Ticket:
             return logging.critical("[on_pticket_open] I can't find the ticket.")
 
-        P = await Panel.find_one({"name": Panelled, "type": "single", "guild": Ticket.get("GuildID")})
+        P = await self.client.db['Panels'].find_one({"name": Panelled, "type": "single", "guild": Ticket.get("GuildID")})
         if not P:
             return logging.critical("[on_pticket_open] I can't find the panel.")
         guild_id = Ticket.get("GuildID")
@@ -284,7 +380,7 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to send messages in the channel {channel.id}"
             )
-        await T.update_one(
+        await self.client.db['Tickets'].update_one(
             {"_id": objectID}, {"$set": {"ChannelID": channel.id, "MessageID": msg.id}}
         )
 
@@ -292,7 +388,7 @@ class TicketsPublic(commands.Cog):
     async def on_pticket_close(
         self, ObjectID: ObjectId, reason: str, member: discord.Member
     ):
-        Result = await T.find_one({"_id": ObjectID})
+        Result = await self.client.db['Tickets'].find_one({"_id": ObjectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {ObjectID} not found")
 
@@ -332,7 +428,7 @@ class TicketsPublic(commands.Cog):
                     "timestamp": message.created_at.timestamp(),
                 }
             )
-        await T.update_one(
+        await self.client.db['Tickets'].update_one(
             {"_id": ObjectID},
             {
                 "$push": {"transcript": {"messages": messages, "compact": compact}},
@@ -346,9 +442,17 @@ class TicketsPublic(commands.Cog):
                 },
             },
         )
-        P = await Panel.find_one({"name": Result.get("panel"), "guild": Guild.id})
+        P = await self.client.db['Panels'].find_one({"name": Result.get("panel"), "guild": Guild.id})
         if not P:
             return logging.critical("[on_pticket_close] I can't find the panel.")
+        try:
+            await self.client.db['Ticket Quota'].update_one(
+                {"GuildID": Guild.id, "UserID": Result.get('claimed', {}).get('claimer')},
+                {"$inc": {"ClaimedTickets": 1}},
+                upsert=True
+            )
+        except:
+            pass
         if P.get("TranscriptChannel"):
             TranscriptChannel = Guild.get_channel(P.get("TranscriptChannel"))
             if TranscriptChannel:

@@ -8,12 +8,12 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
 load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Customisation = DB["Customisation"]
-qotd = DB["QOTD Configuration"]
-qotds = DB["qotd"]
-Configuration = DB["Config"]
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Customisation = DB["Customisation"]
+# qotd = DB["QOTD Configuration"]
+# qotds = DB["qotd"]
+# Configuration = DB["Config"]
 
 
 class QOTDOptions(discord.ui.Select):
@@ -33,7 +33,7 @@ class QOTDOptions(discord.ui.Select):
         option = interaction.data["values"][0]
         from Cogs.Configuration.Configuration import ConfigMenu, Options
         if option == "Start QOTD":
-            await qotds.update_one(
+            await interaction.client.db['qotd'].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"nextdate": datetime.now() + timedelta(days=1)}},
                 upsert=True,
@@ -65,7 +65,7 @@ class QOTDOptions(discord.ui.Select):
             view.add_item(
                 ConfigMenu(
                     Options(
-                        await Configuration.find_one({"_id": interaction.guild.id})
+                        await interaction.client.config.find_one({"_id": interaction.guild.id})
                     ),
                     interaction.user,
                 )
@@ -79,7 +79,7 @@ class QOTDOptions(discord.ui.Select):
         elif option == "Stop QOTD":
 
 
-            await qotds.update_one(
+            await interaction.client.db['qotd'].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"nextdate": None}},
                 upsert=True,
@@ -110,7 +110,7 @@ class QOTDOptions(discord.ui.Select):
             view.add_item(
                 ConfigMenu(
                     Options(
-                        await Configuration.find_one({"_id": interaction.guild.id})
+                        await interaction.client.config.find_one({"_id": interaction.guild.id})
                     ),
                     interaction.user,
                 )
@@ -125,7 +125,7 @@ class QOTDOptions(discord.ui.Select):
 
         elif option == "Channel":
 
-            Config = await qotd.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.db['qotd'].find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"_id": interaction.guild.id, "channel": None}
             view = discord.ui.View()
@@ -142,7 +142,7 @@ class QOTDOptions(discord.ui.Select):
             )
             await interaction.followup.send(view=view, ephemeral=True)
         elif option == "Preferences":
-            Config = await qotds.find_one({"guild_id": interaction.guild.id})
+            Config = await interaction.client.db['qotd'].find_one({"guild_id": interaction.guild.id})
             if not Config:
                 Config = {"guild_id": interaction.guild.id, "qotdthread": True}
             view = Preferences(self.author)
@@ -190,7 +190,7 @@ class PingRole(discord.ui.RoleSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        await qotds.update_one(
+        await interaction.client.db['qotd'].update_one(
             {"guild_id": interaction.guild.id},
             {
                 "$set": {
@@ -228,7 +228,7 @@ class QOTDChannel(discord.ui.ChannelSelect):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await qotds.update_one(
+        await interaction.client.db['qotd'].update_one(
             {"guild_id": interaction.guild.id},
             {
                 "$set": {
@@ -258,7 +258,7 @@ class Preferences(discord.ui.View):
     async def ToggleOption(
         self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
     ):
-        QOTD = await qotds.find_one({"guild_id": interaction.guild.id})
+        QOTD = await interaction.client.db['qotd'].find_one({"guild_id": interaction.guild.id})
         if not QOTD:
             QOTD = {"guild_id": interaction.guild.id, "qotdthread": True}
 
@@ -272,7 +272,7 @@ class Preferences(discord.ui.View):
                 self.IssuerButton.label = "Threads (Enabled)"
                 self.IssuerButton.style = discord.ButtonStyle.green
 
-        await qotds.update_one(
+        await interaction.client.db['qotd'].update_one(
             {"guild_id": interaction.guild.id},
             {"$set": {"qotdthread": QOTD["qotdthread"]}},
             upsert=True,
@@ -287,7 +287,7 @@ class Preferences(discord.ui.View):
 
 
 async def QOTDEMbed(interaction: discord.Interaction, embed: discord.Embed):
-    config = await qotds.find_one({"guild_id": interaction.guild.id})
+    config = await interaction.client.db['qotd'].find_one({"guild_id": interaction.guild.id})
     channel = (
         interaction.guild.get_channel(config.get("channel_id") if config else 0)
         or "Not Configured"

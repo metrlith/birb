@@ -8,12 +8,10 @@ from utils.emojis import *
 
 load_dotenv()
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-scollection = db["staffrole"]
-arole = db["adminrole"]
-consentdb = db["consent"]
+# MONGO_URL = os.getenv("MONGO_URL")
+# client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# consentdb = db["consent"]
 
 
 class Consent(commands.Cog):
@@ -24,10 +22,10 @@ class Consent(commands.Cog):
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def notifications(self, interaction: discord.Interaction):
-        consent_data = await consentdb.find_one({"user_id": interaction.user.id})
+        consent_data = await self.client.config.find_one({"user_id": interaction.user.id})
 
         if consent_data is None:
-            await consentdb.insert_one(
+            await interaction.client.db['consent'].insert_one(
                 {
                     "user_id": interaction.user.id,
                     "infractionalert": "Enabled",
@@ -92,7 +90,7 @@ class Confirm(discord.ui.View):
             if self.consent_data["infractionalert"] == "Disabled"
             else "Disabled"
         )
-        await consentdb.update_one(
+        await interaction.client.db['consent'].update_one(
             {"user_id": self.consent_data["user_id"]},
             {"$set": self.consent_data},
             upsert=True,
@@ -119,7 +117,7 @@ class Confirm(discord.ui.View):
             if self.consent_data["PromotionAlerts"] == "Disabled"
             else "Disabled"
         )
-        await consentdb.update_one(
+        await interaction.client.db['consent'].update_one(
             {"user_id": self.consent_data["user_id"]},
             {"$set": self.consent_data},
             upsert=True,
@@ -144,7 +142,7 @@ class Confirm(discord.ui.View):
         consent = self.consent_data.get("LOAAlerts", "Enabled")
         consent = "Enabled" if consent == "Disabled" else "Disabled"
         update_data = {"LOAAlerts": consent}
-        await consentdb.update_one(
+        await interaction.client.db['consent'].update_one(
             {"user_id": self.consent_data["user_id"]},
             {"$set": update_data},
             upsert=True,

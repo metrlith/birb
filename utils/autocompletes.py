@@ -8,7 +8,7 @@ async def DepartmentAutocomplete(
 ) -> list[app_commands.Choice]:
     from Cogs.Modules.promotions import config
 
-    C = await config.find_one({"_id": interaction.guild.id})
+    C = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not C:
         return [
             app_commands.Choice(
@@ -38,7 +38,7 @@ async def RoleAutocomplete(
 ) -> list[app_commands.Choice[str]]:
     from Cogs.Modules.promotions import config
 
-    C = await config.find_one({"_id": interaction.guild.id})
+    C = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not C:
         return [
             app_commands.Choice(

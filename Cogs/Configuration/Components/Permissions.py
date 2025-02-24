@@ -6,10 +6,10 @@ from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 
-load_dotenv()
-Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-DB = Mongos["astro"]
-Configuration = DB["Config"]
+# load_dotenv()
+# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
+# DB = Mongos["astro"]
+# Configuration = DB["Config"]
 
 
 class PermissionsUpdate(discord.ui.RoleSelect):
@@ -37,15 +37,15 @@ class PermissionsUpdate(discord.ui.RoleSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Permissions": {}}
         elif "Permissions" not in config:
             config["Permissions"] = {}
 
         config["Permissions"][self.typed] = [role.id for role in self.values]
-        await Configuration.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await Configuration.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         view = discord.ui.View()
         view.add_item(
             PermissionsUpdate(
@@ -81,6 +81,7 @@ class PermissionsUpdate(discord.ui.RoleSelect):
 async def PermissionsEmbed(
     interaction: discord.Interaction, Config: dict, embed: discord.Embed
 ):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         Config = {"Permissions": {}}
     print(Config.get("Permissions", {}).get("staffrole"))

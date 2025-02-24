@@ -7,6 +7,7 @@ import os
 import utils.Paginator as Paginator
 from utils.permissions import *
 from discord import app_commands
+from utils.permissions import check_admin_and_staff
 from motor.motor_asyncio import AsyncIOMotorClient
 from utils.Module import ModuleCheck
 from dotenv import load_dotenv
@@ -14,12 +15,10 @@ load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
 ENVIRONMENT = os.getenv('ENVIRONMENT')
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-stafffeedback = db["feedback"]
-modules = db["Modules"]
-options = db["module options"]
-Configuration = db["Config"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# stafffeedback = db["feedback"]
+# Configuration = db["Config"]
 
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -35,31 +34,6 @@ from utils.HelpEmbeds import (
 class Feedback(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-
-    # TODO: Fix permissons and do the need config schema data for it
-
-    @staticmethod
-    async def staffcheck(ctx: commands.Context, staff: discord.Member):
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
-        if not Config:
-            return False
-        if not Config.get("Permissions"):
-            return False
-
-        StaffRoles = Config["Permissions"].get("staffrole", [])
-        AdminRoles = Config["Permissions"].get("adminrole", [])
-
-        if StaffRoles:
-            for role in staff.roles:
-                if role.id in StaffRoles:
-                    return True
-
-        if AdminRoles:
-            for role in staff.roles:
-                if role.id in AdminRoles:
-                    return True
-
-        return False
 
     @commands.hybrid_group(description="Staff Feedback")
     async def feedback(self, ctx: commands.Context):
@@ -83,7 +57,7 @@ class Feedback(commands.Cog):
         if not await has_admin_role(ctx, "Staff Feedback Permission"):
 
             return
-        result = await stafffeedback.find_one(
+        result = await self.client.db['feedback'].find_one(
             {"feedbackid": id, "guild_id": ctx.guild.id}
         )
         if result is None:
@@ -92,7 +66,7 @@ class Feedback(commands.Cog):
             )
             return
 
-        await stafffeedback.delete_one({"feedbackid": id, "guild_id": ctx.guild.id})
+        await self.client.db['feedback'].delete_one({"feedbackid": id, "guild_id": ctx.guild.id})
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, I have removed the feedback.",
         )
@@ -132,7 +106,7 @@ class Feedback(commands.Cog):
             return await ctx.send(
                 f"{no} {ctx.author.display_name}, that user isn't in the server."
             )
-        existing_feedback = await stafffeedback.find_one(
+        existing_feedback = await self.client.db['feedback'].find_one(
             {"guild_id": ctx.guild.id, "staff": staff.id, "author": ctx.author.id}
         )
         Config = await Configuration.find_one({"_id": ctx.guild.id})
@@ -161,7 +135,7 @@ class Feedback(commands.Cog):
             )
             return
 
-        has_staff_role = await self.staffcheck(ctx, staff)
+        has_staff_role = await check_admin_and_staff(ctx.guild, staff)
 
         if not has_staff_role:
             await ctx.send(
@@ -183,7 +157,7 @@ class Feedback(commands.Cog):
                     f"{no} **{ctx.author.display_name},** You have already rated this staff member.",
                 )
                 return
-        feedbackid = await stafffeedback.count_documents({}) + 1
+        feedbackid = await self.client.db['feedback'].count_documents({}) + 1
         msg = await ctx.send(f'<a:Loading:1167074303905386587>  **{ctx.author.display_name}**, submitting feedback...')
 
 
@@ -215,7 +189,7 @@ class Feedback(commands.Cog):
                 "date": datetime.now().timestamp(),
                 "feedbackid": feedbackid,
             }
-            insert = await stafffeedback.insert_one(feedbackdata)
+            insert = await self.client.db['feedback'].insert_one(feedbackdata)
             self.client.dispatch('feedback', insert.inserted_id, Config)
             await msg.edit(
                 content=f"{tick} You've rated **@{staff.display_name}** {rating}!",
@@ -250,13 +224,13 @@ class Feedback(commands.Cog):
             return
 
         if scope == "global":
-            staff_ratings = stafffeedback.find({"staff": staff.id}).to_list(length=None)
-            total_ratings = await stafffeedback.count_documents({"staff": staff.id})
+            staff_ratings = await self.client.db['feedback'].find({"staff": staff.id}).to_list(length=None)
+            total_ratings = await self.client.db['feedback'].count_documents({"staff": staff.id})
         elif scope == "server":
-            staff_ratings = stafffeedback.find(
+            staff_ratings = await self.client.db['feedback'].find(
                 {"guild_id": ctx.guild.id, "staff": staff.id}
             ).to_list(length=None)
-            total_ratings = await stafffeedback.count_documents(
+            total_ratings = await self.client.db['feedback'].count_documents(
                 {"guild_id": ctx.guild.id, "staff": staff.id}
             )
         else:
@@ -328,11 +302,11 @@ class ViewRatings(discord.ui.View):
             )
         )
         if self.scope == "global":
-            staff_ratings = stafffeedback.find({"staff": self.staff.id}).to_list(
+            staff_ratings = await interaction.client.db['feedback'].find({"staff": self.staff.id}).to_list(
                 length=None
             )
         elif self.scope == "server":
-            staff_ratings = stafffeedback.find(
+            staff_ratings = await interaction.client.db['feedback'].find(
                 {"guild_id": interaction.guild.id, "staff": self.staff.id}
             ).to_list(length=None)
         embeds = []

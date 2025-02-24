@@ -29,17 +29,13 @@ from utils.permissions import has_admin_role, has_staff_role
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-loa_collection = db["loa"]
+# client = AsyncIOMotorClient(MONGO_URL)
+# db = client["astro"]
+# loa_collection = db["loa"]
 
-arole = db["adminrole"]
-modules = db["Modules"]
-scollection = db["staffrole"]
-consent = db["consent"]
-advancedpermissions = db["Advanced Permissions"]
-Configuration = db["Config"]
-blacklist = db["blacklists"]
+# consent = db["consent"]
+# Configuration = db["Config"]
+# blacklist = db["blacklists"]
 
 
 class LOA(discord.ui.Modal, title="Create Leave Of Absence"):
@@ -91,7 +87,7 @@ class LOA(discord.ui.Modal, title="Create Leave Of Absence"):
             start_time = datetime.now()
             end_time = start_time + timedelta(seconds=duration_seconds)
 
-            Config = await Configuration.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 return await interaction.response.send_message(
                     embed=BotNotConfigured(), ephemeral=True, view=Support()
@@ -160,7 +156,7 @@ class LOA(discord.ui.Modal, title="Create Leave Of Absence"):
                 embed=embed,
                 view=None,
             )
-            await loa_collection.insert_one(loadata)
+            await interaction.client.db['loa'].insert_one(loadata)
 
             try:
                 await self.user.send(
@@ -202,7 +198,7 @@ class loamodule(commands.Cog):
         if not await has_admin_role(ctx, "LOA Permissions"):
             return
 
-        loas = await loa_collection.find_one(
+        loas = await self.client.db['loa'].find_one(
             {
                 "user": user.id,
                 "guild_id": ctx.guild.id,
@@ -210,7 +206,7 @@ class loamodule(commands.Cog):
                 "request": {"$ne": True},
             }
         )
-        loainactive = await loa_collection.find(
+        loainactive = await self.client.db['loa'].find(
             {
                 "user": user.id,
                 "guild_id": ctx.guild.id,
@@ -289,7 +285,7 @@ class loamodule(commands.Cog):
             "request": {"$ne": True},
         }
 
-        loa_requests = await loa_collection.find(filter).to_list(length=None)
+        loa_requests = await self.client.db['loa'].find(filter).to_list(length=None)
 
         if len(loa_requests) == 0:
             await ctx.send(
@@ -348,7 +344,7 @@ class loamodule(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, invalid duration format. Please use a valid format like '1d' (1 day), '2h' (2 hours), etc.",
             )
             return
-        LOA = await loa_collection.find_one(
+        LOA = await self.client.db['loa'].find_one(
             {"guild_id": ctx.guild.id, "user": ctx.author.id, "active": True}
         )
         if LOA:
@@ -356,7 +352,7 @@ class loamodule(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, you already have an active LOA.",
             )
             return
-        Config = await Configuration.find_one({"_id": ctx.guild.id})
+        Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if not Config:
             return await ctx.send(
                 embed=BotNotConfigured(),
@@ -423,7 +419,7 @@ class loamodule(commands.Cog):
             icon_url=ctx.author.display_avatar, name=ctx.author.display_name
         )
         embed.set_thumbnail(url=ctx.author.display_avatar)
-        past_loas = await loa_collection.count_documents(
+        past_loas = await self.client.db['loa'].count_documents(
             {
                 "guild_id": ctx.guild.id,
                 "user": ctx.author.id,
@@ -463,7 +459,7 @@ class loamodule(commands.Cog):
                 "active": False,
                 "scheduled": True if start else False,
             }
-            await loa_collection.insert_one(loadata)
+            await self.client.db['loa'].insert_one(loadata)
             await ctx.send(f"{tick} LOA Request sent", ephemeral=True)
             print(f"[LOA] LOA Request @{ctx.guild.name} pending")
         except discord.Forbidden:
@@ -476,74 +472,6 @@ class loamodule(commands.Cog):
 class Confirm(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-
-    @staticmethod
-    async def has_admin_role(interaction: discord.Interaction, permissions=None):
-        blacklists = await blacklist.find_one({"user": interaction.user.id})
-        if blacklists:
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?",
-                ephemeral=True,
-            )
-            return False
-
-        filter = {"guild_id": interaction.guild.id}
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            await interaction.response.send_message(
-                embed=BotNotConfigured(),
-                ephemeral=True,
-                view=Support(),
-            )
-            return False
-        if not Config.get("Permissions"):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the permissions haven't been set up yet, please run `/config`",
-                ephemeral=True,
-            )
-            return False
-        if not Config.get("Permissions").get("adminrole"):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the admin role hasn't been set up yet, please run `/config`",
-                ephemeral=True,
-            )
-            return False
-
-        advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-        if advancedresult:
-            for advanced in advancedresult:
-                if permissions in advanced.get("permissions", []):
-                    if any(
-                        role.id == advanced.get("role")
-                        for role in interaction.user.roles
-                    ):
-                        return True
-
-        if Config.get("Permissions").get("adminrole"):
-            Ids = Config.get("Permissions").get("adminrole")
-            if not isinstance(Ids, list):
-                Ids = [Ids]
-
-            if any(role.id in Ids for role in interaction.user.roles):
-                return True
-        else:
-            if interaction.user.guild_permissions.administrator:
-                await interaction.response.send_message(
-                    f"{no} **{interaction.user.display_name}**, the admin role isn't set, please run </config:1140463441136586784>",
-                    ephemeral=True,
-                )
-            else:
-                await interaction.response.send_message(
-                    f"{no} **{interaction.user.display_name}**, the admin role is not set up. Please tell an admin to run </config:1140463441136586784> to fix it.",
-                    ephemeral=True,
-                )
-            return
-
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`",
-            ephemeral=True,
-        )
-        return False
 
     @discord.ui.button(
         label="Accept",
@@ -562,10 +490,10 @@ class Confirm(discord.ui.View):
             )
             return
 
-        if not await self.has_admin_role(interaction):
+        if not await has_admin_role(interaction):
             return
         await interaction.response.defer()
-        loa_data = await loa_collection.find_one({"messageid": interaction.message.id})
+        loa_data = await interaction.client.db['loa'].find_one({"messageid": interaction.message.id})
         if loa_data:
             try:
                 self.user = await interaction.guild.fetch_member(loa_data["user"])
@@ -583,7 +511,7 @@ class Confirm(discord.ui.View):
                 ephemeral=True,
             )
             return
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             await interaction.followup.send(
                 embed=BotNotConfigured(),
@@ -607,7 +535,7 @@ class Confirm(discord.ui.View):
             icon_url=interaction.user.display_avatar,
         )
         await interaction.message.edit(embed=embed, view=None)
-        await loa_collection.update_one(
+        await interaction.client.db['loa'].update_one(
             {
                 "guild_id": interaction.guild.id,
                 "messageid": interaction.message.id,
@@ -632,7 +560,7 @@ class Confirm(discord.ui.View):
                         )
                         pass
 
-        loanotification = await consent.find_one({"user_id": self.user.id})
+        loanotification = await interaction.client.db['consent'].find_one({"user_id": self.user.id})
         if loanotification and loanotification.get("LOAAlerts", "Enabled") == "Enabled":
 
             try:
@@ -667,7 +595,7 @@ class Confirm(discord.ui.View):
                 ephemeral=True,
             )
             return
-        loa_data = await loa_collection.find_one({"messageid": interaction.message.id})
+        loa_data = await interaction.client.db['loa'].find_one({"messageid": interaction.message.id})
         if loa_data:
             try:
                 self.user = await interaction.guild.fetch_member(loa_data["user"])
@@ -693,7 +621,7 @@ class Confirm(discord.ui.View):
             icon_url=interaction.user.display_avatar,
         )
         await interaction.message.edit(embed=embed, view=None)
-        await loa_collection.delete_one(
+        await interaction.client.db['loa'].delete_one(
             {
                 "guild_id": interaction.guild.id,
                 "user": self.user.id,
@@ -701,7 +629,7 @@ class Confirm(discord.ui.View):
             }
         )
         print(f"LOA Request @{interaction.guild.name} denied")
-        loanotification = await consent.find_one({"user_id": self.user.id})
+        loanotification = await self.client.db['consent'].find_one({"user_id": self.user.id})
         if loanotification and loanotification.get("LOAAlerts", "Enabled") == "Enabled":
             try:
 
@@ -722,7 +650,7 @@ class Confirm(discord.ui.View):
     async def loacount(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        loa_data = await loa_collection.find_one({"messageid": interaction.message.id})
+        loa_data = await interaction.client.db['loa'].find_one({"messageid": interaction.message.id})
         if loa_data:
 
             try:
@@ -741,7 +669,7 @@ class Confirm(discord.ui.View):
             return
         user = self.user
         loainactive = (
-            await loa_collection.find(
+            await interaction.client.db['loa'].find(
                 {
                     "guild_id": interaction.guild.id,
                     "request": {"$ne": True},
@@ -793,10 +721,10 @@ class LOAPanel(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        loa = await loa_collection.find_one(
+        loa = await interaction.client.db['loa'].find_one(
             {"user": self.user.id, "guild_id": interaction.guild.id, "active": True}
         )
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config:
             LOARole = config.get("LOA", {}).get("role")
             if LOARole:
@@ -814,7 +742,7 @@ class LOAPanel(discord.ui.View):
                         )
                         pass
 
-        await loa_collection.update_many(
+        await interaction.client.db['loa'].update_many(
             {"guild_id": interaction.guild.id, "user": user.id},
             {"$set": {"active": False}},
         )
@@ -824,7 +752,7 @@ class LOAPanel(discord.ui.View):
             view=None,
         )
         try:
-            loanotification = await consent.find_one({"user_id": self.user.id})
+            loanotification = await interaction.client.db['consent'].find_one({"user_id": self.user.id})
             if (
                 loanotification
                 and loanotification.get("LOAAlerts", "Enabled") == "Enabled"
@@ -894,7 +822,7 @@ class ExtendLOA(discord.ui.Modal):
             duration_seconds *= 86400
         elif duration_unit == "w":
             duration_seconds *= 604800
-        config = await Configuration.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** the bot isn't set up. Run `/config` to get started.",
@@ -908,7 +836,7 @@ class ExtendLOA(discord.ui.Modal):
             )
             return
 
-        loa = await loa_collection.find_one(
+        loa = await interaction.client.db['loa'].find_one(
             {"user": self.user.id, "guild_id": interaction.guild.id, "active": True}
         )
         if not loa:
@@ -917,7 +845,7 @@ class ExtendLOA(discord.ui.Modal):
             )
             return
         end_time = loa["end_time"] + timedelta(seconds=duration_seconds)
-        await loa_collection.update_one(
+        await interaction.client.db['loa'].update_one(
             {
                 "user": self.user.id,
                 "guild_id": interaction.guild.id,
@@ -940,7 +868,7 @@ class ExtendLOA(discord.ui.Modal):
                 icon_url=self.user.display_avatar, name=self.user.display_name
             )
             embed.set_thumbnail(url=self.user.display_avatar)
-            loanotification = await consent.find_one({"user_id": self.user.id})
+            loanotification = await interaction.client.db['consent'].find_one({"user_id": self.user.id})
             if (
                 loanotification
                 and loanotification.get("LOAAlerts", "Enabled") == "Enabled"
