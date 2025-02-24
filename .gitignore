@@ -3,3 +3,4 @@
 .venv/
 utils/configer.py
 dev.env
+__pycache__/

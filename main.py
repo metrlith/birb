@@ -22,7 +22,9 @@ from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Events.Dev.on_ticket import TicketControl
 from Cogs.Modules.tickets import ButtonHandler
 from Cogs.Modules.Developer.tickets import Buttons
-from discord import app_commands
+import sys
+sys.dont_write_bytecode = True
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,10 +56,41 @@ Views = db["Views"]
 SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
-if any(environment == "custom", os.getenv("RemoveEmojis", False) is True):
+def ProgressBar(iterable, prefix='', suffix='', decimals=1, length=50, fill='█', print_end="\r"):
+    total = len(iterable)
+    
+    def print_progress_bar(iteration):
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filled_length = int(length * iteration // total)
+        bar = fill * filled_length + '-' * (length - filled_length)
+        sys.stdout.write(f'\r{prefix} |{bar}| {percent}% {suffix}')
+        sys.stdout.flush()
+
+    print_progress_bar(0)
+    for i, item in enumerate(iterable):
+        yield item
+        print_progress_bar(i + 1)
+    print()
+
+if not (TOKEN or MONGO_URL, PREFIX):
+    print("[❌] Missing .env variables. [TOKEN, MONGO_URL]")
+    sys.exit(1)
+
+if os.getenv("RemoveEmojis", False) == "True" or environment == "custom":
     from branding import ClearEmojis
     ClearEmojis(True, os.getenv('FolderPath', '/app'))
 
+if os.getenv('SENTRY_URL', None):
+    import sentry_sdk
+    from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+
+    sentry_sdk.init(
+        dsn=os.getenv('SENTRY_URL'),
+        integrations=[AioHttpIntegration(), LoggingIntegration(level=logging.INFO)]
+    )
+
+    logger.info("Sentry SDK initialized")
 
 class Client(commands.AutoShardedBot):
     def __init__(self):
@@ -337,7 +370,7 @@ class Client(commands.AutoShardedBot):
         self.add_view(PTicketControl())
 
         self.loop.create_task(self.load_jishaku())
-        for ext in self.cogslist:
+        for ext in ProgressBar(self.cogslist, prefix='[⏳] Loading Cogs:', suffix='Complete', length=50):
             await self.load_extension(ext)
             print(f"[✅] {ext} loaded")
 
