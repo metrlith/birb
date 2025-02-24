@@ -2,30 +2,27 @@ import discord
 import platform
 import sys
 import gc
-
-sys.dont_write_bytecode = True
-from discord.ext import commands, tasks
 import os
-from dotenv import load_dotenv
-from Cogs.Modules.promotions import SyncCommands
 import time
+import logging
+from dotenv import load_dotenv
+from discord.ext import commands, tasks
+from motor.motor_asyncio import AsyncIOMotorClient
+from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
 from Cogs.Modules.loa import Confirm
 from Cogs.Modules.customcommands import Voting
 from Cogs.Tasks.activityauto import ResetLeaderboard
 from Cogs.Modules.staff import Staffview
 from Cogs.Events.on_ban import AcceptOrDeny, AppealButton
-from motor.motor_asyncio import AsyncIOMotorClient
 from Cogs.Events.on_infraction_approval import CaseApproval
 from Cogs.Events.on_ticket import PTicketControl
-from discord import app_commands
 from Cogs.Tasks.qotd import *
-import logging
-
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Events.Dev.on_ticket import TicketControl
 from Cogs.Modules.tickets import ButtonHandler
 from Cogs.Modules.Developer.tickets import Buttons
+from discord import app_commands
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,19 +34,16 @@ logger = logging.getLogger(__name__)
 
 gc.enable()
 
-if environment == "custom":
-    from branding import ClearEmojis
-
-    ClearEmojis(True, "/app")
+load_dotenv()
 
 PREFIX = os.getenv("PREFIX")
 TOKEN = os.getenv("TOKEN")
 STATUS = os.getenv("STATUS")
 MONGO_URL = os.getenv("MONGO_URL")
 SHARDS = os.getenv("SHARDS")
-
-load_dotenv()
 guildid = os.getenv("CUSTOM_GUILD")
+environment = os.getenv("ENVIRONMENT")
+
 client = AsyncIOMotorClient(MONGO_URL)
 qdb = client["quotadb"]
 db = client["astro"]
@@ -59,6 +53,10 @@ Config = db["Config"]
 Views = db["Views"]
 SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
+
+if any(environment == "custom", os.getenv("RemoveEmojis", False) is True):
+    from branding import ClearEmojis
+    ClearEmojis(True, os.getenv('FolderPath', '/app'))
 
 
 class Client(commands.AutoShardedBot):
@@ -219,20 +217,22 @@ class Client(commands.AutoShardedBot):
         await self.CacheCommands()
 
     async def _load_views(self):
-        TicketViews = await self.db['Panels'].find({}).to_list(length=None)
+        TicketViews = await self.db["Panels"].find({}).to_list(length=None)
         V = await Views.find({}).to_list(length=None)
-        print('[Views] Loading Any Views')
+        print("[Views] Loading Any Views")
         for view in V:
             if not view:
                 continue
             if view.get("type") == "staff":
                 await self._load_staff_view(view)
-        print('[Views] Loading Ticket Views')
+        print("[Views] Loading Ticket Views")
         for view in TicketViews:
             await self._load_ticket_view(view)
 
     async def _load_staff_view(self, view):
-        DbResults = await staffdb.find({"guild_id": view.get("guild")}).to_list(length=None)
+        DbResults = await staffdb.find({"guild_id": view.get("guild")}).to_list(
+            length=None
+        )
         if not DbResults:
             return
         options = []
@@ -253,7 +253,7 @@ class Client(commands.AutoShardedBot):
                     label=member.display_name,
                     value=str(member.id),
                     description=member.get("rolename"),
-                    emoji="<:staff:1206248655359840326>"
+                    emoji="<:staff:1206248655359840326>",
                 )
             )
             if len(options) >= 24:
@@ -262,7 +262,7 @@ class Client(commands.AutoShardedBot):
                         label="View More",
                         value="more",
                         description="View more staff members",
-                        emoji="<:List:1223063187063308328>"
+                        emoji="<:List:1223063187063308328>",
                     )
                 )
                 break
@@ -280,7 +280,7 @@ class Client(commands.AutoShardedBot):
             if not view.get("Panels"):
                 return
             for panel_name in view.get("Panels"):
-                sub = await self.db['Panels'].find_one(
+                sub = await self.db["Panels"].find_one(
                     {
                         "guild": view.get("guild"),
                         "name": panel_name,
