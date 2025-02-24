@@ -661,14 +661,22 @@ class TicketsPub(commands.Cog):
 
         Tickets = (
             await interaction.client.db["Tickets"]
-            .find({"GuildID": interaction.guild.id})
+            .find({"GuildID": interaction.guild.id, "UserID": user.id})
             .to_list(length=None)
         )
         if time:
             time = await strtotime(time)
-            Tickets = [
-                ticket for ticket in Tickets if ticket.get("opened") >= time.timestamp()
-            ]
+            Tickets = (
+                await interaction.client.db["Tickets"]
+                .find(
+                    {
+                        "GuildID": interaction.guild.id,
+                        "UserID": user.id,
+                        "closed.closedAt": {"$gte": time.timestamp()},
+                    }
+                )
+                .to_list(length=None)
+            )
 
         if not Tickets:
             return await interaction.followup.send(
@@ -726,7 +734,6 @@ class TicketsPub(commands.Cog):
         embed.set_thumbnail(url=user.display_avatar)
 
         await interaction.followup.send(embed=embed)
-
 
 
 class CloseRequest(discord.ui.View):

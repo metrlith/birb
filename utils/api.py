@@ -676,7 +676,7 @@ class APIRoutes:
 
 
         TicketQuota = await self.client.db["Ticket Quota"].find_one(
-            {"GuildID": server, "UserID": discord_id, "timestamp": {"$gte": Time or 0}}
+            {"GuildID": server, "UserID": discord_id, "closed.closedAt": {"$gte": Time or 0}}
         )
         if not TicketQuota:
             raise HTTPException(
@@ -739,9 +739,10 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuota = await Tickets.find(
-            {"GuildID": server, "timestamp": {"$gte": Time or 0}}
-        ).to_list(length=750)
+        TicketQuota = await self.client.db["Ticket Quota"].find_one(
+            {"GuildID": server, "closed.closedAt": {"$gte": Time or 0}}
+        )
+
 
         if not TicketQuota:
             raise HTTPException(
