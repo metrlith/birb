@@ -34,11 +34,8 @@ Tickets = db["Tickets"]
 
 
 async def Validation(key: str, server: int):
-    keyresult = await Keys.find_one({"key": key, "_id": server})
-    if keyresult:
-        return True
-    else:
-        return False
+    return bool(await Keys.find_one({"key": key, "_id": server}))
+
 
 
 async def isAdmin(guild: discord.Guild, user: discord.Member):
@@ -660,7 +657,7 @@ class APIRoutes:
         return {"status": "success", "infraction": random_string}
     
     async def GET_TicketQuota(self, auth: str, server: int, discord_id: int):
-        if not await (Validation(auth, server)):
+        if not await Validation(auth, server):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
@@ -672,7 +669,7 @@ class APIRoutes:
         return TicketQuota
     
     async def GET_TicketLeaderboard(self, auth: str, server: int):
-        if not await (Validation(auth, server)):
+        if not await Validation(auth, server):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
