@@ -59,7 +59,7 @@ class Shed(commands.Cog):
                     continue
 
                 if not guild or not user:
-                    await self.client.db[''].delete_one(
+                    await self.client.db['loa'].delete_one(
                         {"guild_id": guild_id, "user": UserID, "start_time": start_time}
                     )
                     continue
