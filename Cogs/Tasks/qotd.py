@@ -27,7 +27,7 @@ class qotd(commands.Cog):
     
     
     async def fetch_question(self, used_questions, server: discord.Guild):
-        questionresult = await self.client.db[''].find({}).to_list(length=None)
+        questionresult = await self.client.db['Question Database'].find({}).to_list(length=None)
         Unusued = [q for q in questionresult if q["question"] not in used_questions]
 
         if not Unusued:
