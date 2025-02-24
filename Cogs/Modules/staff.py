@@ -378,6 +378,13 @@ class quota(commands.Cog):
     async def activity(self, ctx: commands.Context):
         pass
 
+    
+    def FuckOff(value):
+        try:
+            return int(value)
+        except ValueError:
+            return 0 
+        
     @activity.command(name="wave", description="Punish people failing the quota.")
     async def wave(self, ctx: commands.Context):
         if not await ModuleCheck(ctx.guild.id, "Quota") or not await ModuleCheck(
@@ -488,11 +495,11 @@ class quota(commands.Cog):
                 failedmembers.append(member)
 
         passed.sort(
-            key=lambda x: int(re.search(r'\d+', x.split("•")[-1].strip()).group()),
+            key=lambda x: self.FuckOff(re.search(r'\d+', x.split("•")[-1].strip()).group()),
             reverse=True,
         )
         failed.sort(
-            key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
             reverse=True,
         )
 
@@ -620,15 +627,15 @@ class quota(commands.Cog):
                 failed.append(entry)
 
         passed.sort(
-            key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
             reverse=True,
         )
         failed.sort(
-            key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
             reverse=True,
         )
         on_loa.sort(
-            key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
             reverse=True,
         )
         passedembed = discord.Embed(title="Passed", color=discord.Color.brand_green())
