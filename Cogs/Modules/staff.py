@@ -390,7 +390,6 @@ class quota(commands.Cog):
                 embed=ModuleNotEnabled(),
                 view=Support(),
             )
-
             return
         if not await has_admin_role(ctx, "Message Quota Permissions"):
             return
@@ -401,7 +400,7 @@ class quota(commands.Cog):
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
 
-        if not Config.get("Message Quota") or not Config.get("Tickets"):
+        if not Config.get("Message Quota") and not Config.get("Tickets"):
             await ctx.send(embed=ModuleNotSetup(), view=Support())
             return
         if Config.get("Infraction", None) is None:
@@ -423,39 +422,55 @@ class quota(commands.Cog):
                     color=discord.Color.dark_embed(),
                 )
             )
-        message_users = (
-            await self.client.qdb["messages"]
-            .find({"guild_id": ctx.guild.id})
-            .sort("message_count", pymongo.DESCENDING)
-            .to_list(length=750)
-        )
-        ticket_users = (
-            await self.client.db["Ticket Quota"]
-            .find({"GuildID": ctx.guild.id})
-            .sort("ClaimedTickets", pymongo.DESCENDING)
-            .to_list(length=750)
-        )
-        Users = message_users + ticket_users
+        message_users = []
+        ticket_users = []
+        if Config.get("Message Quota"):
+            message_users = (
+                await self.client.qdb["messages"]
+                .find({"guild_id": ctx.guild.id})
+                .sort("message_count", pymongo.DESCENDING)
+                .to_list(length=750)
+            )
+        if Config.get("Tickets"):
+            ticket_users = (
+                await self.client.db["Ticket Quota"]
+                .find({"GuildID": ctx.guild.id})
+                .sort("ClaimedTickets", pymongo.DESCENDING)
+                .to_list(length=750)
+            )
+        Users = {}
+        for user in message_users + ticket_users:
+            user_id = user.get("user_id") or user.get("UserID")
+            if user_id not in Users:
+                Users[user_id] = user
+            else:
+                Users[user_id]["message_count"] = int(Users[user_id].get("message_count", 0)) + int(user.get("message_count", 0))
+                Users[user_id]["ClaimedTickets"] = int(Users[user_id].get("ClaimedTickets", 0)) + int(user.get("ClaimedTickets", 0))
 
-        # message_users = {"user_id": 0, "message_count": 0}
-        # ticket_users = {"UserID": 0, "ClaimedTickets": 0}
+        Users = sorted(
+            Users.values(),
+            key=lambda x: (int(x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))),
+            reverse=True,
+        )
 
-        quota = Config.get("Message Quota", {}).get("quota", 0)
-        TicketQuota = Config.get("Tickets", {}).get("quota", 0)
+        quota = int(Config.get("Message Quota", {}).get("quota", 0))
+        TicketQuota = int(Config.get("Tickets", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
-        for Users in Users:
-            member = ctx.guild.get_member(Users.get("user_id"))
+        for user in Users:
+            member = ctx.guild.get_member(user.get("user_id") or user.get("UserID"))
             if not member:
                 try:
-                    member = await ctx.guild.fetch_member(Users.get("user_id"))
+                    member = await ctx.guild.fetch_member(
+                        user.get("user_id") or user.get("UserID")
+                    )
                 except (discord.HTTPException, discord.NotFound):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
 
-            MessageCount = Users.get("message_count", 0)
-            TicketCount = Users.get("ClaimedTickets", 0)
+            MessageCount = user.get("message_count", 0)
+            TicketCount = user.get("ClaimedTickets", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
             Tickets = f"• `{TicketCount}` tickets" if TicketCount else ""
 
@@ -472,6 +487,7 @@ class quota(commands.Cog):
                 passed.append(entry)
             else:
                 failed.append(entry)
+                failedmembers.append(member)
 
         passed.sort(
             key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
@@ -522,7 +538,7 @@ class quota(commands.Cog):
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
 
-        if not Config.get("Message Quota"):
+        if not Config.get("Message Quota") and not Config.get("Tickets"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
         await ctx.defer()
@@ -541,41 +557,55 @@ class quota(commands.Cog):
                     color=discord.Color.dark_embed(),
                 )
             )
-        message_users = (
-            await self.client.qdb["messages"]
-            .find({"guild_id": ctx.guild.id})
-            .sort("message_count", pymongo.DESCENDING)
-            .to_list(length=750)
-        )
-        ticket_users = (
-            await self.client.db["Ticket Quota"]
-            .find({"GuildID": ctx.guild.id})
-            .sort("ClaimedTickets", pymongo.DESCENDING)
-            .to_list(length=750)
-        )
-        Users = message_users + ticket_users
+        message_users = []
+        ticket_users = []
+        if Config.get("Message Quota"):
+            message_users = (
+                await self.client.qdb["messages"]
+                .find({"guild_id": ctx.guild.id})
+                .sort("message_count", pymongo.DESCENDING)
+                .to_list(length=750)
+            )
+        if Config.get("Tickets"):
+            ticket_users = (
+                await self.client.db["Ticket Quota"]
+                .find({"GuildID": ctx.guild.id})
+                .sort("ClaimedTickets", pymongo.DESCENDING)
+                .to_list(length=750)
+            )
+        Users = {}
+        for user in message_users + ticket_users:
+            user_id = user.get("user_id") or user.get("UserID")
+            if user_id not in Users:
+                Users[user_id] = user
+            else:
+                Users[user_id]["message_count"] = Users[user_id].get("message_count", 0) + user.get("message_count", 0)
+                Users[user_id]["ClaimedTickets"] = Users[user_id].get("ClaimedTickets", 0) + user.get("ClaimedTickets", 0)
 
-        # message_users = {"user_id": 0, "message_count": 0}
-        # ticket_users = {"UserID": 0, "ClaimedTickets": 0}
+        Users = sorted(
+            Users.values(),
+            key=lambda x: int((x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))),
+            reverse=True,
+        )
 
-        quota = Config.get("Message Quota", {}).get("quota", 0)
-        TicketQuota = Config.get("Tickets", {}).get("quota", 0)
+        quota = int(Config.get("Message Quota", {}).get("quota", 0))
+        TicketQuota = int(Config.get("Tickets", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
-        for Users in Users:
-            member = ctx.guild.get_member(Users.get("user_id") or Users.get("UserID"))
+        for user in Users:
+            member = ctx.guild.get_member(user.get("user_id") or user.get("UserID"))
             if not member:
                 try:
                     member = await ctx.guild.fetch_member(
-                        Users.get("user_id") or Users.get("UserID")
+                        user.get("user_id") or user.get("UserID")
                     )
                 except (discord.HTTPException, discord.NotFound):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
 
-            MessageCount = Users.get("message_count", 0)
-            TicketCount = Users.get("ClaimedTickets", 0)
+            MessageCount = user.get("message_count", 0)
+            TicketCount = user.get("ClaimedTickets", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
             Tickets = f"• `{TicketCount}` tickets" if TicketCount else ""
 
@@ -885,8 +915,17 @@ class quota(commands.Cog):
                 .sort("ClaimedTickets", pymongo.DESCENDING)
                 .to_list(length=750)
             )
+        Users = {}
+        for user in message_users + ticket_users:
+            user_id = user.get("user_id") or user.get("UserID")
+            if user_id not in Users:
+                Users[user_id] = user
+            else:
+                Users[user_id]["message_count"] = Users[user_id].get("message_count", 0) + user.get("message_count", 0)
+                Users[user_id]["ClaimedTickets"] = Users[user_id].get("ClaimedTickets", 0) + user.get("ClaimedTickets", 0)
+
         Users = sorted(
-            message_users + ticket_users,
+            Users.values(),
             key=lambda x: (x.get("message_count", 0) + x.get("ClaimedTickets", 0)),
             reverse=True,
         )
@@ -896,14 +935,22 @@ class quota(commands.Cog):
                 content=f"{no} **{ctx.author.display_name},** there hasn't been any {'messages' if message_users else 'tickets'} sent yet.",
                 embed=None,
             )
-        YouProgress = await self.client.qdb["messages"].find_one(
-            {"guild_id": ctx.guild.id, "user_id": ctx.author.id}
+        YouProgress = next(
+            (
+                user
+                for user in Users
+                if user.get("user_id") == ctx.author.id
+                or user.get("UserID") == ctx.author.id
+            ),
+            {},
         )
         YourPlace = self.GetPlace(Users, ctx.author)
         YourMessages = YouProgress.get("message_count") if YouProgress else 0
         YourLOA = any(
             role.id == Config.get("LOA", {}).get("role") for role in ctx.author.roles
         )
+        YourMessages = YouProgress.get("message_count", 0) if YouProgress else 0
+        YourTickets = YouProgress.get("ClaimedTickets", 0) if YouProgress else 0
         YourEmoji = (
             "`LOA`"
             if YourLOA
@@ -913,7 +960,8 @@ class quota(commands.Cog):
                     if environment == "custom"
                     else "<:status_green:1227365520857104405>"
                 )
-                if YourMessages >= Config.get("Message Quota", {}).get("quota", 0)
+                if YourMessages >= int(Config.get("Message Quota", {}).get("quota", 0))
+                or YourTickets >= int(Config.get("Tickets", {}).get("quota", 0))
                 else (
                     "Not Met"
                     if environment == "custom"
@@ -940,60 +988,60 @@ class quota(commands.Cog):
                     )
                 except (discord.HTTPException, discord.NotFound):
                     continue
-                if not member or not await check_admin_and_staff(ctx.guild, member):
-                    continue
+            if not member or not await check_admin_and_staff(ctx.guild, member):
+                continue
 
-                if Config.get("LOA", {}).get("role"):
-                    OnLOA = any(
-                        role.id == Config.get("LOA", {}).get("role")
-                        for role in member.roles
+            if Config.get("LOA", {}).get("role"):
+                OnLOA = any(
+                    role.id == Config.get("LOA", {}).get("role")
+                    for role in member.roles
+                )
+
+            emoji = (
+                "`LOA`"
+                if OnLOA
+                else (
+                    (
+                        "Met"
+                        if environment == "custom"
+                        else "<:status_green:1227365520857104405>"
                     )
-
-                emoji = (
-                    "`LOA`"
-                    if OnLOA
+                    if int(staff.get("message_count", 0))
+                    >= int(Config.get("Message Quota", {}).get("quota", 0))
+                    or int(staff.get("ClaimedTickets", 0))
+                    >= int(Config.get("Tickets", {}).get("quota", 0))
                     else (
-                        (
-                            "Met"
-                            if environment == "custom"
-                            else "<:status_green:1227365520857104405>"
-                        )
-                        if staff.get("message_count", 0)
-                        >= Config.get("Message Quota", {}).get("quota", 0)
-                        or staff.get("ClaimedTickets", 0)
-                        >= Config.get("Tickets", {}).get("quota", 0)
-                        else (
-                            "Not Met"
-                            if environment == "custom"
-                            else "<:status_red:1227365495376711700>"
-                        )
+                        "Not Met"
+                        if environment == "custom"
+                        else "<:status_red:1227365495376711700>"
                     )
                 )
-                if staff.get("message_count", 0) and staff.get("ClaimedTickets", 0):
-                    Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
-                elif staff.get("message_count", 0):
-                    Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
-                elif staff.get("ClaimedTickets", 0):
-                    Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
+            )
+            if staff.get("message_count", 0) and staff.get("ClaimedTickets", 0):
+                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
+            elif staff.get("message_count", 0):
+                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
+            elif staff.get("ClaimedTickets", 0):
+                Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
 
-                if (
-                    Config.get("Message Quota", {}).get("quota", 0) != 0
-                    or Config.get("Tickets", {}).get("quota", 0) != 0
-                ):
-                    Description += f"{replybottom} **Status:** {emoji}\n\n"
+            if (
+                Config.get("Message Quota", {}).get("quota", 0) != 0
+                or Config.get("Tickets", {}).get("quota", 0) != 0
+            ):
+                Description += f"{replybottom} **Status:** {emoji}\n\n"
 
-                if i % 9 == 0:
-                    embed = discord.Embed(
-                        title="Staff Leaderboard",
-                        description=Description,
-                        color=discord.Color.dark_embed(),
-                    )
-                    embed.set_thumbnail(url=ctx.guild.icon)
-                    embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
-                    pages.append(embed)
-                    Description = ""
+            if i % 9 == 0:
+                embed = discord.Embed(
+                    title="Staff Leaderboard",
+                    description=Description,
+                    color=discord.Color.dark_embed(),
+                )
+                embed.set_thumbnail(url=ctx.guild.icon)
+                embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
+                pages.append(embed)
+                Description = ""
 
-                i += 1
+            i += 1
         if Description.strip():
             embed = discord.Embed(
                 title="Staff Leaderboard",
@@ -1059,7 +1107,13 @@ class quota(commands.Cog):
             InitialPage=0,
             timeout=360,
         )
-        await paginator.start(ctx, pages=pages[:45], msg=msg)
+        if pages:
+            await paginator.start(ctx, pages=pages[:45], msg=msg)
+        else:
+            await msg.edit(
+                content=f"{no} **{ctx.author.display_name},** there are no pages to display.",
+                embed=None,
+            )
 
     @quota.command(name="reset", description="Reset the message quota leaderboard")
     async def ResetQuota(

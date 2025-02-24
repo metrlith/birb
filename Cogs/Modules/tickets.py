@@ -79,10 +79,10 @@ class Button(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        AlreadyOpen = await self.client.db["Tickets"].count_documents(
+        AlreadyOpen = await interaction.client.db["Tickets"].count_documents(
             {"UserID": interaction.user.id, "closed": None, "panel": {"$exists": True}}
         )
-        Blacklisted = await self.client.db["Ticket Blacklists"].find_one(
+        Blacklisted = await interaction.client.db["Ticket Blacklists"].find_one(
             {"user": interaction.user.id, "guild": interaction.guild.id}
         )
         if Blacklisted:
@@ -105,7 +105,7 @@ class Button(discord.ui.Button):
 
         TPanel = None
         panel = (
-            await self.client.db["Panels"]
+            await interaction.client.db["Panels"]
             .find({"guild": interaction.guild.id})
             .to_list(length=None)
         )
@@ -122,7 +122,7 @@ class Button(discord.ui.Button):
             )
 
         if TPanel:
-            t = await self.client.db["Tickets"].insert_one(
+            t = await interaction.client.db["Tickets"].insert_one(
                 {
                     "_id": "".join(
                         random.choices(string.ascii_letters + string.digits, k=10)
@@ -159,7 +159,7 @@ class Debug(discord.ui.View):
 
     @discord.ui.button(label="Debug Issue", style=discord.ButtonStyle.red)
     async def debug(self, interaction: discord.Interaction, button: discord.ui.Button):
-        R = await self.client.db["Tickets"].find_one(
+        R = await interaction.client.db["Tickets"].find_one(
             {"UserID": interaction.user.id, "closed": None}
         )
         if not R:
@@ -181,12 +181,12 @@ class Debug(discord.ui.View):
             interaction.user,
         )
         await asyncio.sleep(3)
-        New = await self.client.db["Tickets"].find_one(
+        New = await interaction.client.db["Tickets"].find_one(
             {"UserID": interaction.user.id, "closed": None}
         )
         if New:
             print(f"[Debug Issue] Ticket {R.get('_id')} has been purged.")
-            await self.client.db["Tickets"].delete_one({"_id": R.get("_id")})
+            await interaction.client.db["Tickets"].delete_one({"_id": R.get("_id")})
 
 
 class TicketsPub(commands.Cog):

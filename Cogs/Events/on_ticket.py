@@ -413,7 +413,7 @@ class TicketsPublic(commands.Cog):
                 },
             },
         )
-        P = await self.client.db['Panel'].find_one({"name": Result.get("panel"), "guild": Guild.id})
+        P = await self.client.db['Panels'].find_one({"name": Result.get("panel"), "guild": Guild.id})
         if not P:
             return logging.critical("[on_pticket_close] I can't find the panel.")
         try:
