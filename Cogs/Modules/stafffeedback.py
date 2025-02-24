@@ -261,7 +261,7 @@ class Feedback(commands.Cog):
             name="Ratings",
             value=f"> **Average Rating**: {average_rating}/10\n> **Last Rating**: {last_rating}/10\n> **Overall**: {rating_text}",
         )
-        value=f"> **Author:** <@{staff_ratings[-1]['author']}>\n> **Feedback:** {staff_ratings[-1]['feedback']}",
+        value = f"> **Author:** <@{staff_ratings[-1]['author']}>\n> **Feedback:** {staff_ratings[-1]['feedback']}"
         if len(value) > 1021:
             value = value[:1021] + "..."
         embed.add_field(
@@ -331,10 +331,12 @@ class ViewRatings(discord.ui.View):
                 date_str = "N/A"
             else:
                 date_str = datetime.utcfromtimestamp(date).strftime("%d/%m/%Y")
+            value=f"> **Date:** {date_str}\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
+            if len(value) > 1021:
+                value = value[:1021] + "..."
 
             embed.add_field(
                 name=f"{star} {rating['rating']}/10",
-                value=f"> **Date:** {date_str}\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}",
                 inline=False,
             )
 
