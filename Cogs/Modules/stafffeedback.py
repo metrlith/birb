@@ -336,6 +336,7 @@ class ViewRatings(discord.ui.View):
 
             embed.add_field(
                 name=f"{star} {rating['rating']}/10",
+                value=value,
                 inline=False,
             )
 
