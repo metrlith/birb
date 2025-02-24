@@ -260,7 +260,7 @@ class Suspension(discord.ui.RoleSelect):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         SelectedRoleIds = [role.id for role in self.values]
-        config = await self.client.config.find_one({"_id": interaction.guild.id})
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             return await interaction.response.send_message(
                 f"{no} **{interaction.user.display_name}**, you need to select at least one role.",
@@ -303,7 +303,7 @@ class Suspension(discord.ui.RoleSelect):
             "active": True,
             "notes": self.notes if self.notes else "N/A",
         }
-        RESULT = await self.client.db['Suspensions'].insert_one(RESULT)
+        RESULT = await interaction.client.db['Suspensions'].insert_one(RESULT)
         interaction.client.dispatch(
             "infraction", RESULT.inserted_id, config, None, "Suspension"
         )
