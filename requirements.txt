@@ -13,3 +13,4 @@ fastapi
 uvicorn
 memory_profiler 
 
+sentry_sdk
