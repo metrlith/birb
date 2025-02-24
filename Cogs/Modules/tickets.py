@@ -63,11 +63,9 @@ class Button(discord.ui.Button):
         emoji = button.get("emoji")
         if emoji:
             try:
-                emoji = discord.PartialEmoji(name=emoji)
-            except discord.DiscordException:
-                emoji = None
-        if emoji:
-            emoji = button.get("emoji")
+             emoji = discord.PartialEmoji.from_str(emoji)
+            except ValueError:
+             emoji = None
 
         super().__init__(
             label=button.get("label"),
