@@ -163,7 +163,7 @@ async def SingleHierarchy(
             content=f"{no} **{interaction.user.display_name}**, **@{user.display_name}** is already at the top of the hierarchy and cannot be promoted further.",
         )
         return
-    Object = await promotions.insert_one(
+    Object = await interaction.client.db['promotions'].insert_one(
         {
             "management": interaction.user.id,
             "staff": user.id,
@@ -323,7 +323,7 @@ async def MultiHireachy(
         )
         return
 
-    Object = await promotions.insert_one(
+    Object = await interaction.client.db['promotions'].insert_one(
         {
             "management": interaction.user.id,
             "staff": user.id,
@@ -433,7 +433,7 @@ async def issue(
             embed=NoPermissionChannel(channel),
             view=Support(),
         )
-    Object = await promotions.insert_one(
+    Object = await interaction.client.db['promotions'].insert_one(
         {
             "management": interaction.user.id,
             "staff": staff.id,
