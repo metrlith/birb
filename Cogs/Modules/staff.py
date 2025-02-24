@@ -479,10 +479,8 @@ class quota(commands.Cog):
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
             elif (
-                TicketCount >= TicketQuota
-                and not MessageCount
-                or MessageCount >= quota
-                and not TicketCount
+                (TicketCount >= TicketQuota if TicketQuota else True)
+                and (MessageCount >= quota if quota else True)
             ):
                 passed.append(entry)
             else:
@@ -614,10 +612,8 @@ class quota(commands.Cog):
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
             elif (
-                TicketCount >= TicketQuota
-                and not MessageCount
-                or MessageCount >= quota
-                and not TicketCount
+                (TicketCount >= TicketQuota if TicketQuota else True)
+                and (MessageCount >= quota if quota else True)
             ):
                 passed.append(entry)
             else:
@@ -961,7 +957,10 @@ class quota(commands.Cog):
                     else "<:status_green:1227365520857104405>"
                 )
                 if YourMessages >= int(Config.get("Message Quota", {}).get("quota", 0))
-                or YourTickets >= int(Config.get("Tickets", {}).get("quota", 0))
+                or (
+                    YourTickets >= int(Config.get("Tickets", {}).get("quota", 0))
+                    and int(Config.get("Tickets", {}).get("quota", 0)) != 0
+                )
                 else (
                     "Not Met"
                     if environment == "custom"
@@ -1006,10 +1005,16 @@ class quota(commands.Cog):
                         if environment == "custom"
                         else "<:status_green:1227365520857104405>"
                     )
-                    if int(staff.get("message_count", 0))
-                    >= int(Config.get("Message Quota", {}).get("quota", 0))
-                    or int(staff.get("ClaimedTickets", 0))
-                    >= int(Config.get("Tickets", {}).get("quota", 0))
+                    if (
+                        int(staff.get("message_count", 0))
+                        >= int(Config.get("Message Quota", {}).get("quota", 0))
+                        and Config.get("Message Quota", {}).get("quota", 0) != 0
+                    )
+                    or (
+                        int(staff.get("ClaimedTickets", 0))
+                        >= int(Config.get("Tickets", {}).get("quota", 0))
+                        and Config.get("Tickets", {}).get("quota", 0) != 0
+                    )
                     else (
                         "Not Met"
                         if environment == "custom"

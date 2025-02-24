@@ -656,6 +656,7 @@ class TicketsPub(commands.Cog):
             return
         if not user:
             user = interaction.user
+
         Tickets = (
             await interaction.client.db["Tickets"]
             .find({"GuildID": interaction.guild.id})
@@ -666,10 +667,12 @@ class TicketsPub(commands.Cog):
             Tickets = [
                 ticket for ticket in Tickets if ticket.get("opened") >= time.timestamp()
             ]
+
         if not Tickets:
             return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name}**, no tickets found for this user.",
             )
+
         ClaimedTickets = [
             ticket
             for ticket in Tickets
@@ -721,6 +724,7 @@ class TicketsPub(commands.Cog):
         embed.set_thumbnail(url=user.display_avatar)
 
         await interaction.followup.send(embed=embed)
+
 
 
 class CloseRequest(discord.ui.View):

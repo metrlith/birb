@@ -659,13 +659,25 @@ class APIRoutes:
 
         return {"status": "success", "infraction": random_string}
     
-    async def GET_TicketQuota(self, auth: str, server: int, discord_id: int):
+    async def GET_TicketQuota(self, auth: str, server: int, discord_id: int, time: str = None):
+        from utils.format import strtotime
+
         if not await Validation(auth, server):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
+        if time:
+            Time = strtotime(time)
+            if not Time:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
+                )
 
-        TicketQuota = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
+
+
+        TicketQuota = await self.client.db["Ticket Quota"].find_one(
+            {"GuildID": server, "UserID": discord_id, "timestamp": {"$gte": Time or 0}}
+        )
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
@@ -688,10 +700,12 @@ class APIRoutes:
 
         if not await check_admin_and_staff(guild, member):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="User does not have the required permissions"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User does not have the required permissions",
             )
 
         TicketQuota["_id"] = str(TicketQuota["_id"])
+
         return {
             "status": "success",
             "ClaimedTickets": TicketQuota,
@@ -700,22 +714,35 @@ class APIRoutes:
                 "name": member.name,
                 "display_name": member.display_name,
                 "avatar": member.display_avatar.url if member.display_avatar else None,
-            }
+            },
         }
+
     
-    async def GET_TicketLeaderboard(self, auth: str, server: int):
+    async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
+        from utils.format import strtotime
+
         if not await Validation(auth, server):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
-        if auth in self.ratelimits:
-            if time.time() < self.ratelimits[auth]:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )
+        if auth in self.ratelimits and time.time() < self.ratelimits[auth]:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
+            )
         self.ratelimits[auth] = time.time() + 3
 
-        TicketQuota = await self.client.db['Ticket Quota'].find({"GuildID": server}).sort("ClaimedTickets", pymongo.DESCENDING).to_list(length=750)
+        Tickets = self.client.db["Tickets"]
+        if time:
+            Time = strtotime(time)
+            if not Time:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
+                )
+
+        TicketQuota = await Tickets.find(
+            {"GuildID": server, "timestamp": {"$gte": Time or 0}}
+        ).to_list(length=750)
+
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
@@ -727,31 +754,42 @@ class APIRoutes:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Server not found"
             )
 
-        Leaderboard = []
-        for ticket in TicketQuota:
-            try:
-                member = guild.get_member(ticket.get("UserID"))
-                if not member:
-                    try:
-                        member = await guild.fetch_member(ticket.get("UserID"))
-                    except (discord.Forbidden, discord.NotFound):
-                        continue
-                if not await check_admin_and_staff(guild, member):
-                    continue
-                if member is None:
-                    continue
-                Leaderboard.append(
-                    {
-                        "username": member.name,
-                        "display": member.display_name,
-                        "id": member.id,
-                        "ClaimedTickets": ticket.get("ClaimedTickets"),
-                    }
-                )
-            except Exception as e:
-                print(e)
+        leaderboard_data = {}
 
-        return {"status": "success", "leaderboard": Leaderboard}
+        for ticket in TicketQuota:
+            claimer_id = ticket.get("claimed", {}).get("claimer")
+            if not claimer_id:
+                continue
+
+            if claimer_id not in leaderboard_data:
+                leaderboard_data[claimer_id] = 0
+            leaderboard_data[claimer_id] += 1
+
+        leaderboard = []
+
+        for user_id, claimed_count in leaderboard_data.items():
+            member = guild.get_member(user_id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(user_id)
+                except (discord.Forbidden, discord.NotFound):
+                    continue
+
+            if not await check_admin_and_staff(guild, member):
+                continue
+
+            leaderboard.append(
+                {
+                    "username": member.name,
+                    "display": member.display_name,
+                    "id": member.id,
+                    "ClaimedTickets": claimed_count,
+                }
+            )
+
+        leaderboard.sort(key=lambda x: x["ClaimedTickets"], reverse=True)
+
+        return {"status": "success", "leaderboard": leaderboard}
 
     async def GET_leaderboard(self, auth: str, server: int):
         if not await Validation(auth, server):
