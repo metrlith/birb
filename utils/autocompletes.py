@@ -6,8 +6,6 @@ Current = {}
 async def DepartmentAutocomplete(
     interaction: discord.Interaction, current: str
 ) -> list[app_commands.Choice]:
-    from Cogs.Modules.promotions import config
-
     C = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not C:
         return [
