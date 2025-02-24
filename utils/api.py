@@ -231,12 +231,8 @@ class APIRoutes:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Key"
             )
 
-        if auth in self.ratelimits:
-            if time.time() < self.ratelimits[auth]:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )
-        self.ratelimits[auth] = time.time() + 3
+        if not self.HandleRatelimits(auth):
+            return
 
         await collection.delete_one({"random_string": id, "guild_id": server})
         return {"status": "success"}
@@ -431,12 +427,8 @@ class APIRoutes:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
 
-        if auth in self.ratelimits:
-            if time.time() < self.ratelimits[auth]:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )
-        self.ratelimits[auth] = time.time() + 3
+        if not self.HandleRatelimits(auth):
+            return
 
         try:
             body = await request.json()
@@ -542,12 +534,8 @@ class APIRoutes:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
 
-        if auth in self.ratelimits:
-            if time.time() < self.ratelimits[auth]:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )
-        self.ratelimits[auth] = time.time() + 3
+        if not self.HandleRatelimits(auth):
+            return
 
         try:
             body = await request.json()
@@ -714,7 +702,10 @@ class APIRoutes:
                 "avatar": member.display_avatar.url if member.display_avatar else None,
             },
         }
-
+    
+    def HandleRatelimits(self, auth: str):
+        if not self.HandleRatelimits(auth):
+            return
     
     async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
         from utils.format import strtotime
@@ -723,11 +714,8 @@ class APIRoutes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
-        if auth in self.ratelimits and time.time() < self.ratelimits[auth]:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-            )
-        self.ratelimits[auth] = time.time() + 3
+        if not self.HandleRatelimits(auth):
+            return
         if time:
             Time: datetime = strtotime(time, back=True)
             if not Time:
@@ -794,12 +782,8 @@ class APIRoutes:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
 
-        if auth in self.ratelimits:
-            if time.time() < self.ratelimits[auth]:
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )
-        self.ratelimits[auth] = time.time() + 3
+        if not self.HandleRatelimits(auth):
+            return
 
         Leaderboard = []
         Users = (
