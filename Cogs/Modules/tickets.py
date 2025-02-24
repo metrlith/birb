@@ -16,7 +16,6 @@ from utils.Module import ModuleCheck
 from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotConfigured
 
 
-
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 # db = client["astro"]
@@ -220,8 +219,6 @@ class TicketsPub(commands.Cog):
 
         except (ValueError, discord.HTTPException, discord.NotFound, TypeError):
             return [app_commands.Choice(name="Error", value="Error")]
-        
-
 
     @tickets.command(description="Send the panel to a channel.")
     @app_commands.autocomplete(panel=PanelAutoComplete)
@@ -427,8 +424,8 @@ class TicketsPub(commands.Cog):
                 ephemeral=True,
             )
         embed = discord.Embed(
-            title="Close Request",
-            description=f"{interaction.user.mention}, is requesting to close the ticket.\n-# Click Confirm to close this ticket.",
+            title="Close Confirmation",
+            description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.",
             color=discord.Color.green(),
         )
         try:
@@ -615,14 +612,15 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        
+
         Panel = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "name": Result.get("panel")}
         )
         if not Panel or not Panel.get("Automations", None):
             return await interaction.followup.send(
-                content=f"{no} **{interaction.user.display_name}**, automations aren't enabled for this ticket")
-        
+                content=f"{no} **{interaction.user.display_name}**, automations aren't enabled for this ticket"
+            )
+
         if Result.get("automations", True):
             await interaction.client.db["Tickets"].update_one(
                 {"ChannelID": interaction.channel.id}, {"$set": {"automations": False}}
@@ -637,7 +635,6 @@ class TicketsPub(commands.Cog):
             await interaction.followup.send(
                 content=f"{tick} **{interaction.user.display_name}**, I've resumed automations in this ticket.",
             )
-
 
     @tickets.command(description="View a users ticket stats.", name="stats")
     async def stats(
@@ -753,7 +750,7 @@ class CloseRequest(discord.ui.View):
             "pticket_close", Result.get("_id"), self.reason, interaction.user
         )
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.gray)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user != self.member:
             return await interaction.response.send_message(

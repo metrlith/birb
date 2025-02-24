@@ -635,8 +635,8 @@ class promo(commands.Cog):
             "guild_id": ctx.guild.id,
             "staff": staff.id,
         }
-        promotion_list = await promotions.find(filter).to_list(750)
-        if not len(promotion_list) > 0:
+        Promotions = await self.client.db['promotions'].find(filter).to_list(750)
+        if not len(Promotions) > 0:
             await ctx.send(
                 f"{no} **{ctx.author.display_name}**, this staff member doesn't have any promotions.",
             )
@@ -650,21 +650,17 @@ class promo(commands.Cog):
         )
 
         embed = discord.Embed(
-            title=f"{staff.name}'s Promotions",
-            description=f"* **User:** {staff.mention}\n* **User ID:** {staff.id}",
             color=discord.Color.dark_embed(),
         )
-
         embed.set_thumbnail(url=staff.display_avatar)
         embed.set_author(icon_url=staff.display_avatar, name=staff.display_name)
 
-        for i, promotion in enumerate(promotion_list):
+        for i, promotion in enumerate(Promotions):
             jump_url = promotion.get("jump_url", "")
             if jump_url:
                 jump_url = f"\n{arrow}**[Jump to Promotion]({jump_url})**"
 
-            management = f"<@{promotion['management']}>"
-            value = f"{arrow}**Promoted By:** {management}\n{arrow}**New:** <@&{promotion.get('new', 'Unknown')}>\n{arrow}**Reason:** {promotion.get('reason')}{jump_url}"
+            value = f"> **Promoted By:** <@{promotion['management']}>\n> **New:** <@&{promotion.get('new', 'Unknown')}>\n> **Reason:** {promotion.get('reason')}{jump_url}"
             if len(value) > 1024:
                 value = value[:1021] + "..."
             embed.add_field(
@@ -673,7 +669,7 @@ class promo(commands.Cog):
                 inline=False,
             )
 
-            if (i + 1) % 9 == 0 or i == len(promotion_list) - 1:
+            if (i + 1) % 9 == 0 or i == len(Promotions) - 1:
                 embeds.append(embed)
                 embed = discord.Embed(
                     title=f"{staff.name}'s Promotions",

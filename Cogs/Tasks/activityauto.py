@@ -105,7 +105,7 @@ class activityauto(commands.Cog):
                             continue
                         if not guild:
                             continue
-                        await self.client.AutoActivity.update_one(
+                        await self.client.db['auto activity'].update_one(
                             {"guild_id": guild.id},
                             {
                                 "$set": {

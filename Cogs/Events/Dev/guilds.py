@@ -119,6 +119,10 @@ class GuildJoins(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
+        if not guild:
+            return
+        if not (guild.member_count, guild.id):
+            return
         await self.LogJoin(guild)
         await self.LogWebhookJoin(guild)
         await self.UpdateData(datetime.now().strftime("%Y-%m-%d"), "new")
@@ -127,6 +131,10 @@ class GuildJoins(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
+        if not guild:
+            return
+        if not (guild.member_count, guild.id):
+            return        
         await self.LogLeave(guild)
         await self.UpdateData(datetime.now().strftime("%Y-%m-%d"), "left")
 

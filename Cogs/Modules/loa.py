@@ -589,7 +589,7 @@ class Confirm(discord.ui.View):
             )
             return
 
-        if not await self.has_admin_role(interaction):
+        if not await has_admin_role(interaction):
             await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name}**, you don't have permission to accept this LOA.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`",
                 ephemeral=True,
