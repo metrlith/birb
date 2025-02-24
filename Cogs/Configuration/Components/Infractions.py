@@ -336,7 +336,7 @@ class ApprovalChannel(discord.ui.ChannelSelect):
         elif "Approval" not in config.get("Infraction", {}):
             config["Infraction"]["Approval"] = {}
 
-        config["Infraction"]["Approval"]["channel"] = self.values[0].id if self.values else None
+        config["Infraction"]["Approval"]["channel"] = self.values[0].id if self.values else None if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
@@ -386,7 +386,7 @@ class ApprovalRole(discord.ui.RoleSelect):
             config["Infraction"]["Approval"] = {}
         
 
-        config["Infraction"]["Approval"]["Ping"] = self.values[0].id if self.values else None
+        config["Infraction"]["Approval"]["Ping"] = self.values[0].id if self.values else None if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
@@ -775,7 +775,7 @@ class InfractionChannel(discord.ui.ChannelSelect):
         elif "channel" not in config.get("Infraction", {}):
             config["Infraction"]["channel"] = None
 
-        config["Infraction"]["channel"] = self.values[0].id
+        config["Infraction"]["channel"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
@@ -986,7 +986,7 @@ class TypeChannel(discord.ui.ChannelSelect):
 
         filter = {"guild_id": interaction.guild.id, "name": self.name}
         await interaction.client.db['infractiontypeactions'].update_one(
-            filter, {"$set": {"channel": self.values[0].id}}, upsert=True
+            filter, {"$set": {"channel": self.values[0].id if self.values else None}}, upsert=True
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",

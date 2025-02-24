@@ -243,7 +243,7 @@ class ThreadsChannel(discord.ui.ChannelSelect):
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
             config["Modmail"] = {}
-        config["Modmail"]["threads"] = self.values[0].id
+        config["Modmail"]["threads"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
@@ -665,7 +665,7 @@ class Threads(discord.ui.ChannelSelect):
             config["Modmail"]["Categories"] = {}
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
-        config["Modmail"]["Categories"][self.name]["threads"] = self.values[0].id
+        config["Modmail"]["Categories"][self.name]["threads"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set threads channel for `{self.name}`.",
@@ -699,7 +699,7 @@ class TranscriptChannel(discord.ui.ChannelSelect):
             config["Modmail"]["Categories"] = {}
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
-        config["Modmail"]["Categories"][self.name]["transcript"] = self.values[0].id
+        config["Modmail"]["Categories"][self.name]["transcript"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set transcript channel for `{self.name}`.",
@@ -732,7 +732,7 @@ class CategoryChannel(discord.ui.ChannelSelect):
             config["Modmail"]["Categories"] = {}
         if self.name not in config["Modmail"]["Categories"]:
             config["Modmail"]["Categories"][self.name] = {}
-        config["Modmail"]["Categories"][self.name]["category"] = self.values[0].id
+        config["Modmail"]["Categories"][self.name]["category"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** Successfully set category for `{self.name}`.",
@@ -836,7 +836,7 @@ class Category(discord.ui.ChannelSelect):
                 config = {"Modmail": {}, "_id": interaction.guild.id}
             if not config.get("Modmail"):
                 config["Modmail"] = {}
-            config["Modmail"]["category"] = self.values[0].id
+            config["Modmail"]["category"] = self.values[0].id if self.values else None
             await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": config}, upsert=True
             )
@@ -875,7 +875,7 @@ class Transcript(discord.ui.ChannelSelect):
             if not config.get("Modmail"):
                 config["Modmail"] = {}
 
-            config["Modmail"]["transcripts"] = self.values[0].id
+            config["Modmail"]["transcripts"] = self.values[0].id if self.values else None
             await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": config}, upsert=True
             )

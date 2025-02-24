@@ -93,7 +93,7 @@ class LOAChannel(discord.ui.ChannelSelect):
         elif "LOA" not in config:
             config["LOA"] = {}
 
-        config["LOA"]["channel"] = self.values[0].id
+        config["LOA"]["channel"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
@@ -138,7 +138,7 @@ class LOARole(discord.ui.RoleSelect):
         elif "LOA" not in config:
             config["LOA"] = {}
 
-        config["LOA"]["role"] = self.values[0].id
+        config["LOA"]["role"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 

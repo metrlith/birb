@@ -194,7 +194,7 @@ class PingRole(discord.ui.RoleSelect):
             {"guild_id": interaction.guild.id},
             {
                 "$set": {
-                    "pingrole": self.values[0].id if self.values else None,
+                    "pingrole": self.values[0].id if self.values else None if self.values else None,
                     "guild_id": interaction.guild_id,
                 }
             },
@@ -232,7 +232,7 @@ class QOTDChannel(discord.ui.ChannelSelect):
             {"guild_id": interaction.guild.id},
             {
                 "$set": {
-                    "channel_id": self.values[0].id,
+                    "channel_id": self.values[0].id if self.values else None,
                     "guild_id": interaction.guild_id,
                 }
             },

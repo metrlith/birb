@@ -289,7 +289,7 @@ class PostChannel(discord.ui.ChannelSelect):
         filter = {"guild_id": interaction.guild.id}
         try:
             await interaction.client.db['auto activity'].update_one(
-                filter, {"$set": {"channel_id": self.values[0].id}}, upsert=True
+                filter, {"$set": {"channel_id": self.values[0].id if self.values else None}}, upsert=True
             )
             await interaction.edit_original_response(content=None)
         except Exception as e:

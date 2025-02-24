@@ -959,7 +959,7 @@ class ForumsChannel(discord.ui.ChannelSelect):
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
-        self.data["channel_id"] = self.values[0].id
+        self.data["channel_id"] = self.values[0].id if self.values else None
         await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** the channel has been updated.",
             view=None,

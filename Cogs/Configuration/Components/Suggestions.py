@@ -95,7 +95,7 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
         elif "Suggestions" not in config:
             config["Suggestions"] = {}
 
-        config["Suggestions"]["channel"] = self.values[0].id
+        config["Suggestions"]["channel"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 

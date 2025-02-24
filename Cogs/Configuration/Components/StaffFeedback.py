@@ -295,7 +295,7 @@ class FeedbackChannel(discord.ui.ChannelSelect):
         elif "Feedback" not in config:
             config["Feedback"] = {}
 
-        config["Feedback"]["channel"] = self.values[0].id
+        config["Feedback"]["channel"] = self.values[0].id if self.values else None
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
         await interaction.response.edit_message(content=None)

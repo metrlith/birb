@@ -490,7 +490,7 @@ class SuspensionPanel(discord.ui.View):
                             view=None,
                             embed=None,
                         )
-                        await self.client.db['Suspensions'].delete_one(
+                        await interaction.client.db['Suspensions'].delete_one(
                             {"guild_id": interaction.guild.id, "staff": self.user.id}
                         )
 

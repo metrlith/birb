@@ -829,7 +829,7 @@ class TranscriptChannel(discord.ui.ChannelSelect):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
-            {"$set": {"TranscriptChannel": self.values[0].id}},
+            {"$set": {"TranscriptChannel": self.values[0].id if self.values else None}},
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** transcript channel updated successfully.",
@@ -860,7 +860,7 @@ class Category(discord.ui.ChannelSelect):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
-            {"$set": {"Category": self.values[0].id}},
+            {"$set": {"Category": self.values[0].id if self.values else None}},
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** category updated successfully.",

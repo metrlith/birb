@@ -824,8 +824,9 @@ class PromotionChannel(discord.ui.ChannelSelect):
             config = {"_id": interaction.guild.id, "Promo": {}}
         elif "Promo" not in config:
             config["Promo"] = {}
+    
 
-        config["Promo"]["channel"] = self.values[0].id
+        config["Promo"]["channel"] = self.values[0].id if self.values else None 
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
         Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
 

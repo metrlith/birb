@@ -268,7 +268,7 @@ class AppealSubChannel(discord.ui.ChannelSelect):
         await interaction.response.defer(ephemeral=True)
         await interaction.client.db["Ban Appeals Configuration"].update_one(
             {"guild_id": interaction.guild.id},
-            {"$set": {"banchannel": self.values[0].id}},
+            {"$set": {"banchannel": self.values[0].id if self.values else None}},
             upsert=True,
         )
         await self.msg.edit(embed=await BanAppealEmbed(interaction, discord.Embed(color=discord.Color.dark_embed())))
