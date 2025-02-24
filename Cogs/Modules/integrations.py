@@ -111,12 +111,18 @@ class Link(commands.Cog):
             from utils.roblox import GroupRoles
 
             Roles = await GroupRoles(interaction)
-            print(Roles)
+
             if Roles == 1:
                 return [
                     app_commands.Choice(
                         name="Please link with /integrations link.",
                         value="Not a role idiot",
+                    )
+                ]
+            if not Roles:
+                return [
+                    app_commands.Choice(
+                        name="No roles found.", value="Not a role idiot"
                     )
                 ]
             Roles = Roles.get("groupRoles")
