@@ -146,8 +146,6 @@ class TicketsPublic(commands.Cog):
                 if not Guild:
                     return 
                 Channel = Guild.get_channel(Ticket.get("ChannelID"))
-                print(Channel)
-                print(Ticket.get("ChannelID"))
 
                 if not Channel:
                     return 
