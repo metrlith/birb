@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import os
 from bson import ObjectId
 from utils.emojis import *
@@ -8,6 +8,8 @@ import logging
 from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import datetime
+import asyncio
+from utils.format import strtotime
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +128,71 @@ class PTicketControl(discord.ui.View):
 class TicketsPublic(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+        self.AutomAtions.start()
+
+    @tasks.loop(seconds=360)
+    async def AutomAtions(self):
+        Tickets = await self.client.db['Tickets'].find({"closed": None}).to_list(length=None)
+        async def SendAutoMation(Ticket, semaphore):
+            async with semaphore:
+                Guild = self.client.get_guild(Ticket.get("GuildID"))
+                if not Guild:
+                    return logging.critical(
+                        f"[AutomAtions] Guild with ID {Ticket.get('GuildID')} not found"
+                    )
+                Channel = Guild.get_channel(Ticket.get("ChannelID"))
+                if not Channel:
+                    return logging.critical(
+                        f"[AutomAtions] Channel with ID {Ticket.get('ChannelID')} not found"
+                    )
+                P = await self.client.db['Panels'].find_one({"name": Ticket.get("panel"), "guild": Guild.id})
+                if not P:
+                    return logging.critical("[AutomAtions] I can't find the panel.")
+                if not P.get("Automations"):
+                    return
+                ActivityReminder = P.get("Automations", {}).get("Reminder", {}).get('Time', None)
+                if not ActivityReminder:
+                    return
+
+                LastMessagSent = Ticket.get("lastMessageSent", None)
+                if not LastMessagSent:
+                    return
+                if not Ticket.get('automations', True):
+                    return
+                if datetime.datetime.utcnow() - LastMessagSent > datetime.timedelta(minutes=ActivityReminder):
+                    try:
+                        await Channel.send(
+                            embed=discord.Embed(
+                                title="⏰️ Activity Reminder",
+                                description="It's been a while since we've heard from you. If you still need assistance, please respond to this message.",
+                                color=discord.Color.dark_embed()
+                            ),
+                            content=f"<@{Ticket.get('UserID')}>"
+                        )
+                    except discord.Forbidden:
+                        return logging.critical(
+                            f"[AutomAtions] Bot does not have permission to send messages in the channel {Channel.id}"
+                        )
+                    
+        semaphore = asyncio.Semaphore(5)
+        await asyncio.gather(*[SendAutoMation(Ticket, semaphore) for Ticket in Tickets])
+                
+                
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot:
+            return
+        if not message.guild:
+            return
+        Ticket = await self.client.db['Tickets'].find_one({"ChannelID": message.channel.id})
+        if not Ticket:
+            return
+        if Ticket.get("UserID") == message.author.id:
+            return
+        await self.client.db['Tickets'].update_one(
+            {"ChannelID": message.channel.id},
+            {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+        )
 
     @commands.Cog.listener()
     async def on_pticket_claim(self, objectID: ObjectId, member: discord.Member):
@@ -349,6 +416,14 @@ class TicketsPublic(commands.Cog):
         P = await self.client.db['Panel'].find_one({"name": Result.get("panel"), "guild": Guild.id})
         if not P:
             return logging.critical("[on_pticket_close] I can't find the panel.")
+        try:
+            await self.client.db['Ticket Quota'].update_one(
+                {"GuildID": Guild.id, "UserID": Result.get('claimed', {}).get('claimer')},
+                {"$inc": {"ClaimedTickets": 1}},
+                upsert=True
+            )
+        except:
+            pass
         if P.get("TranscriptChannel"):
             TranscriptChannel = Guild.get_channel(P.get("TranscriptChannel"))
             if TranscriptChannel:

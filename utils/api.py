@@ -30,6 +30,7 @@ dbq = client["quotadb"]
 Messages = dbq["messages"]
 infractiontypeactions = db["infractiontypeactions"]
 collection = db["infractions"]
+Tickets = db["Tickets"]
 
 
 async def Validation(key: str, server: int):
@@ -657,6 +658,35 @@ class APIRoutes:
         )
 
         return {"status": "success", "infraction": random_string}
+    
+    async def GET_TicketQuota(self, auth: str, server: int, discord_id: int):
+        if not await (Validation(auth, server)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
+            )
+        TicketQuota = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
+        if not TicketQuota:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
+            )
+        return TicketQuota
+    
+    async def GET_TicketLeaderboard(self, auth: str, server: int):
+        if not await (Validation(auth, server)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
+            )
+        if auth in self.ratelimits:
+            if time.time() < self.ratelimits[auth]:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
+                )        
+        TicketQuota = await self.client.db['Ticket Quota'].find({"GuildID": server}).to_list(length=750).sort("ClaimedTickets", pymongo.DESCENDING)
+        if not TicketQuota:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
+            )
+        return TicketQuota
 
     async def GET_leaderboard(self, auth: str, server: int):
         if not await Validation(auth, server):
