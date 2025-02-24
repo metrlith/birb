@@ -704,8 +704,12 @@ class APIRoutes:
         }
     
     def HandleRatelimits(self, auth: str):
-        if not self.HandleRatelimits(auth):
-            return
+        if auth in self.ratelimits:
+            if time.time() < self.ratelimits[auth]:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
+                )
+        self.ratelimits[auth] = time.time() + 3
     
     async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
         from utils.format import strtotime
