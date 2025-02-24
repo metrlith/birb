@@ -665,14 +665,14 @@ class TicketsPub(commands.Cog):
             .to_list(length=None)
         )
         if time:
-            time = await strtotime(time)
+            time = await strtotime(time, back=True)
             Tickets = (
                 await interaction.client.db["Tickets"]
                 .find(
                     {
                         "GuildID": interaction.guild.id,
                         "UserID": user.id,
-                        "closed.closedAt": {"$gte": time.timestamp()},
+                        "opened": {"$gte": time.timestamp()},
                     }
                 )
                 .to_list(length=None)

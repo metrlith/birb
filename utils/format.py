@@ -15,7 +15,7 @@ def DefaultTypes():
 # TODO: Use this more
 
 
-async def strtotime(duration: int):
+async def strtotime(duration: int, back: bool = False):
     now = datetime.now()
     DurationValue = int(duration[:-1])
     DurationUnit = duration[-1]
@@ -31,7 +31,10 @@ async def strtotime(duration: int):
     elif DurationUnit == "w":
         DurationSeconds *= 604800
 
-    return now + timedelta(seconds=DurationSeconds)
+    if back:
+        return now - timedelta(seconds=DurationSeconds)
+    else:
+     return now + timedelta(seconds=DurationSeconds)
 
 
 def ordinal(n):

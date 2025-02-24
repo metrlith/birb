@@ -667,16 +667,14 @@ class APIRoutes:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
         if time:
-            Time = strtotime(time)
+            Time: datetime = strtotime(time, back=True)
             if not Time:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-
-
         TicketQuota = await self.client.db["Ticket Quota"].find_one(
-            {"GuildID": server, "UserID": discord_id, "closed.closedAt": {"$gte": Time or 0}}
+            {"GuildID": server, "UserID": discord_id, "opened": {"$gte": Time.timestamp() or 0}}
         )
         if not TicketQuota:
             raise HTTPException(
@@ -730,17 +728,15 @@ class APIRoutes:
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
             )
         self.ratelimits[auth] = time.time() + 3
-
-        Tickets = self.client.db["Tickets"]
         if time:
-            Time = strtotime(time)
+            Time: datetime = strtotime(time, back=True)
             if not Time:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
         TicketQuota = await self.client.db["Ticket Quota"].find_one(
-            {"GuildID": server, "closed.closedAt": {"$gte": Time or 0}}
+            {"GuildID": server, "opened": {"$gte": Time.timestamp() or 0}}
         )
 
 
