@@ -34,7 +34,10 @@ Tickets = db["Tickets"]
 
 
 async def Validation(key: str, server: int):
-    return bool(await Keys.find_one({"key": key, "_id": server}))
+    print(key, server)
+    doc = await Keys.find_one({"key": key, "_id": server})
+    return bool(doc)
+
 
 
 
@@ -661,12 +664,44 @@ class APIRoutes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
+
         TicketQuota = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
             )
-        return TicketQuota
+
+        guild = self.client.get_guild(server)
+        if not guild:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Server not found"
+            )
+
+        member = guild.get_member(discord_id)
+        if not member:
+            try:
+                member = await guild.fetch_member(discord_id)
+            except (discord.Forbidden, discord.NotFound):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+                )
+
+        if not await check_admin_and_staff(guild, member):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="User does not have the required permissions"
+            )
+
+        TicketQuota["_id"] = str(TicketQuota["_id"])
+        return {
+            "status": "success",
+            "ClaimedTickets": TicketQuota,
+            "user": {
+                "id": str(member.id),
+                "name": member.name,
+                "display_name": member.display_name,
+                "avatar": member.display_avatar.url if member.display_avatar else None,
+            }
+        }
     
     async def GET_TicketLeaderboard(self, auth: str, server: int):
         if not await Validation(auth, server):
@@ -677,13 +712,46 @@ class APIRoutes:
             if time.time() < self.ratelimits[auth]:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limited"
-                )        
-        TicketQuota = await self.client.db['Ticket Quota'].find({"GuildID": server}).to_list(length=750).sort("ClaimedTickets", pymongo.DESCENDING)
+                )
+        self.ratelimits[auth] = time.time() + 3
+
+        TicketQuota = await self.client.db['Ticket Quota'].find({"GuildID": server}).sort("ClaimedTickets", pymongo.DESCENDING).to_list(length=750)
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
             )
-        return TicketQuota
+
+        guild = self.client.get_guild(server)
+        if not guild:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Server not found"
+            )
+
+        Leaderboard = []
+        for ticket in TicketQuota:
+            try:
+                member = guild.get_member(ticket.get("UserID"))
+                if not member:
+                    try:
+                        member = await guild.fetch_member(ticket.get("UserID"))
+                    except (discord.Forbidden, discord.NotFound):
+                        continue
+                if not await check_admin_and_staff(guild, member):
+                    continue
+                if member is None:
+                    continue
+                Leaderboard.append(
+                    {
+                        "username": member.name,
+                        "display": member.display_name,
+                        "id": member.id,
+                        "ClaimedTickets": ticket.get("ClaimedTickets"),
+                    }
+                )
+            except Exception as e:
+                print(e)
+
+        return {"status": "success", "leaderboard": Leaderboard}
 
     async def GET_leaderboard(self, auth: str, server: int):
         if not await Validation(auth, server):
