@@ -488,7 +488,7 @@ class quota(commands.Cog):
                 failedmembers.append(member)
 
         passed.sort(
-            key=lambda x: int(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: int(re.search(r'\d+', x.split("•")[-1].strip()).group()),
             reverse=True,
         )
         failed.sort(

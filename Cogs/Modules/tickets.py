@@ -14,7 +14,7 @@ from utils.permissions import has_admin_role
 import asyncio
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotConfigured
-
+from utils.autocompletes import CloseReason
 
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
@@ -342,6 +342,7 @@ class TicketsPub(commands.Cog):
         )
 
     @tickets.command(description="Close a ticket.")
+    @app_commands.autocomplete(reason=CloseReason)
     async def close(self, interaction: discord.Interaction, reason: str = None):
         await interaction.response.defer()
         if not await TicketPermissions(interaction):
@@ -404,6 +405,7 @@ class TicketsPub(commands.Cog):
         )
 
     @tickets.command(description="Request to close a ticket.")
+    @app_commands.autocomplete(reason=CloseReason)
     async def closerequest(self, interaction: discord.Interaction, reason: str = None):
         await interaction.response.defer()
         if not await TicketPermissions(interaction):
