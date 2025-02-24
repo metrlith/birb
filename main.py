@@ -212,7 +212,8 @@ class Client(commands.AutoShardedBot):
         return commands.when_mentioned_or(prefix)(self, message)
 
     async def setup_hook(self):
-        UpdateChannelName.restart() if UpdateChannelName.is_running() else UpdateChannelName.start()
+        if not UpdateChannelName.is_running():
+            UpdateChannelName.start()
         await self._load_views()
         await self._load_cogs()
         await self.CacheCommands()
