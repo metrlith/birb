@@ -153,7 +153,7 @@ class Voting(discord.ui.View):
     async def downvote(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        settings = await self.client.config.find_one({"_id": interaction.guild.id})
+        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
         if not result:
             return logging.critical(
