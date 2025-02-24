@@ -87,7 +87,7 @@ class PSelect(discord.ui.Select):
                     interaction.message,
                 )
             )
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
             )
@@ -127,7 +127,7 @@ class PSelect(discord.ui.Select):
             view.children[2].label = (
                 f"Show Issuer ({'Enabled' if Config.get('Module Options', {}).get('pshowissuer', False) else 'Disabled'})"
             )
-            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            return await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         elif Selected == "Customise Embed":
             try:
                 custom = await interaction.client.db['Customisation'].find_one(
@@ -262,7 +262,7 @@ class PSelect(discord.ui.Select):
                 role for role in interaction.guild.roles if role.id in hierarchy_roles
             ]
             view.add_item(SingleHierarchy(interaction.user, roles))
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
                 content=f"<:List:1223063187063308328> Select the roles for the hierarchy.\n\n<:Help:1223063068012056576> No need to select them in order, they will be sorted automatically with discords role hierarchy system.",
@@ -303,7 +303,7 @@ class PSelect(discord.ui.Select):
                     if len(embed.fields) >= 25:
                         break
 
-            await interaction.followup.send(
+            return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
                 embed=embed,
@@ -456,7 +456,7 @@ class CreateAndDelete(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
         if self.values[0] == "create":
-            await interaction.response.send_modal(
+            return await interaction.response.send_modal(
                 CreateDeleteDepartment(interaction.user, "create")
             )
         elif self.values[0] == "modify":
@@ -499,7 +499,7 @@ class CreateAndDelete(discord.ui.Select):
                 embed=None
             )
         elif self.values[0] == "delete":
-            await interaction.response.send_modal(
+            return await interaction.response.send_modal(
                 CreateDeleteDepartment(interaction.user, "delete")
             )
         await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})

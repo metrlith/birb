@@ -180,6 +180,13 @@ class PanelCreationModal(discord.ui.Modal):
         self.add_item(self.name_input)
 
     async def on_submit(self, interaction: discord.Interaction):
+        if await interaction.client.db["Panels"].find_one(
+            {"guild": interaction.guild.id, "type": self.PanelType, "name": self.name_input.value}
+        ):
+            return await interaction.response.send_message(
+                content=f"{no} **{interaction.user.display_name},** a panel with that name already exists.",
+                ephemeral=True,
+            )
         PanelName = self.name_input.value
         await interaction.client.db["Panels"].insert_one(
             {"guild": interaction.guild.id, "type": self.PanelType, "name": PanelName}

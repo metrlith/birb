@@ -511,12 +511,19 @@ class Modmail(commands.Cog):
             embed.set_thumbnail(url=Server.icon)
             if Config.get("Module Options", {}):
                 if Config.get("Module Options").get("MessageFormatting") == "Messages":
-                    await ctx.channel.send(
-                        f"<:messagereceived:1201999712593383444> **(Staff)** {author_name}: {content}"
-                    )
-                    await user.send(
-                        f"<:messagereceived:1201999712593383444> **(Staff)** {author_name}: {content}"
-                    )
+                    try:
+                        await ctx.channel.send(
+                            f"<:messagereceived:1201999712593383444> **(Staff)** {author_name}: {content}"
+                        )
+                        await user.send(
+                            f"<:messagereceived:1201999712593383444> **(Staff)** {author_name}: {content}"
+                        )
+                    except (discord.Forbidden, discord.HTTPException):
+                        await ctx.send(
+                            f"{no} **{ctx.author.display_name},** I can't send a message to this user.",
+                            ephemeral=True,
+                        )
+                        return
                     if ctx.interaction:
                         return await ctx.message.delete()
                     else:
@@ -526,8 +533,25 @@ class Modmail(commands.Cog):
                         )
 
             try:
-                await user.send(embed=embed, file=media)
-                await ctx.channel.send(embed=embed, file=media)
+                if media:
+                    file = await media.to_file()
+                    try:
+                        await user.send(embed=embed, file=file)
+                        await ctx.channel.send(embed=embed, file=file)
+                    except (discord.Forbidden, discord.HTTPException):
+                        await ctx.send(
+                            f"{no} **{ctx.author.display_name},** I can't send a message to this user.",
+                            ephemeral=True,
+                        )
+                else:
+                    try:
+                        await user.send(embed=embed)
+                        await ctx.channel.send(embed=embed)
+                    except (discord.Forbidden, discord.HTTPException):
+                        await ctx.send(
+                            f"{no} **{ctx.author.display_name},** I can't send a message to this user.",
+                            ephemeral=True,
+                        )
                 if ctx.interaction:
                     await ctx.send(
                         content=f"{tick} **{ctx.author.display_name},** i've sent the message."
@@ -547,7 +571,6 @@ class Modmail(commands.Cog):
     @modmail.command(description="Close a modmail channel.")
     @app_commands.describe(reason="The reason for closing the modmail channel.")
     async def close(self, ctx: commands.Context, *, reason=None):
-        await ctx.defer()
         if not await ModuleCheck(ctx.guild.id, "Modmail"):
             await ctx.send(
                 embed=ModuleNotEnabled(),
@@ -556,6 +579,7 @@ class Modmail(commands.Cog):
             return
         if not await has_staff_role(ctx, "Modmail Permissions"):
             return
+        await ctx.defer()
         await Close(ctx.interaction, reason=reason)
 
 
