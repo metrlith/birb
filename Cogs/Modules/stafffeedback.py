@@ -322,15 +322,10 @@ class ViewRatings(discord.ui.View):
                 embed.set_author(
                     name=self.staff.display_name, icon_url=self.staff.display_avatar
                 )
-            date = rating.get("date", "N/A")
+            date = rating.get("date", 0)
             Id = rating.get("feedbackid", "N/A")
             feedback = rating.get("feedback", "Non Given")
-
-            if date == "N/A":
-                date_str = "N/A"
-            else:
-                date_str = datetime.fromtimestamp(date, datetime.timezone.utc).strftime("%d/%m/%Y")
-            value=f"> **Date:** {date_str}\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
+            value = f"> **Date:** <t:{int(date).timestamp()}>\n> **Feedback ID:** {Id}\n> **Feedback:** {feedback}"
             if len(value) > 1021:
                 value = value[:1021] + "..."
 
