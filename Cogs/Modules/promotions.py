@@ -658,7 +658,7 @@ class promo(commands.Cog):
         for i, promotion in enumerate(Promotions):
             jump_url = promotion.get("jump_url", "")
             if jump_url:
-                jump_url = f"\n{arrow}**[Jump to Promotion]({jump_url})**"
+                jump_url = f"\n> **[Jump to Promotion]({jump_url})**"
 
             value = f"> **Promoted By:** <@{promotion['management']}>\n> **New:** <@&{promotion.get('new', 'Unknown')}>\n> **Reason:** {promotion.get('reason')}{jump_url}"
             if len(value) > 1024:
