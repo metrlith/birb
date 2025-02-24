@@ -28,7 +28,7 @@ class Tickets(discord.ui.Select):
                     label="Multi Panels", emoji="<:MultiPanel:1340741183579885690>"
                 ),
                 discord.SelectOption(
-                    label="Quota", emoji="<:Quota:1340741181965078642>"
+                    label="Quota", emoji="<:counting:1343598685749252227>"
                 ),
             ]
         )
@@ -424,9 +424,8 @@ class SingelPanelCustomisation(discord.ui.View):
         custom = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
-        view = discord.ui.View()
-        view.add_item(Automations(interaction.user, self.name, custom))
-        await interaction.response.send_message(view=view, ephemeral=True)
+
+        await interaction.response.send_modal(Automations(interaction.user, self.name, custom))
 
     @discord.ui.button(
         label="Finish",
@@ -481,6 +480,8 @@ class Automations(discord.ui.Modal):
         )
         if not Config:
             Config = {"_id": interaction.guild.id, "Automations": {"Inactivity": "120"}}
+        if not Config.get("Automations"):
+            Config["Automations"] = {"Inactivity": "120"}
 
         if not isinstance(Inactivity, int):
             try:
@@ -493,8 +494,13 @@ class Automations(discord.ui.Modal):
 
         Config["Automations"]["Inactivity"] = Inactivity
         await interaction.client.db["Panels"].update_one(
-            {"_id": interaction.guild.id},
+            {"guild": interaction.guild.id, "type": "single", "name": self.name},
             {"$set": Config},
+            upsert=True,
+        )
+        await interaction.response.send_message(
+            content=f"{tick} **{interaction.user.display_name},** inactivity reminder updated successfully.",
+            ephemeral=True,
         )
 
 

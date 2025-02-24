@@ -123,6 +123,12 @@ class PTicketControl(discord.ui.View):
         view.claim.label = f"Claimed by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
+        try:
+         await interaction.channel.edit(name=f"claimed-{interaction.channel.name.split('-')[1]}")
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_pticket_claim] Bot does not have permission to edit the channel {interaction.channel.id}"
+            )
 
 
 class TicketsPublic(commands.Cog):
@@ -135,12 +141,16 @@ class TicketsPublic(commands.Cog):
         Tickets = await self.client.db['Tickets'].find({"closed": None}).to_list(length=None)
         async def SendAutoMation(Ticket, semaphore):
             async with semaphore:
+                await asyncio.sleep(0.4)
                 Guild = self.client.get_guild(Ticket.get("GuildID"))
                 if not Guild:
                     return logging.critical(
                         f"[AutomAtions] Guild with ID {Ticket.get('GuildID')} not found"
                     )
                 Channel = Guild.get_channel(Ticket.get("ChannelID"))
+                print(Channel)
+                print(Ticket.get("ChannelID"))
+
                 if not Channel:
                     return logging.critical(
                         f"[AutomAtions] Channel with ID {Ticket.get('ChannelID')} not found"
@@ -150,16 +160,18 @@ class TicketsPublic(commands.Cog):
                     return logging.critical("[AutomAtions] I can't find the panel.")
                 if not P.get("Automations"):
                     return
-                ActivityReminder = P.get("Automations", {}).get("Reminder", {}).get('Time', None)
+                ActivityReminder = P.get("Automations", {}).get("Inactivity", {})
                 if not ActivityReminder:
                     return
 
                 LastMessagSent = Ticket.get("lastMessageSent", None)
-                if not LastMessagSent:
-                    return
                 if not Ticket.get('automations', True):
                     return
-                if datetime.datetime.utcnow() - LastMessagSent > datetime.timedelta(minutes=ActivityReminder):
+                if not LastMessagSent or datetime.datetime.utcnow() - LastMessagSent > datetime.timedelta(minutes=ActivityReminder):
+                    await self.client.db['Tickets'].update_one(
+                        {"_id": Ticket.get("_id")},
+                        {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+                    )
                     try:
                         await Channel.send(
                             embed=discord.Embed(
@@ -169,6 +181,7 @@ class TicketsPublic(commands.Cog):
                             ),
                             content=f"<@{Ticket.get('UserID')}>"
                         )
+                        
                     except discord.Forbidden:
                         return logging.critical(
                             f"[AutomAtions] Bot does not have permission to send messages in the channel {Channel.id}"
@@ -187,7 +200,7 @@ class TicketsPublic(commands.Cog):
         Ticket = await self.client.db['Tickets'].find_one({"ChannelID": message.channel.id})
         if not Ticket:
             return
-        if Ticket.get("UserID") == message.author.id:
+        if not int(Ticket.get("UserID")) == int(message.author.id):
             return
         await self.client.db['Tickets'].update_one(
             {"ChannelID": message.channel.id},
@@ -219,6 +232,14 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_pticket_claim] Bot does not have permission to edit the message {Message.id}"
             )
+        try:
+            await Channel.edit(
+                name=f"claimed-{Channel.name.split('-')[1]}",
+            )
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_pticket_claim] Bot does not have permission to edit the channel {Channel.id}"
+            )
 
     @commands.Cog.listener()
     async def on_unclaim(self, objectID: ObjectId):
@@ -243,6 +264,14 @@ class TicketsPublic(commands.Cog):
         except discord.Forbidden:
             return logging.critical(
                 f"[on_unclaim] Bot does not have permission to edit the message {Message.id}"
+            )
+        try:
+            await Channel.edit(
+                name=f"ticket-{Channel.name.split('-')[1]}",
+            )
+        except discord.Forbidden:
+            return logging.critical(
+                f"[on_unclaim] Bot does not have permission to edit the channel {Channel.id}"
             )
 
     @commands.Cog.listener()

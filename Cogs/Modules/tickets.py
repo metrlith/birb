@@ -615,23 +615,27 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        if not Config.get("Tickets").get("Automations"):
+        
+        Panel = await interaction.client.db["Panels"].find_one(
+            {"guild": interaction.guild.id, "name": Result.get("panel")}
+        )
+        if not Panel or not Panel.get("Automations", None):
             return await interaction.followup.send(
-                content=f"{no} Automations are disabled for this server."
-            )
-        if Result.get("automations"):
+                content=f"{no} **{interaction.user.display_name}**, automations aren't enabled for this ticket")
+        
+        if Result.get("automations", True):
             await interaction.client.db["Tickets"].update_one(
                 {"ChannelID": interaction.channel.id}, {"$set": {"automations": False}}
             )
             await interaction.followup.send(
-                content=f"{tick} Automations stopped.",
+                content=f"{tick} **{interaction.user.display_name}**, I've paused automations in this ticket.",
             )
         else:
             await interaction.client.db["Tickets"].update_one(
                 {"ChannelID": interaction.channel.id}, {"$set": {"automations": True}}
             )
             await interaction.followup.send(
-                content=f"{tick} Automations started.",
+                content=f"{tick} **{interaction.user.display_name}**, I've resumed automations in this ticket.",
             )
 
 
@@ -720,35 +724,6 @@ class TicketsPub(commands.Cog):
         embed.set_thumbnail(url=user.display_avatar)
 
         await interaction.followup.send(embed=embed)
-
-
-class Automations(discord.ui.View):
-    def __init__(self, TicketID: str):
-        super().__init__(timeout=None)
-        self.TicketID = TicketID
-
-    @discord.ui.button(label="Stop Automations", style=discord.ButtonStyle.red)
-    async def stop(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user != self.member:
-            return await interaction.response.send_message(
-                f"{no} You can't stop this automation.", ephemeral=True
-            )
-        await interaction.response.defer()
-        Result = await interaction.client.db["Tickets"].find_one(
-            {"ChannelID": interaction.channel.id}
-        )
-        if not Result:
-            return await interaction.followup.send(
-                f"{no} This isn't a ticket channel.", ephemeral=True
-            )
-        await interaction.client.db["Tickets"].update_one(
-            {"ChannelID": interaction.channel.id}, {"$set": {"automations": False}}
-        )
-        view = Automations(Result.get("_id"))
-        view.stop.disabled = True
-        await interaction.response.edit_message(
-            content=f"{tick} Automation stopped.", view=view, embed=None
-        )
 
 
 class CloseRequest(discord.ui.View):
