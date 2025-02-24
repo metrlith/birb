@@ -70,6 +70,8 @@ class Tickets(commands.Cog):
         print("[Tickets] Registering ticket commands")
 
     async def RegisterCommands(self):
+        if not self.client.user.id == 1113245569490616400:
+            return
         guild = discord.Object(id=1092976553752789054)
         Group = app_commands.Group(name="ticket", description="Manage tickets")
 
@@ -91,8 +93,10 @@ class Tickets(commands.Cog):
             )
         )
 
+
         self.client.tree.add_command(Group, guild=guild)
         await self.client.tree.sync(guild=guild)
+
 
     @commands.command()
     @commands.is_owner()
