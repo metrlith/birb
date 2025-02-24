@@ -209,6 +209,9 @@ class Reason(discord.ui.Modal):
         self.type = type
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        if any(word in self.reason.value.lower() for word in ['sussy', 'sus']):
+            return await interaction.followup.send(content=f"{no} **{interaction.user.display_name}**, Se você está aqui por causa da coisa estranha do `sussy vip`, este é o servidor errado e não temos nada a ver com isso. Volte para o servidor de onde você veio.", ephemeral=True)
+        
         await interaction.response.defer()
         t = await interaction.client.db["Tickets"].insert_one(
             {
