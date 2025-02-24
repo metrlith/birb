@@ -242,7 +242,6 @@ class Feedback(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, I couldn't find any rating for this user.\n{arrow} To rate someone use </feedback give:1194418154617700382>!",
             )
             return
-        staff_ratings = await staff_ratings
         sum_ratings = sum(
             int(rating["rating"].split("/")[0]) for rating in staff_ratings
         )
