@@ -313,7 +313,6 @@ class ViewRatings(discord.ui.View):
                 {"guild_id": interaction.guild.id, "staff": self.staff.id}
             ).to_list(length=None)
         embeds = []
-        staff_ratings = await staff_ratings
         for idx, rating in enumerate(staff_ratings):
             if idx % 9 == 0:
                 embed = discord.Embed(
