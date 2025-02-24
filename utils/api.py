@@ -655,7 +655,7 @@ class APIRoutes:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
         if time:
-            Time: datetime = strtotime(time, back=True)
+            Time: datetime = await strtotime(time, back=True)
             if not Time:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
@@ -722,7 +722,7 @@ class APIRoutes:
         if not self.HandleRatelimits(auth):
             return
         if time:
-            Time: datetime = strtotime(time, back=True)
+            Time: datetime = await strtotime(time, back=True)
             if not Time:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
