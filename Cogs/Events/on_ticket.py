@@ -502,7 +502,7 @@ class TicketsPublic(commands.Cog):
                 embeds=[Embed, ResponseEmbed] if ResponseEmbed else [Embed],
                 content=" ".join(Mentions),
                 allowed_mentions=discord.AllowedMentions(roles=True, users=True),
-                view=PTicketControl(),
+                view=view,
             )
         except discord.Forbidden:
             return logging.critical(
