@@ -21,7 +21,6 @@ from Cogs.Tasks.qotd import *
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Events.Dev.on_ticket import TicketControl
 from Cogs.Modules.tickets import ButtonHandler
-from Cogs.Modules.Developer.tickets import Buttons
 import sys
 sys.dont_write_bytecode = True
 
@@ -204,7 +203,6 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_infraction",
             "Cogs.Events.ConnectionRoles",
             "Cogs.Modules.data",
-            "Cogs.Modules.Developer.tickets",
             "Cogs.Events.Dev.on_ticket",
             "Cogs.Tasks.expiration",
             "Cogs.Events.on_promotion",
@@ -365,7 +363,6 @@ class Client(commands.AutoShardedBot):
         self.add_view(ModmailClosure())
         self.add_view(Links())
         self.add_view(TicketControl())
-        self.add_view(Buttons())
         self.add_view(CaseApproval())
         self.add_view(PTicketControl())
 
