@@ -279,9 +279,9 @@ class TicketsPublic(commands.Cog):
                 f"[on_pticket_claim] Bot does not have permission to edit the channel {Channel.id}"
             )
 
-    @tasks.loop(seconds=300)
+    @tasks.loop(seconds=360)
     async def ClearOld(self):
-        if (
+        if not (
             os.getenv("R2_URL")
             and os.getenv("ACCESS_KEY_ID")
             and os.getenv("SECRET_ACCESS_KEY")

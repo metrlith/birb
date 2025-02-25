@@ -11,7 +11,6 @@ from datetime import datetime, timezone, timedelta
 load_dotenv()
 
 
-
 logger = logging.getLogger(__name__)
 
 s3_client = None
@@ -60,11 +59,26 @@ async def upload_file_to_r2(file_bytes: bytes, filename: str, message: discord.M
 
 
 async def ClearOldFiles():
-    if s3_client is None:
-        return
-    response = s3_client.list_objects_v2(Bucket=os.getenv("BUCKET"))
-    if "Contents" in response:
-        for obj in response["Contents"]:
-            last_modified = obj["LastModified"]
-            if (datetime.now(timezone.utc) - last_modified) > timedelta(days=31):
-                s3_client.delete_object(Bucket=os.getenv("BUCKET"), Key=obj["Key"])
+        if s3_client is None:
+            return
+
+        continuation_token = None
+        list_params = {'Bucket': os.getenv("BUCKET")}
+        if continuation_token:
+            list_params['ContinuationToken'] = continuation_token
+
+        response = s3_client.list_objects_v2(**list_params)
+        if "Contents" in response:
+            for obj in response["Contents"]:
+                last_modified = obj["LastModified"]
+                file_extension = obj["Key"].split('.')[-1].lower()
+                if file_extension in ['mp4', 'avi', 'mov', 'webm'] and (datetime.now(timezone.utc) - last_modified) > timedelta(days=15):
+                    s3_client.delete_object(Bucket=os.getenv("BUCKET"), Key=obj["Key"])
+
+                elif (datetime.now(timezone.utc) - last_modified) > timedelta(days=31):
+                    s3_client.delete_object(Bucket=os.getenv("BUCKET"), Key=obj["Key"])
+
+        continuation_token = response.get('NextContinuationToken')
+        if not continuation_token:
+            return
+
