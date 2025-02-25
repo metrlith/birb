@@ -190,7 +190,7 @@ class AutoActivity(discord.ui.Select):
 
         options = [
             discord.SelectOption(label="Toggle", emoji="<:Button:1223063359184830494>"),
-            discord.SelectOption(label="Channel", emoji=f"{tagsemoji}"),
+            discord.SelectOption(label="Channel", emoji="<:tag:1234998802948034721>"),
             discord.SelectOption(
                 label="Post Date", emoji="<:time:1158064756104630294>"
             ),
