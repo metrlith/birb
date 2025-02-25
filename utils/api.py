@@ -719,6 +719,22 @@ class APIRoutes:
         self.ratelimits[auth] = time.time() + 3
         return True
     
+    async def POST_ResetQuota(self, auth: str, server:int):
+        if not await Validation(auth, server):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
+            )
+        if not self.HandleRatelimits(auth):
+            return
+        Result1 = await self.client.db['Ticket Quota'].update_many({"GuildID": server}, {"$set": {"ClaimedTickets": 0}})
+        Result2 = await self.client.dbq['messages'].update_many({"guild_id": server}, {"$set": {"message_count": 0}})
+        if not Result1.modified_count and not Result2.modified_count:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No quotas found"
+            )
+
+        return {"status": "success", "modified": Result1.modified_count + Result2.modified_count}
+    
     async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
         from utils.format import strtotime
 
