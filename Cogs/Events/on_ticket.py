@@ -494,7 +494,9 @@ class TicketsPublic(commands.Cog):
                 )
                 if len(ResponseEmbed.fields) == 25:
                     break
-
+        view = PTicketControl()
+        if not guild.id == 1092976553752789054:
+         view.remove_item(view.escalate)
         try:
             msg = await channel.send(
                 embeds=[Embed, ResponseEmbed] if ResponseEmbed else [Embed],
