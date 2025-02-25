@@ -330,6 +330,8 @@ class TicketsPub(commands.Cog):
                     await last.delete()
             except discord.NotFound:
                 pass
+        if interaction.guild.id == 1092976553752789054: # adding support for main server
+            embed = None 
         try:
             msg = await interaction.channel.send(embed=embed, view=view, content=Panel.get('content', ""))
         except discord.Forbidden:

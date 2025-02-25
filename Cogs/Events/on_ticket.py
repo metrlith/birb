@@ -50,6 +50,14 @@ async def DefaultEmbed(Member: discord.Member, Ticket: dict) -> discord.Embed:
 class PTicketControl(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.AllowedRoles = [
+            1257815758977765558,
+            1092977224501710848,
+            1092977378638188594,
+            1127223190616289430,
+        ] 
+        self.Developers = [795743076520820776]
+        # This is for the escalate button ^^ which is main server only
 
     @discord.ui.button(
         label="Close",
@@ -132,6 +140,54 @@ class PTicketControl(discord.ui.View):
                 f"[on_pticket_claim] Bot does not have permission to edit the channel {interaction.channel.id}"
             )
 
+    @discord.ui.button(
+        label="Escalate",
+        style=discord.ButtonStyle.red,
+        custom_id="TICKET:ESCALATE",
+        emoji="🔰",
+    )
+    async def escalate(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        if not any(role.id in self.AllowedRoles for role in interaction.user.roles):
+            return await interaction.response.send_message(
+                "You don't have permission to escalate this ticket.", ephemeral=True
+            )
+        await interaction.response.defer()
+        Result = await interaction.client.db['Tickets'].find_one({"channel": interaction.channel.id})
+        if not Result:
+            return await interaction.followup.send(
+                "This isn't a ticket channel.", ephemeral=True
+            )
+        await interaction.client.db['Tickets'].update_one(
+            {"channel": interaction.channel.id},
+            {
+                "$set": {
+                    "escalated": {
+                        "escalatedBy": interaction.user.id,
+                        "escalatedAt": datetime.datetime.now(),
+                    }
+                }
+            },
+        )
+        embed = discord.Embed(
+            color=discord.Color.green(),
+            title="Ticket Escalated",
+            description=f"This ticket has been escalated by **{interaction.user.display_name}**!",
+        ).set_author(
+            name=interaction.user.display_name, icon_url=interaction.user.display_avatar
+        )
+        for devs in self.Developers:
+            try:
+                embed.description = f"{interaction.channel.mention} has been escalated by **{interaction.user.display_name}**!"
+                await interaction.client.get_user(devs).send(embed=embed)
+            except (discord.NotFound, discord.HTTPException):
+                pass
+        view = PTicketControl()
+        view.escalate.disabled = True
+        view.escalate.label = f"Escalated by @{interaction.user.name}"
+        await interaction.followup.send(embed=embed)
+        await interaction.edit_original_response(view=view)
 
 class TicketsPublic(commands.Cog):
     def __init__(self, client: commands.Bot):
