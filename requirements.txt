@@ -14,5 +14,5 @@ uvicorn
 memory_profiler 
 
 sentry_sdk
-bot3
+boto3
 pillow
