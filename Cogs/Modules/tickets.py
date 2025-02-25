@@ -105,7 +105,7 @@ class Button(discord.ui.Button):
         super().__init__(
             label=button.get("label"),
             style=style,
-            emoji=button.get("emoji"),
+            emoji=emoji,
             url=button.get("url"),
             custom_id=custom_id,
         )
