@@ -757,11 +757,13 @@ async def CustomiseEmbed(interaction: discord.Interaction, option, name):
         embed = await DisplayEmbed(custom.get(option), interaction.user)
         view.remove_item(view.Buttons)
         view.remove_item(view.RemoveEmbed)
-        view.remove_item(view.Content)
+        if option != "Panel":
+         view.remove_item(view.Content)
         view.remove_item(view.Permissions)
         view.remove_item(view.ForumsChannel)
         view.remove_item(view.Ping)
         view.remove_item(view.reset)
+
 
         return await interaction.edit_original_response(
             embed=embed, view=view, content=None

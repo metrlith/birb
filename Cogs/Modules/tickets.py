@@ -331,7 +331,7 @@ class TicketsPub(commands.Cog):
             except discord.NotFound:
                 pass
         try:
-            msg = await interaction.channel.send(embed=embed, view=view)
+            msg = await interaction.channel.send(embed=embed, view=view, content=Panel.get('content', ""))
         except discord.Forbidden:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** I don't have permission to send messages in this channel.",
