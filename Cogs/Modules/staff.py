@@ -387,7 +387,7 @@ class quota(commands.Cog):
         
     @activity.command(name="wave", description="Punish people failing the quota.")
     async def wave(self, ctx: commands.Context):
-        if not await ModuleCheck(ctx.guild.id, "Quota") or not await ModuleCheck(
+        if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
             ctx.guild.id, "Tickets"
         ):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
@@ -528,7 +528,7 @@ class quota(commands.Cog):
 
     @activity.command(name="view", description="View the activity results.")
     async def view(self, ctx: commands.Context):
-        if not await ModuleCheck(ctx.guild.id, "Quota") or not await ModuleCheck(
+        if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
             ctx.guild.id, "Tickets"
         ):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())

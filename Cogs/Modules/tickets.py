@@ -1,4 +1,4 @@
-from discord.ext import commands, tasks
+from discord.ext import commands
 import os
 import discord
 from datetime import datetime, timedelta
@@ -15,6 +15,8 @@ import asyncio
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotConfigured
 from utils.autocompletes import CloseReason
+
+
 
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
@@ -48,6 +50,39 @@ class ButtonHandler(discord.ui.View):
             self.add_item(Button(buttons))
 
 
+class TicketForm(discord.ui.Modal):
+    def __init__(self, questions: list, data: dict):
+        super().__init__(timeout=None, title="Ticket Form")
+        self.questions = {}  
+        for question in questions:
+            label = question.get("label")  
+            TextInput = discord.ui.TextInput(
+                placeholder=question.get("placeholder"),
+                min_length=question.get("min", 1),
+                max_length=question.get("max", 1000),
+                label=label,
+                required=question.get("required", False),
+                default=question.get("default", None),
+            )
+            self.questions[label] = question.get("question", label) 
+            self.add_item(TextInput)
+        self.data = data
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        responses = {
+            self.questions[item.label]: item.value
+            for item in self.children if isinstance(item, discord.ui.TextInput)
+        }
+        
+        self.data['responses'] = responses
+        t = await interaction.client.db["Tickets"].insert_one(self.data)
+        interaction.client.dispatch("pticket_open", t.inserted_id, self.data.get("panel"))
+
+        await interaction.response.send_message(
+            content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
+            ephemeral=True,
+        )
+
 class Button(discord.ui.Button):
     def __init__(self, button: dict):
         custom_id = button.get("custom_id")
@@ -77,7 +112,7 @@ class Button(discord.ui.Button):
         self.custom_id = custom_id
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        
         AlreadyOpen = await interaction.client.db["Tickets"].count_documents(
             {"UserID": interaction.user.id, "closed": None, "panel": {"$exists": True}}
         )
@@ -85,18 +120,18 @@ class Button(discord.ui.Button):
             {"user": interaction.user.id, "guild": interaction.guild.id}
         )
         if Blacklisted:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, you're blacklisted from this servers tickets.",
                 ephemeral=True,
             )
         Cli = await interaction.guild.fetch_member(interaction.client.user.id)
         if not Cli.guild_permissions.manage_channels:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, I don't have permission to manage channels.",
                 ephemeral=True,
             )
         if AlreadyOpen > 3:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, you already have a max of 3 tickets open! If this is a mistake contact a developer.\n-# If this is a mistake (actually a mistake) press the debug button. (Abusing it'll can lead to a blacklist)",
                 ephemeral=True,
                 view=Debug(),
@@ -115,27 +150,31 @@ class Button(discord.ui.Button):
                     TPanel = p
                     break
         if not await AccessControl(interaction, TPanel):
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name}**, you don't have permission to use this panel.",
                 ephemeral=True,
             )
-
-        if TPanel:
+        
+        Dict = {
+            "_id": "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            ),
+            "GuildID": interaction.guild.id,
+            "UserID": interaction.user.id,
+            "opened": interaction.created_at.timestamp(),
+            "closed": None,
+            "claimed": {"claimer": None, "claimedAt": None},
+            "transcript": [],
+            "type": self.type,
+            "panel": TPanel.get("name"),
+            "panel_id": self.custom_id,
+        }
+        if TPanel.get('Questions') and len(TPanel.get('Questions')) > 0:
+            return await interaction.response.send_modal(TicketForm(TPanel.get('Questions'), Dict))
+        await interaction.response.defer()        
+        if TPanel:  
             t = await interaction.client.db["Tickets"].insert_one(
-                {
-                    "_id": "".join(
-                        random.choices(string.ascii_letters + string.digits, k=10)
-                    ),
-                    "GuildID": interaction.guild.id,
-                    "UserID": interaction.user.id,
-                    "opened": interaction.created_at.timestamp(),
-                    "closed": None,
-                    "claimed": {"claimer": None, "claimedAt": None},
-                    "transcript": [],
-                    "type": self.type,
-                    "panel": TPanel.get("name"),
-                    "panel_id": self.custom_id,
-                }
+                Dict
             )
             interaction.client.dispatch(
                 "pticket_open", t.inserted_id, TPanel.get("name")

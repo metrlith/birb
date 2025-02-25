@@ -692,10 +692,16 @@ class APIRoutes:
 
         for ticket in TicketQuota:
             ticket["_id"] = str(ticket["_id"])
+        
+        ClaimedTickets = len(TicketQuota)
+        if not time:
+            TicketQuotaVar = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
+            ClaimedTickets = TicketQuotaVar.get("ClaimedTickets") if TicketQuotaVar else 0
+
 
         return {
             "status": "success",
-            "ClaimedTickets": len(TicketQuota),
+            "ClaimedTickets": ClaimedTickets,
             "user": {
                 "id": str(member.id),
                 "name": member.name,

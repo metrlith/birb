@@ -31,17 +31,18 @@ async def DepartmentAutocomplete(
     return []
 
 async def CloseReason(
-        interaction: discord.Interaction, current: str
+    interaction: discord.Interaction, current: str
 ) -> list[app_commands.Choice[str]]:
     PreviousTicketReasons = interaction.client.db['Tickets'].find({'GuildID': interaction.guild.id, 'Closed': {'$exists': True}})
     Reasons = []
     async for Ticket in PreviousTicketReasons:
-        if Ticket.get('closed', {}).get('reason') and current.lower() in Ticket.get('closed', {}).get('reason').lower():
-            Reasons.append(app_commands.Choice(
-                name=Ticket.get('closed', {}).get('reason')[:100],
-                value=Ticket.get('closed', {}).get('reason')[:100]
-            ))
-    return Reasons
+        if Ticket.get('closed', {}).get('reason'):
+            if current.lower() in Ticket.get('closed', {}).get('reason').lower() or not current:
+                Reasons.append(app_commands.Choice(
+                    name=Ticket.get('closed', {}).get('reason')[:100],
+                    value=Ticket.get('closed', {}).get('reason')[:100]
+                ))
+    return Reasons[:25]
 
 
 
