@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import os
 from bson import ObjectId
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import logging
 from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed

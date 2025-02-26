@@ -1,18 +1,13 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
+from utils.format import PaginatorButtons
 from utils.emojis import *
-import typing
 import utils.Paginator as Paginator
+from utils.autocompletes import ConnectionRoles
 from utils.Module import ModuleCheck
 
-# MONGO_URL = os.getenv("MONGO_URL")
-# mongo = AsyncIOMotorClient(MONGO_URL)
-# db = mongo["astro"]
-# connectionroles = db["connectionroles"]
-
+from utils.HelpEmbeds import BotNotConfigured, ModuleNotEnabled, Support
 
 class ConnectionRoles(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -22,26 +17,6 @@ class ConnectionRoles(commands.Cog):
     async def connectionrole(self, ctx: commands.Context):
         pass
 
-    async def tag_name_autocompletion(
-        ctx: commands.Context, interaction: discord.Interaction, current: str
-    ) -> typing.List[app_commands.Choice[str]]:
-        try:
-            filter = {"guild": interaction.guild_id}
-
-            tag_names = await interaction.client.db['connectionroles'].distinct("name", filter)
-
-            filtered_names = [
-                name for name in tag_names if current.lower() in name.lower()
-            ]
-            filtered_names = filtered_names[:25]
-
-            choices = [
-                app_commands.Choice(name=name, value=name) for name in filtered_names
-            ]
-
-            return choices
-        except Exception as e:
-            print(e)
 
     @connectionrole.command(
         name="sync", description="Sync connection roles to all members"
@@ -146,13 +121,14 @@ class ConnectionRoles(commands.Cog):
     @connectionrole.command(
         name="remove", description="Remove a connection role from your server"
     )
-    @app_commands.autocomplete(name=tag_name_autocompletion)
+    @app_commands.autocomplete(name=ConnectionRoles)
     @commands.has_guild_permissions(manage_roles=True)
     @app_commands.describe(name="The name of the connection role")
     async def connectionrole_remove(self, ctx: commands.Context, name):
         if not await ModuleCheck(ctx.guild.id, "connectionroles"):
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the connection roles module isn't enabled.",
+                embed=ModuleNotEnabled(),
+                view=Support(),
             )
             return
         roleresult = await self.client.db['connectionroles'].find_one(
@@ -176,7 +152,8 @@ class ConnectionRoles(commands.Cog):
     async def connectionrole_list(self, ctx: commands.Context):
         if not await ModuleCheck(ctx.guild.id, "connectionroles"):
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the connection roles module isn't enabled.",
+                embed=ModuleNotEnabled(),
+                view=Support(),
             )
             return
 
@@ -189,18 +166,11 @@ class ConnectionRoles(commands.Cog):
             )
             return
 
-        if os.getenv('ENVIRONMENT') == "custom":
-            msg = await ctx.send(
-                embed=discord.Embed(description="Loading...", color=discord.Color.dark_embed())
-            )
-
-        else:
-            msg = await ctx.send(
-                embed=discord.Embed(
-                    description="<a:astroloading:1245681595546079285>",
-                    color=discord.Color.dark_embed(),
-                )
-            )
+        loading_embed = discord.Embed(
+            description="<a:astroloading:1245681595546079285>",
+            color=discord.Color.dark_embed(),
+        )
+        msg = await ctx.send(embed=loading_embed)
 
         grouped_roles = {}
         for role in roleresult:
@@ -215,7 +185,6 @@ class ConnectionRoles(commands.Cog):
 
         MAX_FIELDS_PER_PAGE = 9
         embeds = []
-        current_embed = None
         description = "<:suggestion:1207370004379607090> **What?**\n> The bot will automatically assign the parent role to a user once they get the child role.\n\n"
 
         for idx, (child_id, parent_ids) in enumerate(grouped_roles.items()):
@@ -248,22 +217,7 @@ class ConnectionRoles(commands.Cog):
             current_embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
             embeds.append(current_embed)
 
-        PreviousButton = discord.ui.Button(emoji="<:chevronleft:1220806425140531321>")
-        NextButton = discord.ui.Button(emoji="<:chevronright:1220806430010118175>")
-        FirstPageButton = discord.ui.Button(emoji="<:chevronsleft:1220806428726661130>")
-        LastPageButton = discord.ui.Button(emoji="<:chevronsright:1220806426583371866>")
-        InitialPage = 0
-        timeout = 42069
-
-        paginator = Paginator.Simple(
-            PreviousButton=PreviousButton,
-            NextButton=NextButton,
-            FirstEmbedButton=FirstPageButton,
-            LastEmbedButton=LastPageButton,
-            InitialPage=InitialPage,
-            timeout=timeout,
-        )
-
+        paginator = await PaginatorButtons()
         await paginator.start(ctx, pages=embeds, msg=msg)
 
     @connectionrole_add.error

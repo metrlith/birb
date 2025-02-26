@@ -3,7 +3,7 @@ import discord.http
 import os
 
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 
 load_dotenv()

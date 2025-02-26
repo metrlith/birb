@@ -4,7 +4,7 @@ import os
 import traceback
 
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 from utils.permissions import premium
 

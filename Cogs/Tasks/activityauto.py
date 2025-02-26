@@ -6,7 +6,7 @@ import re
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
+
 
 from utils.format import strtotime
 from utils.emojis import *
@@ -119,7 +119,7 @@ class activityauto(commands.Cog):
                             f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!"
                         )
                         if guild:
-                            result = await self.qdb[''].find(
+                            result = await self.client.qdb[''].find(
                                 {"guild_id": guild.id}
                             ).to_list(length=None)
                             passed = []

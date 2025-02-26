@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from utils.emojis import *
 from Cogs.Modules.promotions import SyncServer
 from datetime import datetime
@@ -12,22 +12,34 @@ from datetime import datetime
 # blacklists = db["blacklists"]
 # Servers = db["Servers"]
 
+PrimaryServers = [int(x) for x in os.getenv("DEFAULT_ALLOWED_SERVERS").split(",")]
+
 
 class GuildJoins(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.GuildChannels = {
-            "join": 1118944466980581376,
-            "leave": 1150816700489535508,
+            "join": (
+                1118944466980581376
+                if not os.getenv("JoinChannel")
+                else int(os.getenv("JoinChannel"))
+            ),
+            "leave": (
+                1150816700489535508
+                if not os.getenv("LeaveChannel")
+                else int(os.getenv("LeaveChannel"))
+            ),
             "webhook": 1178362100737916988,
             "notable-joins": 1341046059606085692,
             "notable-leaves": 1341046182788726865,
         }
 
     async def LogJoin(self, guild: discord.Guild):
-        if not guild:
+        if not (guild, guild.member_count, guild.id):
             return
-        blacklist = await self.client.db['blacklists'].find_one({"user": guild.owner_id})
+        blacklist = await self.client.db["blacklists"].find_one(
+            {"user": guild.owner_id}
+        )
 
         try:
             embed = discord.Embed(
@@ -49,8 +61,7 @@ class GuildJoins(commands.Cog):
             if not channel:
                 return
             await channel.send(embed=embed)
-        except discord.HTTPException:
-            print(f"[Join ERROR] @{guild.name} name is too long.")
+        except (discord.HTTPException, discord.Forbidden):
             return
 
     async def LogWebhookJoin(self, guild: discord.Guild):
@@ -66,8 +77,7 @@ class GuildJoins(commands.Cog):
                     username=guild.name,
                     avatar_url=guild.icon,
                 )
-            except discord.HTTPException:
-                print("[ERROR] Can't send guild join message its too long.")
+            except (discord.HTTPException, discord.Forbidden):
                 pass
             inviter = None
             try:
@@ -90,9 +100,12 @@ class GuildJoins(commands.Cog):
                 print("[⚠️] I couldn't DM the owner of the guild for the guild join.")
 
     async def LogLeave(self, guild: discord.Guild):
-        if not guild:
+
+        if not (guild, guild.member_count, guild.id):
             return
-        blacklist = await self.client.db['blacklists'].find_one({"user": guild.owner_id})
+        blacklist = await self.client.db["blacklists"].find_one(
+            {"user": guild.owner_id}
+        )
         try:
             embed = discord.Embed(
                 description=f"**Owner:** <@{guild.owner_id}>\n**Guild ID** {guild.id}\n**Members:** {guild.member_count}\n**Created:** <t:{guild.created_at.timestamp():.0f}:F>\n**Blacklisted:** {f'{tick}' if blacklist else f'{no}'}",
@@ -113,33 +126,44 @@ class GuildJoins(commands.Cog):
             if not channel:
                 return
             await channel.send(embed=embed)
-        except discord.HTTPException:
-            print(f"[Join ERROR] @{guild.name} name is too long.")
+        except (discord.HTTPException, discord.Forbidden):
             return
-
+        
+    async def HandlePrimaryServers(self, guild: discord.Guild):
+        Whitelist = await self.client.db["whitelist"].find_one({"_id": str(guild.id)})
+        if not guild.id in PrimaryServers and not Whitelist:
+            try:
+             await guild.leave()
+            except discord.Forbidden:
+                return False
+            return False
+        return True
+           
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
         if not guild:
             return
         if not (guild.member_count, guild.id):
             return
+        if os.getenv("DEFAULT_ALLOWED_SERVERS") or os.getenv("STAFF"):
+            if not await self.HandlePrimaryServers(guild):
+                return        
         await self.LogJoin(guild)
         await self.LogWebhookJoin(guild)
         await self.UpdateData(datetime.now().strftime("%Y-%m-%d"), "new")
         await SyncServer(self.client, guild)
-
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild):
         if not guild:
             return
         if not (guild.member_count, guild.id):
-            return        
+            return
         await self.LogLeave(guild)
         await self.UpdateData(datetime.now().strftime("%Y-%m-%d"), "left")
 
     async def UpdateData(self, TodayDate, action):
-        Data = await self.client.db['Servers'].find_one({"_id": "Data"})
+        Data = await self.client.db["Servers"].find_one({"_id": "Data"})
         if not Data:
             Data = {
                 "_id": "Data",
@@ -147,7 +171,7 @@ class GuildJoins(commands.Cog):
                 "total": {"new": 0, "left": 0},
                 "stats": [],
             }
-            await self.client.db['Servers'].insert_one(Data)
+            await self.client.db["Servers"].insert_one(Data)
 
         TodayStat = next((stat for stat in Data["stats"] if TodayDate in stat), None)
         if TodayStat:
@@ -170,7 +194,7 @@ class GuildJoins(commands.Cog):
         elif action == "left":
             increment["today.left"] = 1
 
-        await self.client.db['Servers'].update_one(
+        await self.client.db["Servers"].update_one(
             {"_id": "Data"},
             {
                 "$inc": increment,
@@ -180,6 +204,6 @@ class GuildJoins(commands.Cog):
             },
         )
 
-        
+
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(GuildJoins(client))

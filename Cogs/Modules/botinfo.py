@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from utils.format import IsSeperateBot
 import os
 class botinfo(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -12,7 +13,7 @@ class botinfo(commands.Cog):
         await ctx.defer()
 
 
-        if os.getenv("ENVIRONMENT") == "custom":
+        if await IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()

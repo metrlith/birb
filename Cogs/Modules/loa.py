@@ -6,7 +6,7 @@ from discord.ext import tasks
 from utils.emojis import *
 import os
 from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from datetime import datetime
 import re
 from utils.Module import ModuleCheck
@@ -26,16 +26,9 @@ from utils.HelpEmbeds import (
 
 from utils.permissions import has_admin_role, has_staff_role
 
-MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# loa_collection = db["loa"]
 
-# consent = db["consent"]
-# Configuration = db["Config"]
-# blacklist = db["blacklists"]
 
 
 class LOA(discord.ui.Modal, title="Create Leave Of Absence"):
@@ -478,7 +471,7 @@ class Confirm(discord.ui.View):
         style=discord.ButtonStyle.green,
         custom_id="persistent_view:confirm",
         row=0,
-        emoji=f"{tick}",
+        emoji=f"<:whitecheck:1223062421212631211>",
     )
     async def confirm(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -578,7 +571,7 @@ class Confirm(discord.ui.View):
         style=discord.ButtonStyle.red,
         custom_id="persistent_view:cancel",
         row=0,
-        emoji=f"{no}",
+        emoji=f"<:whitex:1190819175447408681>",
     )
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()

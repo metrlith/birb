@@ -5,7 +5,7 @@ from discord import app_commands
 import os
 import typing
 from datetime import datetime
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from utils.permissions import has_admin_role
 import random
 import re
@@ -196,28 +196,6 @@ class CustomCommands(commands.Cog):
     async def on_ready(self):
         await self.RegisterCustomCommands()
 
-    async def commands_auto_complete(
-        ctx: commands.Context, interaction: discord.Interaction, current: str
-    ) -> typing.List[app_commands.Choice[str]]:
-        try:
-            filter = {"guild_id": interaction.guild_id}
-
-            tag_names = await interaction.client.db['Custom Commands'].distinct("name", filter)
-
-            filtered_names = [
-                name for name in tag_names if current.lower() in name.lower()
-            ]
-
-            choices = [
-                app_commands.Choice(name=name, value=name)
-                for name in filtered_names[:25]
-            ]
-
-            return choices
-        except Exception as e:
-            print(f"Error in commands_auto_complete: {e}")
-            return []
-
     @commands.command()
     async def prefix(self, ctx: commands.Context, prefix: str = None):
         result = await self.client.db['prefixes'].find_one({"guild_id": ctx.guild.id})
@@ -250,7 +228,6 @@ class CustomCommands(commands.Cog):
 
     async def RegisterCustomCommands(self):
         customcommands = await self.client.customcommands.find({}).to_list(length=None)
-        CommandGroups = {}
         Commands = []
         GuildsToSync = set()
         SyncedServers = 0
@@ -336,7 +313,7 @@ class Voting(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(
-        label="0", style=discord.ButtonStyle.green, emoji=f"{tick}", custom_id="vote"
+        label="0", style=discord.ButtonStyle.green, emoji=f"<:whitecheck:1223062421212631211>", custom_id="vote"
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
@@ -379,7 +356,7 @@ class Voting(discord.ui.View):
     @discord.ui.button(
         label="Voters",
         style=discord.ButtonStyle.blurple,
-        emoji=f"{folder}",
+        emoji=f"<:folder:1235296135728594965>",
         custom_id="viewlist",
     )
     async def list(self, interaction: discord.Interaction, button: discord.ui.Button):

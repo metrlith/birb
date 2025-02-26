@@ -5,20 +5,18 @@ from utils.emojis import *
 from datetime import datetime
 import os
 import utils.Paginator as Paginator
+from utils.format import PaginatorButtons
 from utils.permissions import *
 from discord import app_commands
 from utils.permissions import check_admin_and_staff
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from utils.Module import ModuleCheck
 from dotenv import load_dotenv
+
 load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
-ENVIRONMENT = os.getenv('ENVIRONMENT')
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# stafffeedback = db["feedback"]
-# Configuration = db["Config"]
+ENVIRONMENT = os.getenv("ENVIRONMENT")
 
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -57,7 +55,7 @@ class Feedback(commands.Cog):
         if not await has_admin_role(ctx, "Staff Feedback Permission"):
 
             return
-        result = await self.client.db['feedback'].find_one(
+        result = await self.client.db["feedback"].find_one(
             {"feedbackid": id, "guild_id": ctx.guild.id}
         )
         if result is None:
@@ -66,7 +64,9 @@ class Feedback(commands.Cog):
             )
             return
 
-        await self.client.db['feedback'].delete_one({"feedbackid": id, "guild_id": ctx.guild.id})
+        await self.client.db["feedback"].delete_one(
+            {"feedbackid": id, "guild_id": ctx.guild.id}
+        )
         await ctx.send(
             f"{tick} **{ctx.author.display_name}**, I have removed the feedback.",
         )
@@ -106,7 +106,7 @@ class Feedback(commands.Cog):
             return await ctx.send(
                 f"{no} {ctx.author.display_name}, that user isn't in the server."
             )
-        existing_feedback = await self.client.db['feedback'].find_one(
+        existing_feedback = await self.client.db["feedback"].find_one(
             {"guild_id": ctx.guild.id, "staff": staff.id, "author": ctx.author.id}
         )
         Config = await Configuration.find_one({"_id": ctx.guild.id})
@@ -157,9 +157,10 @@ class Feedback(commands.Cog):
                     f"{no} **{ctx.author.display_name},** You have already rated this staff member.",
                 )
                 return
-        feedbackid = await self.client.db['feedback'].count_documents({}) + 1
-        msg = await ctx.send(f'<a:Loading:1167074303905386587>  **{ctx.author.display_name}**, submitting feedback...')
-
+        feedbackid = await self.client.db["feedback"].count_documents({}) + 1
+        msg = await ctx.send(
+            f"<a:Loading:1167074303905386587>  **{ctx.author.display_name}**, submitting feedback..."
+        )
 
         try:
             channel = await ctx.guild.fetch_channel(
@@ -189,8 +190,8 @@ class Feedback(commands.Cog):
                 "date": datetime.now().timestamp(),
                 "feedbackid": feedbackid,
             }
-            insert = await self.client.db['feedback'].insert_one(feedbackdata)
-            self.client.dispatch('feedback', insert.inserted_id, Config)
+            insert = await self.client.db["feedback"].insert_one(feedbackdata)
+            self.client.dispatch("feedback", insert.inserted_id, Config)
             await msg.edit(
                 content=f"{tick} You've rated **@{staff.display_name}** {rating}!",
             )
@@ -224,13 +225,21 @@ class Feedback(commands.Cog):
             return
 
         if scope == "global":
-            staff_ratings = await self.client.db['feedback'].find({"staff": staff.id}).to_list(length=None)
-            total_ratings = await self.client.db['feedback'].count_documents({"staff": staff.id})
+            staff_ratings = (
+                await self.client.db["feedback"]
+                .find({"staff": staff.id})
+                .to_list(length=None)
+            )
+            total_ratings = await self.client.db["feedback"].count_documents(
+                {"staff": staff.id}
+            )
         elif scope == "server":
-            staff_ratings = await self.client.db['feedback'].find(
-                {"guild_id": ctx.guild.id, "staff": staff.id}
-            ).to_list(length=None)
-            total_ratings = await self.client.db['feedback'].count_documents(
+            staff_ratings = (
+                await self.client.db["feedback"]
+                .find({"guild_id": ctx.guild.id, "staff": staff.id})
+                .to_list(length=None)
+            )
+            total_ratings = await self.client.db["feedback"].count_documents(
                 {"guild_id": ctx.guild.id, "staff": staff.id}
             )
         else:
@@ -267,7 +276,6 @@ class Feedback(commands.Cog):
         embed.add_field(
             name="Last Rating",
             value=value,
-            
         )
         embed.set_author(name=f"@{staff.display_name}", icon_url=staff.display_avatar)
         embed.set_footer(text=f"{scope.capitalize()} Ratings")
@@ -305,13 +313,17 @@ class ViewRatings(discord.ui.View):
             )
         )
         if self.scope == "global":
-            staff_ratings = await interaction.client.db['feedback'].find({"staff": self.staff.id}).to_list(
-                length=None
+            staff_ratings = (
+                await interaction.client.db["feedback"]
+                .find({"staff": self.staff.id})
+                .to_list(length=None)
             )
         elif self.scope == "server":
-            staff_ratings = await interaction.client.db['feedback'].find(
-                {"guild_id": interaction.guild.id, "staff": self.staff.id}
-            ).to_list(length=None)
+            staff_ratings = (
+                await interaction.client.db["feedback"]
+                .find({"guild_id": interaction.guild.id, "staff": self.staff.id})
+                .to_list(length=None)
+            )
         embeds = []
         for idx, rating in enumerate(staff_ratings):
             if idx % 9 == 0:
@@ -338,26 +350,7 @@ class ViewRatings(discord.ui.View):
             if (idx + 1) % 9 == 0 or idx == len(staff_ratings) - 1:
                 embeds.append(embed)
 
-        pag = Paginator.Simple(
-            PreviousButton=discord.ui.Button(
-            emoji="<:chevronleft:1220806425140531321>" if ENVIRONMENT != "custom" else None,
-            label="<<" if ENVIRONMENT == "custom" else None
-            ),
-            NextButton=discord.ui.Button(
-            emoji="<:chevronright:1220806430010118175>" if ENVIRONMENT != "custom" else None,
-            label=">>" if ENVIRONMENT == "custom" else None
-            ),
-            FirstEmbedButton=discord.ui.Button(
-            emoji="<:chevronsleft:1220806428726661130>" if ENVIRONMENT != "custom" else None,
-            label="<<" if ENVIRONMENT == "custom" else None
-            ),
-            LastEmbedButton=discord.ui.Button(
-            emoji="<:chevronsright:1220806426583371866>" if ENVIRONMENT != "custom" else None,
-            label=">>" if ENVIRONMENT == "custom" else None
-            ),
-            InitialPage=0,
-            timeout=360,
-        )
+        pag = await PaginatorButtons()
         button.disabled = True
         await pag.start(self.ctx, embeds, msg=msg)
         await interaction.response.edit_message(view=self)

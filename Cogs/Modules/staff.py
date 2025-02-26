@@ -9,30 +9,18 @@ import os
 import string
 from typing import Literal
 import random
-from motor.motor_asyncio import AsyncIOMotorClient
+from utils.format import IsSeperateBot, PaginatorButtons
+
 from utils.Module import ModuleCheck
 from datetime import datetime
 import re
 
-MONGO_URL = os.getenv("MONGO_URL")
-mongo = AsyncIOMotorClient(MONGO_URL)
 
 from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.format import ordinal
 from utils.permissions import check_admin_and_staff
 
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# staffdb = db["staff database"]
-# Customisation = db["Customisation"]
-# config = db["Config"]
-# infractiontypeactions = db["infractiontypeactions"]
-# collection = db["infractions"]
-# stafflist = db["Staff List"]
-# activelists = db["Active Staff List"]
-# Configuration = db["Config"]
-# Views = db["Views"]
 
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
@@ -226,9 +214,6 @@ class StaffManage(discord.ui.View):
         )
 
 
-# dbq = mongo["quotadb"]
-# mccollection = dbq["messages"]
-# message_quota_collection = dbq["message_quota"]
 
 
 class quota(commands.Cog):
@@ -378,13 +363,12 @@ class quota(commands.Cog):
     async def activity(self, ctx: commands.Context):
         pass
 
-    
     def FuckOff(self, value):
         try:
             return int(value)
         except ValueError:
-            return 0 
-        
+            return 0
+
     @activity.command(name="wave", description="Punish people failing the quota.")
     async def wave(self, ctx: commands.Context):
         if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
@@ -415,7 +399,7 @@ class quota(commands.Cog):
 
         await ctx.defer()
 
-        if os.getenv("ENVIRONMENT") == "custom":
+        if await IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
@@ -451,12 +435,18 @@ class quota(commands.Cog):
             if user_id not in Users:
                 Users[user_id] = user
             else:
-                Users[user_id]["message_count"] = int(Users[user_id].get("message_count", 0)) + int(user.get("message_count", 0))
-                Users[user_id]["ClaimedTickets"] = int(Users[user_id].get("ClaimedTickets", 0)) + int(user.get("ClaimedTickets", 0))
+                Users[user_id]["message_count"] = int(
+                    Users[user_id].get("message_count", 0)
+                ) + int(user.get("message_count", 0))
+                Users[user_id]["ClaimedTickets"] = int(
+                    Users[user_id].get("ClaimedTickets", 0)
+                ) + int(user.get("ClaimedTickets", 0))
 
         Users = sorted(
             Users.values(),
-            key=lambda x: (int(x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))),
+            key=lambda x: (
+                int(x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))
+            ),
             reverse=True,
         )
 
@@ -485,9 +475,8 @@ class quota(commands.Cog):
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
-            elif (
-                (TicketCount >= TicketQuota if TicketQuota else True)
-                and (MessageCount >= quota if quota else True)
+            elif (TicketCount >= TicketQuota if TicketQuota else True) and (
+                MessageCount >= quota if quota else True
             ):
                 passed.append(entry)
             else:
@@ -495,11 +484,15 @@ class quota(commands.Cog):
                 failedmembers.append(member)
 
         passed.sort(
-            key=lambda x: self.FuckOff(re.search(r'\d+', x.split("•")[-1].strip()).group()),
+            key=lambda x: self.FuckOff(
+                re.search(r"\d+", x.split("•")[-1].strip()).group()
+            ),
             reverse=True,
         )
         failed.sort(
-            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(
+                x.split("•")[-1].strip().split(" ")[0].strip("`")
+            ),
             reverse=True,
         )
 
@@ -548,7 +541,7 @@ class quota(commands.Cog):
             return
         await ctx.defer()
 
-        if os.getenv("ENVIRONMENT") == "custom":
+        if await IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
@@ -584,12 +577,18 @@ class quota(commands.Cog):
             if user_id not in Users:
                 Users[user_id] = user
             else:
-                Users[user_id]["message_count"] = Users[user_id].get("message_count", 0) + user.get("message_count", 0)
-                Users[user_id]["ClaimedTickets"] = Users[user_id].get("ClaimedTickets", 0) + user.get("ClaimedTickets", 0)
+                Users[user_id]["message_count"] = Users[user_id].get(
+                    "message_count", 0
+                ) + user.get("message_count", 0)
+                Users[user_id]["ClaimedTickets"] = Users[user_id].get(
+                    "ClaimedTickets", 0
+                ) + user.get("ClaimedTickets", 0)
 
         Users = sorted(
             Users.values(),
-            key=lambda x: int((x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))),
+            key=lambda x: int(
+                (x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))
+            ),
             reverse=True,
         )
 
@@ -618,24 +617,29 @@ class quota(commands.Cog):
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
-            elif (
-                (TicketCount >= TicketQuota if TicketQuota else True)
-                and (MessageCount >= quota if quota else True)
+            elif (TicketCount >= TicketQuota if TicketQuota else True) and (
+                MessageCount >= quota if quota else True
             ):
                 passed.append(entry)
             else:
                 failed.append(entry)
 
         passed.sort(
-            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(
+                x.split("•")[-1].strip().split(" ")[0].strip("`")
+            ),
             reverse=True,
         )
         failed.sort(
-            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(
+                x.split("•")[-1].strip().split(" ")[0].strip("`")
+            ),
             reverse=True,
         )
         on_loa.sort(
-            key=lambda x: self.FuckOff(x.split("•")[-1].strip().split(" ")[0].strip("`")),
+            key=lambda x: self.FuckOff(
+                x.split("•")[-1].strip().split(" ")[0].strip("`")
+            ),
             reverse=True,
         )
         passedembed = discord.Embed(title="Passed", color=discord.Color.brand_green())
@@ -699,13 +703,13 @@ class quota(commands.Cog):
                 else (
                     (
                         "Met"
-                        if environment == "custom"
+                        if await IsSeperateBot()
                         else "<:status_green:1227365520857104405>"
                     )
                     if MessageData.get("message_count") >= Quota
                     else (
                         "Not Met"
-                        if environment == "custom"
+                        if await IsSeperateBot()
                         else "<:status_red:1227365495376711700>"
                     )
                 )
@@ -877,7 +881,7 @@ class quota(commands.Cog):
             return
 
         await ctx.defer()
-        if os.getenv("ENVIRONMENT") == "custom":
+        if await IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
@@ -924,8 +928,12 @@ class quota(commands.Cog):
             if user_id not in Users:
                 Users[user_id] = user
             else:
-                Users[user_id]["message_count"] = Users[user_id].get("message_count", 0) + user.get("message_count", 0)
-                Users[user_id]["ClaimedTickets"] = Users[user_id].get("ClaimedTickets", 0) + user.get("ClaimedTickets", 0)
+                Users[user_id]["message_count"] = Users[user_id].get(
+                    "message_count", 0
+                ) + user.get("message_count", 0)
+                Users[user_id]["ClaimedTickets"] = Users[user_id].get(
+                    "ClaimedTickets", 0
+                ) + user.get("ClaimedTickets", 0)
 
         Users = sorted(
             Users.values(),
@@ -1083,42 +1091,7 @@ class quota(commands.Cog):
                         f"> **Place:** {ordinal(YourPlace) if YourPlace else 'N/A'}"
                     ),
                 )
-        paginator = Paginator.Simple(
-            PreviousButton=discord.ui.Button(
-                emoji=(
-                    "<:chevronleft:1220806425140531321>"
-                    if environment != "custom"
-                    else None
-                ),
-                label="<<" if environment == "custom" else None,
-            ),
-            NextButton=discord.ui.Button(
-                emoji=(
-                    "<:chevronright:1220806430010118175>"
-                    if environment != "custom"
-                    else None
-                ),
-                label=">>" if environment == "custom" else None,
-            ),
-            FirstEmbedButton=discord.ui.Button(
-                emoji=(
-                    "<:chevronsleft:1220806428726661130>"
-                    if environment != "custom"
-                    else None
-                ),
-                label="<<" if environment == "custom" else None,
-            ),
-            LastEmbedButton=discord.ui.Button(
-                emoji=(
-                    "<:chevronsright:1220806426583371866>"
-                    if environment != "custom"
-                    else None
-                ),
-                label=">>" if environment == "custom" else None,
-            ),
-            InitialPage=0,
-            timeout=360,
-        )
+        paginator = await PaginatorButtons()
         if pages:
             await paginator.start(ctx, pages=pages[:45], msg=msg)
         else:
@@ -1129,7 +1102,7 @@ class quota(commands.Cog):
 
     @quota.command(name="reset", description="Reset the message quota leaderboard")
     async def ResetQuota(
-        self, ctx: commands.Context, quota: Literal["messages", "tickets"]
+        self, ctx: commands.Context, quota: Literal["Messages", "Tickets"]
     ):
         await ctx.defer()
         if not await ModuleCheck(ctx.guild.id, "Quota"):
@@ -1670,13 +1643,13 @@ class ArmFire(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        if self.action == "messages":
-            await self.client.qdb["messages"].update_many(
+        if self.action == "Messages":
+            await interaction.client.qdb["messages"].update_many(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"message_count": 0}},
             )
         else:
-            await self.client.db["Ticket Quota"].update_many(
+            await interaction.client.db["Ticket Quota"].update_many(
                 {"GuildID": interaction.guild.id},
                 {"$set": {"ClaimedTickets": 0}},
             )

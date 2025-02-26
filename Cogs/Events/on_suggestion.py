@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 from utils.emojis import *
@@ -219,7 +219,7 @@ class Voting(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(
-        label="", emoji=f"{Settings}", custom_id="settingsbuttonforsuggestions"
+        label="", emoji=f"<:Setting:1223062944187813918>", custom_id="settingsbuttonforsuggestions"
     )
     async def settings(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -262,10 +262,10 @@ class ManageSuggestion(discord.ui.Select):
     def __init__(self, msg):
         options = [
             discord.SelectOption(
-                label="Approve", description="Approve the suggestion", emoji=f"{tick}"
+                label="Approve", description="Approve the suggestion", emoji=f"<:whitecheck:1223062421212631211>"
             ),
             discord.SelectOption(
-                label="Reject", description="Reject the suggestion", emoji=f"{no}"
+                label="Reject", description="Reject the suggestion", emoji=f"<:whitex:1190819175447408681>"
             ),
         ]
         super().__init__(

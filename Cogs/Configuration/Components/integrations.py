@@ -1,5 +1,5 @@
 import discord
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import os
 from utils.erm import GetIdentifier
 from utils.emojis import *

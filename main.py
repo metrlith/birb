@@ -102,6 +102,8 @@ class Client(commands.AutoShardedBot):
         self.cogslist = self._initialize_cogslist()
         if environment != "custom":
             self.cogslist.extend(["utils.api", "utils.dokploy"])
+        if os.getenv('STAFF'):
+            self.cogslist.append("Cogs.Modules.Developer.admin")
 
     def _initialize_databases(self):
         self.db = db
@@ -157,7 +159,7 @@ class Client(commands.AutoShardedBot):
                 command_prefix=commands.when_mentioned_or(PREFIX),
                 intents=intents,
                 shard_count=None,
-                chunk_guilds_at_startup=True,
+                chunk_guilds_at_startup=os.getenv("CACHE", True),
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
                 ),
@@ -167,7 +169,8 @@ class Client(commands.AutoShardedBot):
             super().__init__(
                 command_prefix=commands.when_mentioned_or(PREFIX),
                 intents=intents,
-                chunk_guilds_at_startup=False,
+            
+                chunk_guilds_at_startup=os.getenv("CACHE", False),
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
                 ),
@@ -181,7 +184,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Modules.utility",
             "Cogs.Modules.botinfo",
             "Cogs.Modules.suspension",
-            "Cogs.Modules.stafffeedback",
+            "Cogs.Modules.feedback",
             "Cogs.Modules.connectionroles",
             "Cogs.Modules.staff",
             "Cogs.Modules.promotions",

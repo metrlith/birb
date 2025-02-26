@@ -4,7 +4,7 @@ import os
 import validators
 from utils.permissions import premium
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 from discord.ui import Modal, TextInput
 

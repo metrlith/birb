@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import logging
 from utils.erm import voidShift
 import asyncio
@@ -300,10 +300,8 @@ class on_infractions(commands.Cog):
     async def InfractionTypes(
         self, data, staff: discord.Member, manager: discord.Member, config: dict
     ):
-
         if not data:
             return
-        print("ok")
         try:
             channel = False
             if data.get("givenroles"):

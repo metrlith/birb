@@ -5,14 +5,9 @@ from utils.emojis import *
 import string
 import os
 import random
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import traceback
 
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# errors = db["errors"]
-# environment = os.getenv("ENVIRONMENT")
 
 
 class On_error(commands.Cog):

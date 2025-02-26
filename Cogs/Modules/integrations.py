@@ -8,7 +8,7 @@ from utils.emojis import *
 from utils.ui import YesOrNo
 import asyncio
 from utils.permissions import has_admin_role
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from discord import app_commands
 
 # MONGO_URL = os.getenv("MONGO_URL")

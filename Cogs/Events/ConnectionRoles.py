@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from utils.emojis import *
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from utils.Module import ModuleCheck
 
 # MONGO_URL = os.getenv("MONGO_URL")

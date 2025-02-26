@@ -4,7 +4,7 @@ import discord
 from datetime import datetime, timedelta
 from utils.emojis import *
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import typing
 from Cogs.Events.on_ticket import TicketPermissions
 from discord import app_commands
@@ -18,12 +18,7 @@ from utils.autocompletes import CloseReason
 
 
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# Panels = db["Panels"]
-# T = db["Tickets"]
-# Blacklists = db["Ticket Blacklists"]
+
 
 
 async def AccessControl(interaction: discord.Interaction, Panel: dict):

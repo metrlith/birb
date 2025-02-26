@@ -1,29 +1,9 @@
 import discord
 from discord.ext import commands
 from utils.emojis import *
-import os
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 load_dotenv()
-
-MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-
-# custom_commands = db["Custom Commands"]
-# Config = db["Config"]
-# infractions = db["infractions"]
-# appeal = db["Ban Appeals Configuration"]
-# promotions = db["promotions"]
-# loa_collection = db["loa"]
-# suggestions = db["suggestions"]
-# forumsconfig = db["Forum Configuration"]
-# staffdb = db["staff database"]
-# stafffeedback = db["feedback"]
-# Responders = db["Auto Responders"]
-# suspensions = db["Suspensions"]
-# connectionroles = db["connectionroles"]
-
 
 class Data(commands.Cog):
     def __init__(self, client: commands.Bot):

@@ -5,7 +5,7 @@ import os
 import re
 import random
 from fuzzywuzzy import fuzz
-from motor.motor_asyncio import AsyncIOMotorClient
+
 
 # MONGO_URL = os.getenv("MONGO_URL")
 # client = AsyncIOMotorClient(MONGO_URL)

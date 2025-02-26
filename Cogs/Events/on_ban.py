@@ -8,17 +8,10 @@ import string
 import os
 import random
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from utils.Module import ModuleCheck
 
 MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-environment = os.getenv("ENVIRONMENT")
-# appeal = db["Ban Appeals Configuration"]
-# appeallogs = db["Ban Appeal Logs"]
-# appealsession = db["Appeal Sessions"]
-
 
 class on_ban(commands.Cog):
     def __init__(self, client: commands.Bot):

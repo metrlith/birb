@@ -4,7 +4,7 @@ from discord import app_commands
 
 from datetime import datetime
 from typing import Optional
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import aiohttp
 import os
 from utils.emojis import *

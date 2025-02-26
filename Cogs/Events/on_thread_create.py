@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import asyncio
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import os
 from utils.permissions import has_staff_role
 

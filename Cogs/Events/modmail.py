@@ -9,19 +9,7 @@ import chat_exporter
 import traceback
 import random
 import io
-from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = os.getenv("MONGO_URL")
-client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# modmail = db["modmail"]
-# transcripts = db["Transcripts"]
-# modmailblacklists = db["modmailblacklists"]
-# modmailping = db["modmailping"]
-# modmailalerts = db["modmailalerts"]
-# appealsession = db["Appeal Sessions"]
-
-# Configuration = db["Config"]
 
 
 async def Reply(

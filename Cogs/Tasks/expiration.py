@@ -1,7 +1,7 @@
 from discord.ext import commands
 import os
 import discord
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from datetime import datetime
 from discord.ext import tasks
 from dotenv import load_dotenv

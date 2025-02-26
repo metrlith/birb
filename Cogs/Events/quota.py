@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import os
 from dotenv import load_dotenv
 

@@ -5,26 +5,20 @@ import os
 from utils.emojis import *
 import datetime
 import random
+from utils.format import PaginatorButtons
 import string
 import utils.Paginator as Paginator
-from utils.permissions import has_admin_role, has_staff_role, premium
+from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
 
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 
 load_dotenv()
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# promochannel = db["promo channel"]
-# consent = db["consent"]
-# Customisation = db["Customisation"]
-# promotionroles = db["promotion roles"]
-# promotions = db["promotions"]
-# config = db["Config"]
+
 from utils.HelpEmbeds import (
     BotNotConfigured,
     NoPermissionChannel,
@@ -678,27 +672,7 @@ class promo(commands.Cog):
                 )
                 embed.set_thumbnail(url=staff.display_avatar)
                 embed.set_author(icon_url=staff.display_avatar, name=staff.display_name)
-        paginator = Paginator.Simple(
-            PreviousButton=discord.ui.Button(
-                emoji=("<:chevronleft:1220806425140531321>" if environment != "custom" else None),
-                label="<<" if environment == "custom" else None,
-            ),
-            NextButton=discord.ui.Button(
-                emoji=("<:chevronright:1220806430010118175>" if environment != "custom" else None),
-                label=">>" if environment == "custom" else None,
-            ),
-            FirstEmbedButton=discord.ui.Button(
-                emoji=("<:chevronsleft:1220806428726661130>" if environment != "custom" else None),
-                label="<<" if environment == "custom" else None,
-            ),
-            LastEmbedButton=discord.ui.Button(
-                emoji=("<:chevronsright:1220806426583371866>" if environment != "custom" else None),
-                label=">>" if environment == "custom" else None,
-            ),
-            InitialPage=0,
-            timeout=360,
-        )
-
+        paginator = await PaginatorButtons()
         await paginator.start(ctx, pages=embeds, msg=msg)
 
 

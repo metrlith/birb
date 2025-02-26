@@ -1,7 +1,7 @@
 from discord import app_commands
 import discord
 from discord.ext import commands
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from discord.ui import button
 import os
 from dotenv import load_dotenv

@@ -19,7 +19,7 @@ MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
-from motor.motor_asyncio import AsyncIOMotorClient
+
 
 client = AsyncIOMotorClient(MONGO_URL)
 # db = client["astro"]

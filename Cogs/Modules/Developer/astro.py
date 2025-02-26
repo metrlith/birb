@@ -3,7 +3,7 @@ from discord.ext import commands
 import os
 import psutil
 from utils.emojis import *
-from motor.motor_asyncio import AsyncIOMotorClient
+
 
 # MONGO_URL = os.getenv("MONGO_URL")
 # deploy_URL = os.getenv("deploy_url")

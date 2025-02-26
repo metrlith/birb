@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+
 import logging
 import validators
 

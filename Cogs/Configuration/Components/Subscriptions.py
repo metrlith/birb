@@ -1,6 +1,6 @@
 import discord
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+
 from dotenv import load_dotenv
 from utils.emojis import *
 load_dotenv()
