@@ -1,15 +1,6 @@
 import discord
 import discord.http
-import os
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-# load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
 
 
 class PermissionsUpdate(discord.ui.RoleSelect):
@@ -29,6 +20,9 @@ class PermissionsUpdate(discord.ui.RoleSelect):
 
     async def callback(self, interaction):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
+        from Cogs.Configuration.Components.AdvancedPermissions import (
+            PermissionsDropdown,
+        )
 
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
@@ -44,8 +38,12 @@ class PermissionsUpdate(discord.ui.RoleSelect):
             config["Permissions"] = {}
 
         config["Permissions"][self.typed] = [role.id for role in self.values]
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
         view = discord.ui.View()
         view.add_item(
             PermissionsUpdate(
@@ -69,6 +67,7 @@ class PermissionsUpdate(discord.ui.RoleSelect):
                 ],
             )
         )
+        view.add_item(PermissionsDropdown(interaction.user))
         view.add_item(ConfigMenu(Options(Updated), interaction.user))
         await interaction.response.edit_message(
             view=view,
@@ -85,7 +84,7 @@ async def PermissionsEmbed(
     if not Config:
         Config = {"Permissions": {}}
     print(Config.get("Permissions", {}).get("staffrole"))
-    print(Config.get('Permissions', {}).get('adminrole'))
+    print(Config.get("Permissions", {}).get("adminrole"))
     StaffRole = (
         ", ".join(
             f"<@&{int(Role)}>"
@@ -104,9 +103,9 @@ async def PermissionsEmbed(
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's permissions! If you wanna know more about what these permissions do head to the [advanced permissions page](https://docs.astrobirb.dev/advanced-permissions) on the [documentation](https:/docs.astrobirb.dev)\n"
-    value=f"{replytop} `Staff Role:` {StaffRole} \n{replybottom} `Admin Role:` {AdminRole}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
+    value = f"{replytop} `Staff Role:` {StaffRole} \n{replybottom} `Admin Role:` {AdminRole}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
     if len(value) > 1021:
-        value = value[:1018] + "..." 
+        value = value[:1018] + "..."
 
     embed.add_field(
         name=f"<:Permissions:1207365901956026368> Permissions",
