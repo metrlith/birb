@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-AdminRoles = [int(x) for x in os.getenv("STAFF").split(",")]
+AdminRoles = [int(x) for x in os.getenv("STAFF").split(",")] if os.getenv("STAFF") else []
 
 class AdminCog(commands.Cog):
     def __init__(self, client: commands.Bot):

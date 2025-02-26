@@ -12,7 +12,7 @@ from datetime import datetime
 # blacklists = db["blacklists"]
 # Servers = db["Servers"]
 
-PrimaryServers = [int(x) for x in os.getenv("DEFAULT_ALLOWED_SERVERS").split(",")]
+PrimaryServers = [int(x) for x in os.getenv("DEFAULT_ALLOWED_SERVERS").split(",")] if os.getenv("DEFAULT_ALLOWED_SERVERS") else []
 
 
 class GuildJoins(commands.Cog):
