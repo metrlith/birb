@@ -340,7 +340,7 @@ class ResetLeaderboard(discord.ui.View):
             return
         button.label = f"Reset By @{interaction.user.display_name}"
         button.disabled = True
-        await self.client.qdb['messages'].update_many(
+        await interaction.client.qdb['messages'].update_many(
             {"guild_id": interaction.guild.id}, {"$set": {"message_count": 0}}
         )
         await interaction.response.edit_message(view=self)
@@ -357,7 +357,7 @@ class ResetLeaderboard(discord.ui.View):
         if not await self.has_admin_role(interaction, "Message Quota Permissions"):
             return
         if not self.failures:
-            result = await self.client.AutoActivity.find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db['auto activity'].find_one({"guild_id": interaction.guild.id})
             self.failures = result.get("failed", [])
             if not result or self.failures is None or len(self.failures) == 0:
                 await interaction.response.send_message(
@@ -389,10 +389,10 @@ class ActionModal(discord.ui.Modal, title="Action"):
         notes = None
         expiration = None
         anonymous = True
-        TypeActions = await self.client.db['infractiontypeactions'].find_one(
+        TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await self.client.config.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}**, the bot isn't setup you can do that in /config.",
