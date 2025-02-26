@@ -1037,12 +1037,14 @@ class quota(commands.Cog):
                     )
                 )
             )
-            if staff.get("message_count", 0) and staff.get("ClaimedTickets", 0):
+        
+            if staff.get("message_count") is not None and staff.get("ClaimedTickets") is not None:
                 Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
-            elif staff.get("message_count", 0):
+            elif staff.get("message_count") is not None:
                 Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
-            elif staff.get("ClaimedTickets", 0):
+            elif staff.get("ClaimedTickets") is not None:
                 Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
+
 
             if (
                 Config.get("Message Quota", {}).get("quota", 0) != 0
