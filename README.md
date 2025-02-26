@@ -1,12 +1,33 @@
 # 🐦Birb
 Birb is designed to simplify tasks related to managing staff, staff punishment, activity tracking.
 
+## 🧱 Features
+> - Tickets
+> - Modmail
+> - Message Quota
+> - Leave Of Absenses
+> - Daily Questions
+> - Integrations (Roblox Groups + ERM)
+> - Staff Punishments
+> - Promotions (Hireachies System)
+> - Forums (Automated Message on open + button controls)
+> - Staff Feedback
+> - Suggestions
+> - Suspensions
+> - Staff List
+> - Staff Panel 
+> - Custom Commands
+> - Connection Roles
+> - Ban Appeals
+> - Auto Response 
 
-## Admin Commands
+## `STAFF` Commands
+> These are the commands you can use if your User ID is listed in *.env* var `STAFF`:
 * !!guilds
 * !!leave
 * !!whitelist
 * !!unwhitelist
+
 
 ## Liscensing
 Birb is licensed under the Attribution-NonCommercial-ShareAlike (CC BY-NC-SA) license. This license allows for the copy, distribution, and creation of adaptations of the material for non-commercial purposes, as long as proper attribution is given to the original creator and any adaptations are licensed under the same terms.
