@@ -5,7 +5,6 @@ import discord
 from datetime import datetime
 from discord.ext import tasks
 from dotenv import load_dotenv
-import os
 
 
 load_dotenv()

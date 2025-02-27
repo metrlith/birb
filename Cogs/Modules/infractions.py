@@ -24,17 +24,6 @@ from utils.HelpEmbeds import (
     NoPremium,
 )
 
-from utils.HelpEmbeds import (
-    BotNotConfigured,
-    NoPermissionChannel,
-    ChannelNotFound,
-    ModuleNotEnabled,
-    NoChannelSet,
-    Support,
-    ModuleNotSetup,
-    NoPremium,
-)
-
 load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")

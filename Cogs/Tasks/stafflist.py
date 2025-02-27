@@ -3,9 +3,7 @@ from discord.ext import commands
 
 from discord.ext import tasks
 import os
-import discord
 from utils.emojis import *
-from discord.ext import commands
 from datetime import datetime
 from utils.Module import ModuleCheck
 

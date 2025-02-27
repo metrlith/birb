@@ -6,7 +6,6 @@ from io import BytesIO
 import discord
 import logging
 import os
-from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
 load_dotenv()
 
