@@ -5,11 +5,9 @@ from bson import ObjectId
 from utils.emojis import *
 
 import logging
-from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import datetime
 import asyncio
-from utils.format import strtotime
 from utils.r2 import upload_file_to_r2, ClearOldFiles
 
 
@@ -26,9 +24,8 @@ async def TicketPermissions(interaction: discord.Interaction):
         return False
     if not P.get("permissions"):
         return False
-    for role in P.get("permissions"):
-        if role in [r.id for r in interaction.user.roles]:
-            return True
+    if any(role.id in P.get("permissions") for role in interaction.user.roles):
+        return True
 
 
 async def DefaultEmbed(Member: discord.Member, Ticket: dict) -> discord.Embed:
