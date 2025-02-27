@@ -18,7 +18,7 @@ async def TicketPermissions(interaction: discord.Interaction):
     if not t:
         return False
     P = await interaction.client.db["Panels"].find_one(
-        {"name": t.get("panel"), "guild": interaction.guild.id}
+        {"name": t.get("panel"), "guild": interaction.guild.id, "type": "single"}
     )
     if not P:
         return False
