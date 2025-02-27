@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands, tasks
 import os
-import discord
 from utils.emojis import *
 from dotenv import load_dotenv
 from datetime import datetime

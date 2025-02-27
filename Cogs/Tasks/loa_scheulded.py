@@ -2,14 +2,11 @@ from discord.ext import commands, tasks
 import os
 
 import datetime
-from discord.ext import tasks
 from dotenv import load_dotenv
-import os
 from datetime import datetime
 from bson import ObjectId
 from utils.emojis import *
 import discord
-from discord.ext import tasks
 
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")

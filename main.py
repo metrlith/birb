@@ -21,7 +21,6 @@ from Cogs.Tasks.qotd import *
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Events.Dev.on_ticket import TicketControl
 from Cogs.Modules.tickets import ButtonHandler
-import sys
 sys.dont_write_bytecode = True
 
 
