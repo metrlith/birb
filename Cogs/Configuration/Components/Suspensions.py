@@ -275,7 +275,7 @@ async def SuspensionEmbed(
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's suspensions settings! Suspension are a way to punish staff members for a period of time. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Suspension",
+        name="<:settings:1207368347931516928> Suspension",
         value=f"> `Suspension Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

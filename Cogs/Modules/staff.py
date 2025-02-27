@@ -818,7 +818,7 @@ class quota(commands.Cog):
         if not await has_admin_role(ctx, "Message Quota Permissions"):
             return
         await ctx.defer(ephemeral=True)
-        msg = await ctx.send(f"<a:Loading:1167074303905386587> Exporting to CSV...")
+        msg = await ctx.send("<a:Loading:1167074303905386587> Exporting to CSV...")
         users = (
             await self.client.qdb["messages"]
             .find({"guild_id": ctx.guild.id})

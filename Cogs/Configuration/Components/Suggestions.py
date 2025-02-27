@@ -57,7 +57,7 @@ class Suggestions(discord.ui.Select):
             await interaction.response.edit_message(
                 embed=None,
                 view=view,
-                content=f"<:List:1223063187063308328> Select which embed you want to edit.",
+                content="<:List:1223063187063308328> Select which embed you want to edit.",
             )
 
 
@@ -305,7 +305,7 @@ async def SuggestionsEmbed(
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's suggestions settings! Suggestions is a way for members to give suggestions to the server. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Suggestions",
+        name="<:settings:1207368347931516928> Suggestions",
         value=f"> `Suggestions Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

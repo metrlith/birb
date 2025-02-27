@@ -163,10 +163,10 @@ class Utility(commands.Cog):
 
                         member = await guild.fetch_member(user.id)
                         if donator2 in member.roles:
-                            badge_values += f"> <:Patreon:1229499944533233695> [Patreon Donator](https://www.patreon.com/astrobirb)\n"
+                            badge_values += "> <:Patreon:1229499944533233695> [Patreon Donator](https://www.patreon.com/astrobirb)\n"
                             badgecount += 1
                         if donator in member.roles:
-                            badge_values += f"> <:kofi:1229499870193258556> [Ko-fi Donator](https://ko-fi.com/astrobird#)\n"
+                            badge_values += "> <:kofi:1229499870193258556> [Ko-fi Donator](https://ko-fi.com/astrobird#)\n"
                             badgecount += 1
                         if booster in member.roles:
                             badge_values += f"> {public_flags_emojis['booster']} Astro Birb Booster\n"

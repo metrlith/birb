@@ -56,7 +56,7 @@ class BanAppealOptions(discord.ui.Select):
                 color=discord.Colour.dark_embed(),
             )
             embed.set_author(
-                name=f"Manage Questions",
+                name="Manage Questions",
                 icon_url="https://cdn.discordapp.com/emojis/1178754449125167254.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
@@ -175,7 +175,7 @@ class CreateQuestionModal(Modal):
             color=discord.Colour.dark_embed(),
         )
         embed.set_author(
-            name=f"Manage Questions",
+            name="Manage Questions",
             icon_url="https://cdn.discordapp.com/emojis/1178754449125167254.webp?size=96&quality=lossless",
         )
         embed.set_thumbnail(url=interaction.guild.icon)
@@ -240,7 +240,7 @@ class DeleteQuestionModal(Modal):
             color=discord.Colour.dark_embed(),
         )
         embed.set_author(
-            name=f"Manage Questions",
+            name="Manage Questions",
             icon_url="https://cdn.discordapp.com/emojis/1178754449125167254.webp?size=96&quality=lossless",
         )
         embed.set_thumbnail(url=interaction.guild.icon)
@@ -287,7 +287,7 @@ async def BanAppealEmbed(interaction: discord.Interaction, embed: discord.Embed)
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is your server's Ban Appeal configuration. If the moderation bot you are using doesn't have ban appeal's, you can use this. (Alert: Doesn't work if the user doesn't have mutual servers with the bot.) You can find out more at [the documentation](https://docs.astrobirb.dev/)"
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Appeals",
+        name="<:settings:1207368347931516928> Appeals",
         value=f"> `Appeal Channel:` {channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

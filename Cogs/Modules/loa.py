@@ -470,7 +470,7 @@ class Confirm(discord.ui.View):
         style=discord.ButtonStyle.green,
         custom_id="persistent_view:confirm",
         row=0,
-        emoji=f"<:whitecheck:1223062421212631211>",
+        emoji="<:whitecheck:1223062421212631211>",
     )
     async def confirm(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -570,7 +570,7 @@ class Confirm(discord.ui.View):
         style=discord.ButtonStyle.red,
         custom_id="persistent_view:cancel",
         row=0,
-        emoji=f"<:whitex:1190819175447408681>",
+        emoji="<:whitex:1190819175447408681>",
     )
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()

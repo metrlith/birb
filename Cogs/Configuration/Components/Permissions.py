@@ -108,7 +108,7 @@ async def PermissionsEmbed(
         value = value[:1018] + "..."
 
     embed.add_field(
-        name=f"<:Permissions:1207365901956026368> Permissions",
+        name="<:Permissions:1207365901956026368> Permissions",
         value=value,
         inline=False,
     )

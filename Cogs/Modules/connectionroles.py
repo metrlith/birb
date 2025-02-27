@@ -45,7 +45,7 @@ class ConnectionRoles(commands.Cog):
         total_members = len(ctx.guild.members)
         updated_members = 0
         msg = await ctx.send(
-            f"<a:astroloading:1245681595546079285> Syncing connection roles..."
+            "<a:astroloading:1245681595546079285> Syncing connection roles..."
         )
 
         for role in roleresult:

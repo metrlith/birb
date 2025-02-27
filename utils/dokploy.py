@@ -238,7 +238,7 @@ class ManageApplication(discord.ui.View):
 
         await interaction.response.defer()
         msg = await interaction.followup.send(
-            f"<a:Loading:1167074303905386587> Deploying...", ephemeral=True
+            "<a:Loading:1167074303905386587> Deploying...", ephemeral=True
         )
         result = await Deploy(self.application.get("applicationId"))
         if not result:
@@ -261,7 +261,7 @@ class ManageApplication(discord.ui.View):
 
         await interaction.response.defer()
         msg = await interaction.followup.send(
-            f"<a:Loading:1167074303905386587> Starting...", ephemeral=True
+            "<a:Loading:1167074303905386587> Starting...", ephemeral=True
         )
         result = await Start(self.application.get("applicationId"))
         if not result:
@@ -284,7 +284,7 @@ class ManageApplication(discord.ui.View):
 
         await interaction.response.defer()
         msg = await interaction.followup.send(
-            f"<a:Loading:1167074303905386587> Reloading...", ephemeral=True
+            "<a:Loading:1167074303905386587> Reloading...", ephemeral=True
         )
 
         result = await Reload(self.application.get("applicationId"))
@@ -316,7 +316,7 @@ class DeployAllButton(discord.ui.View):
 
         await interaction.response.defer()
         msg = await interaction.followup.send(
-            f"<a:Loading:1167074303905386587> Deploying all applications...",
+            "<a:Loading:1167074303905386587> Deploying all applications...",
             ephemeral=True,
         )
         result = await DeployAll()

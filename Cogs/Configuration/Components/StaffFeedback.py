@@ -71,7 +71,7 @@ class StaffFeedback(discord.ui.Select):
                 view.children[0].label = "Multiple Feedback (Disabled)"
                 view.children[0].style = discord.ButtonStyle.red
             embed = discord.Embed(color=discord.Color.dark_embed())
-            embed.description = f"> - **Multiple Feedback:** Its in the name basically you can submit multiple feedback for the same person."
+            embed.description = "> - **Multiple Feedback:** Its in the name basically you can submit multiple feedback for the same person."
 
             embed.set_author(
                 name="Preferences",
@@ -326,7 +326,7 @@ async def StaffFeedbackEmbed(
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's staff feedback settings! Staff feedback is a way for members to give feedback to staff. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Staff Feedback",
+        name="<:settings:1207368347931516928> Staff Feedback",
         value=f"> `Feedback Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

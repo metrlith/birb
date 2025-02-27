@@ -263,7 +263,7 @@ class PSelect(discord.ui.Select):
             return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
-                content=f"<:List:1223063187063308328> Select the roles for the hierarchy.\n\n<:Help:1223063068012056576> No need to select them in order, they will be sorted automatically with discords role hierarchy system.",
+                content="<:List:1223063187063308328> Select the roles for the hierarchy.\n\n<:Help:1223063068012056576> No need to select them in order, they will be sorted automatically with discords role hierarchy system.",
             )
         elif Selected == "Multi Hierarchy":
             view = discord.ui.View()
@@ -764,7 +764,7 @@ class CreateDeleteDepartment(discord.ui.Modal):
             view = discord.ui.View()
             view.add_item(MultiHierarchy(interaction.user, DepartmentName, []))
             await interaction.response.edit_message(
-                content=f"<:List:1223063187063308328> Select the roles for this department's hierarchy.\n\n<:Help:1223063068012056576> No need to select them in order, they will be sorted automatically with discords role hierarchy system.",
+                content="<:List:1223063187063308328> Select the roles for this department's hierarchy.\n\n<:Help:1223063068012056576> No need to select them in order, they will be sorted automatically with discords role hierarchy system.",
                 view=view,
             )
             return
@@ -858,7 +858,7 @@ async def PromotionEmbed(
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's promotion settings! Promotions are a way to give staff members more power. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Promotions",
+        name="<:settings:1207368347931516928> Promotions",
         value=f"> `Promotion Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

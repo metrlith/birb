@@ -84,7 +84,7 @@ class QOTDOptions(discord.ui.Select):
             )
             embed = discord.Embed(
                 title=f"{redx} Disabled",
-                description=f"> **QOTD has been disabled.**",
+                description="> **QOTD has been disabled.**",
                 color=discord.Color.brand_red(),
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -152,7 +152,7 @@ class QOTDOptions(discord.ui.Select):
                 view.IssuerButton.style = discord.ButtonStyle.red
 
             embed = discord.Embed(color=discord.Color.dark_embed())
-            embed.description = f"> - **Threads:** If enabled, the bot will create a thread for each QOTD post. This is useful for keeping the discussion organized."
+            embed.description = "> - **Threads:** If enabled, the bot will create a thread for each QOTD post. This is useful for keeping the discussion organized."
 
             embed.set_author(
                 name="Preferences",
@@ -308,7 +308,7 @@ async def QOTDEMbed(interaction: discord.Interaction, embed: discord.Embed):
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's QOTD settings! QOTD is a way for members to answer a question of the day. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Daily Questions",
+        name="<:settings:1207368347931516928> Daily Questions",
         value=f"{replytop} `Channel:` {channel}\n{replymiddle} `Ping`: {ping}\n{replybottom} `Next Date:` {NextDate} (Not 100% accurate)\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )

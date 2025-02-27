@@ -103,7 +103,7 @@ class Voting(discord.ui.View):
         label="Upvote",
         style=discord.ButtonStyle.green,
         custom_id="PERSISTENTR:UPVOTE",
-        emoji=f"<:UpVote:1223062893096996934>",
+        emoji="<:UpVote:1223062893096996934>",
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -138,7 +138,7 @@ class Voting(discord.ui.View):
         label="Downvote",
         style=discord.ButtonStyle.red,
         custom_id="PERSISTENTR:DOWNVOTE",
-        emoji=f"<:DownVote:1059585429357211760>",
+        emoji="<:DownVote:1059585429357211760>",
     )
     async def downvote(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -209,7 +209,7 @@ class Voting(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(
-        label="", emoji=f"<:Setting:1223062944187813918>", custom_id="settingsbuttonforsuggestions"
+        label="", emoji="<:Setting:1223062944187813918>", custom_id="settingsbuttonforsuggestions"
     )
     async def settings(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -252,10 +252,10 @@ class ManageSuggestion(discord.ui.Select):
     def __init__(self, msg):
         options = [
             discord.SelectOption(
-                label="Approve", description="Approve the suggestion", emoji=f"<:whitecheck:1223062421212631211>"
+                label="Approve", description="Approve the suggestion", emoji="<:whitecheck:1223062421212631211>"
             ),
             discord.SelectOption(
-                label="Reject", description="Reject the suggestion", emoji=f"<:whitex:1190819175447408681>"
+                label="Reject", description="Reject the suggestion", emoji="<:whitex:1190819175447408681>"
             ),
         ]
         super().__init__(

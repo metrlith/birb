@@ -462,7 +462,7 @@ class SingelPanelCustomisation(discord.ui.View):
             )
         
         if len(dict.get("Questions", [])) < 0:
-            embed.description = f"> You can add up to 5 questions to this form."
+            embed.description = "> You can add up to 5 questions to this form."
 
         return embed
             

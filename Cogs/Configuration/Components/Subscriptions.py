@@ -82,5 +82,5 @@ async def SubscriptionsEmbed(interaction: discord.Interaction):
     if user and not result:
         embed.description = "> Thanks for being a **premium subscriber!** You can active there server by pressing Upgrade Server!"
     if user and result:
-        embed.description = f"> Thanks for being a **premium server!** If you no longer want this server to have premium deactivate it below."
+        embed.description = "> Thanks for being a **premium server!** If you no longer want this server to have premium deactivate it below."
     return embed
