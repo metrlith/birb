@@ -3,7 +3,6 @@ from discord import app_commands
 from discord.ext import commands
 import discord.http
 import pymongo
-import utils.Paginator as Paginator
 from utils.emojis import *
 import os
 import string

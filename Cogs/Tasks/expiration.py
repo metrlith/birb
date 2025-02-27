@@ -8,17 +8,9 @@ from dotenv import load_dotenv
 import os
 
 
-MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# collection = db["infractions"]
-# loa_collection = db["loa"]
-# infractiontypeactions = db["infractiontypeactions"]
-# config = db["Config"]
-
 
 
 class expiration(commands.Cog):

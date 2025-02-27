@@ -3,7 +3,6 @@ from discord.ext import commands
 import discord.http
 from utils.emojis import *
 import os
-import utils.Paginator as Paginator
 import traceback
 from utils.format import IsSeperateBot, PaginatorButtons
 from utils.autocompletes import Snippets

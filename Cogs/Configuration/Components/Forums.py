@@ -1,11 +1,8 @@
 import discord
 import discord.http
-import os
-import traceback
 from utils.emojis import *
 
 from dotenv import load_dotenv
-from utils.permissions import premium
 
 load_dotenv()
 # Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))

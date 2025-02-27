@@ -1,18 +1,9 @@
 import discord
 from discord.ext import commands
 from utils.emojis import *
-import os
 import re
 import random
 from fuzzywuzzy import fuzz
-
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# Responders = db["Auto Responders"]
-# environment = os.getenv("ENVIRONMENT")
-# premium = db["Premium"]
 from datetime import datetime
 
 

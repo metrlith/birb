@@ -263,67 +263,7 @@ class ResetLeaderboard(discord.ui.View):
         super().__init__(timeout=None)
         self.failures = failures
 
-    @staticmethod
-    async def has_admin_role(interaction: discord.Interaction, permissions=None):
-        blacklists = await blacklist.find_one({"user": interaction.user.id})
-        if blacklists:
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?",
-                ephemeral=True,
-            )
-            return False
 
-        filter = {"guild_id": interaction.guild.id}
-        Config = await Configuration.find_one({"_id": interaction.guild.id})
-        if not Config:
-            await interaction.response.send_message(
-                embed=BotNotConfigured(),
-                view=Support(),
-            )
-            return False
-        if not Config.get("Permissions"):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the permissions haven't been set up yet, please run `/config`",
-            )
-            return False
-        if not Config.get("Permissions").get("adminrole"):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, the admin role hasn't been set up yet, please run `/config`",
-            )
-            return False
-
-        # advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-        # if advancedresult:
-        #     for advanced in advancedresult:
-        #         if permissions in advanced.get("permissions", []):
-        #             if any(
-        #                 role.id == advanced.get("role")
-        #                 for role in interaction.user.roles
-        #             ):
-        #                 return True
-
-        if Config.get("Permissions").get("adminrole"):
-            Ids = Config.get("Permissions").get("adminrole")
-            if not isinstance(Ids, list):
-                Ids = [Ids]
-
-            if any(role.id in Ids for role in interaction.user.roles):
-                return True
-        else:
-            if interaction.user.guild_permissions.administrator:
-                await interaction.response.send_message(
-                    f"{no} **{interaction.user.display_name}**, the admin role isn't set, please run </config:1140463441136586784>",
-                )
-            else:
-                await interaction.response.send_message(
-                    f"{no} **{interaction.user.display_name}**, the admin role is not set up. Please tell an admin to run </config:1140463441136586784> to fix it.",
-                )
-            return
-
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`",
-        )
-        return False
 
     @discord.ui.button(
         label="Reset Leaderboard",
@@ -334,8 +274,8 @@ class ResetLeaderboard(discord.ui.View):
     async def reset_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if not await self.has_admin_role(
-            interaction=interaction, permissions="Message Quota Permissions"
+        if not await has_admin_role(
+            interaction
         ):
             return
         button.label = f"Reset By @{interaction.user.display_name}"
@@ -354,7 +294,7 @@ class ResetLeaderboard(discord.ui.View):
     async def punishfailures(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if not await self.has_admin_role(interaction, "Message Quota Permissions"):
+        if not await has_admin_role(interaction):
             return
         if not self.failures:
             result = await interaction.client.db['auto activity'].find_one({"guild_id": interaction.guild.id})

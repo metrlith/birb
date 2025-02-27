@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 from utils.emojis import *
 from discord import app_commands
-import os
-import typing
 from datetime import datetime
 
 from utils.permissions import has_admin_role
@@ -15,16 +13,6 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed, HandleButto
 from utils.format import Replace
 from dotenv import load_dotenv
 load_dotenv()
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-
-# custom_commands = db["Custom Commands"]
-# CustomVoting = db["Commands Voting"]
-# commandslogging = db["Commands Logging"]
-# prefixdb = db["prefixes"]
-
 
 async def run(
     ctx: discord.Interaction,

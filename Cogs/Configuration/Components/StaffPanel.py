@@ -1,6 +1,5 @@
 import discord
 import discord.http
-import os
 import traceback
 
 from utils.emojis import *

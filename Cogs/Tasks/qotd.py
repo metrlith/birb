@@ -15,12 +15,6 @@ MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# # questiondb = db["qotd"]
-# # questionsa = db["Question Database"]
-
-
 class qotd(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

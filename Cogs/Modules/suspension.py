@@ -15,16 +15,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
-MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
-
-
-client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# suspensions = db["Suspensions"]
-# Config = db["Config"]
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -38,7 +31,6 @@ from utils.HelpEmbeds import (
 class Suspensions(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-
 
     @commands.hybrid_command(description="Suspend a staff member")
     @app_commands.describe(
@@ -58,10 +50,7 @@ class Suspensions(commands.Cog):
         await ctx.defer(ephemeral=True)
         if not await ModuleCheck(ctx.guild.id, "suspensions"):
 
-            await ctx.send(
-               embed=ModuleNotEnabled(),
-               view=Support()
-            )
+            await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
         if not await has_admin_role(ctx, "Suspension Permissions"):
             return
@@ -91,7 +80,7 @@ class Suspensions(commands.Cog):
             return
 
         filter = {"guild_id": ctx.guild.id, "staff": staff.id, "active": True}
-        existing_suspensions = await self.client.db['Suspensions'].find_one(filter)
+        existing_suspensions = await self.client.db["Suspensions"].find_one(filter)
 
         if existing_suspensions:
             await ctx.send(
@@ -137,7 +126,7 @@ class Suspensions(commands.Cog):
     async def active(self, ctx: commands.Context):
         if not await ModuleCheck(ctx.guild.id, "suspensions"):
             await ctx.send(
-                                embed=ModuleNotEnabled(),
+                embed=ModuleNotEnabled(),
                 view=Support(),
             )
             return
@@ -146,7 +135,9 @@ class Suspensions(commands.Cog):
 
         filter = {"guild_id": ctx.guild.id, "active": True}
 
-        loa_requests = await self.client.db['Suspensions'].find(filter).to_list(length=None)
+        loa_requests = (
+            await self.client.db["Suspensions"].find(filter).to_list(length=None)
+        )
 
         if len(loa_requests) == 0:
             await ctx.send(
@@ -182,14 +173,14 @@ class Suspensions(commands.Cog):
     async def manage(self, ctx: commands.Context, staff: discord.Member):
         if not await ModuleCheck(ctx.guild.id, "suspensions"):
             await ctx.send(
-                                embed=ModuleNotEnabled(),
+                embed=ModuleNotEnabled(),
                 view=Support(),
             )
             return
         if not await has_admin_role(ctx, "Suspension Permissions"):
             return
         filter = {"guild_id": ctx.guild.id, "staff": staff.id}
-        suspension_requests = self.client.db['Suspensions'].find(filter)
+        suspension_requests = self.client.db["Suspensions"].find(filter)
 
         suspension_records = []
 
@@ -303,7 +294,7 @@ class Suspension(discord.ui.RoleSelect):
             "active": True,
             "notes": self.notes if self.notes else "N/A",
         }
-        RESULT = await interaction.client.db['Suspensions'].insert_one(RESULT)
+        RESULT = await interaction.client.db["Suspensions"].insert_one(RESULT)
         interaction.client.dispatch(
             "infraction", RESULT.inserted_id, config, None, "Suspension"
         )
@@ -406,7 +397,7 @@ class RoleTakeAwayYesOrNo(discord.ui.View):
             "active": True,
             "notes": self.notes if self.notes else "N/A",
         }
-        RESULT = await interaction.client.db['Suspensions'].insert_one(Suspension)
+        RESULT = await interaction.client.db["Suspensions"].insert_one(Suspension)
         interaction.client.dispatch(
             "infraction", RESULT.inserted_id, config, None, "Suspension"
         )
@@ -458,7 +449,7 @@ class SuspensionPanel(discord.ui.View):
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        suspension_record = await interaction.client.db['Suspensions'].find_one(
+        suspension_record = await interaction.client.db["Suspensions"].find_one(
             {"guild_id": interaction.guild.id, "staff": self.user.id}
         )
         if suspension_record:
@@ -490,7 +481,7 @@ class SuspensionPanel(discord.ui.View):
                             view=None,
                             embed=None,
                         )
-                        await interaction.client.db['Suspensions'].delete_one(
+                        await interaction.client.db["Suspensions"].delete_one(
                             {"guild_id": interaction.guild.id, "staff": self.user.id}
                         )
 
@@ -510,7 +501,7 @@ class SuspensionPanel(discord.ui.View):
                         pass
             else:
                 member = await interaction.guild.fetch_member(self.user.id)
-                await interaction.client.db['Suspensions'].delete_one(
+                await interaction.client.db["Suspensions"].delete_one(
                     {"guild_id": interaction.guild.id, "staff": self.user.id}
                 )
                 await interaction.response.edit_message(

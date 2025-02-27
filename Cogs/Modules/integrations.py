@@ -1,8 +1,6 @@
 import discord
 from discord.ext import commands
-import platform
 from typing import Literal
-import psutil
 import os
 from utils.emojis import *
 from utils.ui import YesOrNo
@@ -10,9 +8,6 @@ import asyncio
 from utils.permissions import has_admin_role
 
 from discord import app_commands
-
-
-
 
 class Link(commands.Cog):
     def __init__(self, client: commands.Bot):

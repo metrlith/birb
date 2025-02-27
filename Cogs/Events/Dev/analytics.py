@@ -1,14 +1,5 @@
 from discord.ext import commands
-
-import os
 import time
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# analytics = db["analytics"]
-
-
 class analyticss(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

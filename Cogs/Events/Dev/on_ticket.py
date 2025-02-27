@@ -8,13 +8,6 @@ import datetime
 from utils.emojis import *
 import os
 
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# T = db["Tickets"]
-
-
 class TicketOpen(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

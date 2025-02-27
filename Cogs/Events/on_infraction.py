@@ -13,24 +13,13 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import traceback
 
 logger = logging.getLogger(__name__)
-
 MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# infractions = db["infractions"]
-# Customisation = db["Customisation"]
-# integrations = db["integrations"]
-# staffdb = db["staff database"]
-# consent = db["consent"]
-# Suspension = db["Suspensions"]
-# infractiontypeactions = db["infractiontypeactions"]
-
 
 
 def Replacements(staff: discord.Member, Infraction: dict, manager: discord.Member):
     def get_attr_or_key(obj, key):
         return getattr(obj, key, None) if hasattr(obj, key) else obj.get(key, "N/A")
-    
+
     replacements = {
         "{staff.mention}": staff.mention,
         "{staff.name}": staff.display_name,
@@ -40,7 +29,9 @@ def Replacements(staff: discord.Member, Infraction: dict, manager: discord.Membe
         "{action}": get_attr_or_key(Infraction, "action"),
         "{reason}": get_attr_or_key(Infraction, "reason"),
         "{notes}": get_attr_or_key(Infraction, "notes"),
-        "{author.avatar}": manager.display_avatar.url if manager.display_avatar else None,
+        "{author.avatar}": (
+            manager.display_avatar.url if manager.display_avatar else None
+        ),
         "{expiration}": (
             f"<t:{int(get_attr_or_key(Infraction, 'expiration').timestamp())}:R>"
             if get_attr_or_key(Infraction, "expiration")
@@ -148,9 +139,13 @@ class on_infractions(commands.Cog):
         self, objectid: ObjectId, Settings: dict, Actions: dict, Type: str = None
     ):
         if Type is None:
-            InfractionData = await self.client.db['infractions'].find_one({"_id": objectid})
+            InfractionData = await self.client.db["infractions"].find_one(
+                {"_id": objectid}
+            )
         else:
-            InfractionData = await self.client.db['Suspensions'].find_one({"_id": objectid})
+            InfractionData = await self.client.db["Suspensions"].find_one(
+                {"_id": objectid}
+            )
         Infraction = InfractItem(InfractionData)
         guild = await self.client.fetch_guild(Infraction.guild_id)
         if guild is None:
@@ -199,7 +194,7 @@ class on_infractions(commands.Cog):
             )
             return
 
-        custom = await self.client.db['Customisation'].find_one(
+        custom = await self.client.db["Customisation"].find_one(
             {
                 "guild_id": Infraction.guild_id,
                 "type": "Infractions" if Type is None else "Suspension",
@@ -244,18 +239,18 @@ class on_infractions(commands.Cog):
         except (discord.Forbidden, discord.HTTPException, discord.NotFound):
             return
         if Type is None:
-            await self.client.db['infractions'].update_one(
+            await self.client.db["infractions"].update_one(
                 {"_id": objectid},
                 {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
             )
         else:
-            await self.client.db['Suspensions'].update_one(
+            await self.client.db["Suspensions"].update_one(
                 {"_id": objectid},
                 {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
             )
 
-        consreult = await self.client.db['consent'].find_one({"user_id": staff.id})
-        if Settings.get('Module Options', {}).get('Direct Message', True):
+        consreult = await self.client.db["consent"].find_one({"user_id": staff.id})
+        if Settings.get("Module Options", {}).get("Direct Message", True):
             if not consreult or consreult.get("infractionalert") is not False:
                 try:
                     await staff.send(
@@ -270,8 +265,14 @@ class on_infractions(commands.Cog):
             NextType = Escalation.get("Next Type")
             Reason = Escalation.get("Reason")
             if Threshold and NextType:
-                InfractionsWithType = await self.client.db['infractions'].count_documents(
-                    {"guild_id": guild.id, "staff": staff.id, "action": Infraction.action}
+                InfractionsWithType = await self.client.db[
+                    "infractions"
+                ].count_documents(
+                    {
+                        "guild_id": guild.id,
+                        "staff": staff.id,
+                        "action": Infraction.action,
+                    }
                 )
                 if len(Threshold) + 1 < InfractionsWithType:
                     await asyncio.sleep(2)
@@ -280,7 +281,7 @@ class on_infractions(commands.Cog):
                         "staff": staff.id,
                         "reason": Reason,
                         "action": NextType,
-                        "management":  manager.id,
+                        "management": manager.id,
                         "notes": "`N/A`",
                         "expiration": None,
                         "random_string": "".join(
@@ -289,13 +290,15 @@ class on_infractions(commands.Cog):
                         "annonymous": Infraction.annonymous,
                         "timestamp": datetime.datetime.now(),
                     }
-                    EscResult = await self.client.db['infractions'].insert_one(FormedData)
-                    TypeActions = await self.client.db['infractiontypeactions'].find_one(
-                        {"guild_id": guild.id, "name": Infraction.action}
+                    EscResult = await self.client.db["infractions"].insert_one(
+                        FormedData
                     )
+                    TypeActions = await self.client.db[
+                        "infractiontypeactions"
+                    ].find_one({"guild_id": guild.id, "name": Infraction.action})
                     self.client.dispatch(
                         "infraction", EscResult.inserted_id, Settings, TypeActions
-                    )    
+                    )
 
     async def InfractionTypes(
         self, data, staff: discord.Member, manager: discord.Member, config: dict
@@ -346,7 +349,7 @@ class on_infractions(commands.Cog):
                 except (discord.Forbidden, discord.HTTPException):
                     pass
             if data.get("voidshift"):
-                result = await self.client.db['integrations'].find_one(
+                result = await self.client.db["integrations"].find_one(
                     {"server": staff.guild.id, "erm": {"$exists": True}}
                 )
                 if result:
@@ -357,7 +360,9 @@ class on_infractions(commands.Cog):
                         pass
 
             if data.get("dbremoval", False) is True:
-                await self.client.db['staff database'].delete_one({"staff_id": staff.id})
+                await self.client.db["staff database"].delete_one(
+                    {"staff_id": staff.id}
+                )
             if data.get("channel"):
                 channel = await staff.guild.fetch_channel(data.get("channel"))
                 if not channel:

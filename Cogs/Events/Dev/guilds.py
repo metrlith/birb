@@ -6,15 +6,7 @@ from utils.emojis import *
 from Cogs.Modules.promotions import SyncServer
 from datetime import datetime
 
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# blacklists = db["blacklists"]
-# Servers = db["Servers"]
-
 PrimaryServers = [int(x) for x in os.getenv("DEFAULT_ALLOWED_SERVERS").split(",")] if os.getenv("DEFAULT_ALLOWED_SERVERS") else []
-
-
 class GuildJoins(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

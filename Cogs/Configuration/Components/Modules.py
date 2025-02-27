@@ -1,6 +1,5 @@
 import discord
 import discord.http
-import os
 
 from utils.emojis import *
 

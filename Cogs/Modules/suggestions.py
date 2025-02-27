@@ -1,19 +1,11 @@
 from discord import app_commands
 import discord
 from discord.ext import commands
-
-from discord.ui import button
 import os
 from dotenv import load_dotenv
 
 
 load_dotenv()
-MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# Suggestions = db["suggestions"]
-# Configuration = db["Config"]
-# blacklist = db["blacklists"]
 from utils.Module import ModuleCheck
 from utils.emojis import *
 

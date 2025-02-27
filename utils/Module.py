@@ -1,6 +1,3 @@
-import discord
-from discord.ext import commands
-import discord.http
 import os
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient

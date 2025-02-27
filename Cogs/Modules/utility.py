@@ -6,19 +6,12 @@ from datetime import datetime
 from typing import Optional
 
 import aiohttp
-import os
 from utils.emojis import *
 from typing import Literal
 
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# mongo = AsyncIOMotorClient(MONGO_URL)
-# db = mongo["astro"]
-# badges = db["User Badges"]
-# premium = db["premium"]
 
 
 class Utility(commands.Cog):
@@ -129,7 +122,7 @@ class Utility(commands.Cog):
         await interaction.response.defer()
         if user is None:
             user = interaction.user
-        user_badges = self.client.db['User Badges'].find({"user_id": user.id})
+        user_badges = self.client.db["User Badges"].find({"user_id": user.id})
         badge_values = ""
 
         public_flags_emojis = {

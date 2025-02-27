@@ -10,10 +10,7 @@ from datetime import datetime
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-#client = AsyncIOMotorClient(MONGO_URL)
-#db = client["astro"]
-#suspensions = db["Suspensions"]
-#Config = db["Config"]
+
 
 
 class EmptyCog(commands.Cog):

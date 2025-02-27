@@ -8,9 +8,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from utils.emojis import *
 
 
-
-
 from dotenv import load_dotenv
+
 load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
@@ -157,7 +156,10 @@ async def has_admin_role(toy, permissions=None):
 
     if Config.get("Advanced Permissions", None):
         if toy.command:
-            if toy.command.qualified_name in Config.get("Advanced Permissions", {}).keys():
+            if (
+                toy.command.qualified_name
+                in Config.get("Advanced Permissions", {}).keys()
+            ):
                 Permissions = Config.get("Advanced Permissions", {}).get(
                     toy.command.qualified_name, []
                 )
@@ -175,15 +177,14 @@ async def has_admin_role(toy, permissions=None):
     if not Config.get("Permissions"):
         await send(
             f"{no} **{author.display_name}**, the permissions haven't been setup yet please run `/config`",
-            ephemeral=True if s == "interaction" else False
+            ephemeral=True if s == "interaction" else False,
         )
         return False
 
     if not Config.get("Permissions").get("adminrole"):
         await send(
             f"{no} **{author.display_name}**, the admin role hasn't been setup yet please run `/config`",
-            ephemeral=True if s == "interaction" else False
-
+            ephemeral=True if s == "interaction" else False,
         )
         return False
 
@@ -206,22 +207,19 @@ async def has_admin_role(toy, permissions=None):
             await send(
                 f"{no} **{author.display_name}**, the admin role isn't set please run </config:1140463441136586784>",
                 view=PermissionsButtons(),
-                ephemeral=True if s == "interaction" else False
-
+                ephemeral=True if s == "interaction" else False,
             )
         else:
             await send(
                 f"{no} **{author.display_name}**, the admin role is not setup please tell an admin to run </config:1140463441136586784> to fix it.",
                 view=PermissionsButtons(),
-                ephemeral=True if s == "interaction" else False
-
+                ephemeral=True if s == "interaction" else False,
             )
         return False
 
     await send(
         f"{no} **{author.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`",
-        ephemeral=True if s == "interaction" else False
-
+        ephemeral=True if s == "interaction" else False,
     )
     return False
 

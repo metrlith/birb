@@ -7,7 +7,6 @@ import datetime
 import random
 from utils.format import PaginatorButtons
 import string
-import utils.Paginator as Paginator
 from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
@@ -157,7 +156,7 @@ async def SingleHierarchy(
             content=f"{no} **{interaction.user.display_name}**, **@{user.display_name}** is already at the top of the hierarchy and cannot be promoted further.",
         )
         return
-    Object = await interaction.client.db['promotions'].insert_one(
+    Object = await interaction.client.db["promotions"].insert_one(
         {
             "management": interaction.user.id,
             "staff": user.id,
@@ -317,7 +316,7 @@ async def MultiHireachy(
         )
         return
 
-    Object = await interaction.client.db['promotions'].insert_one(
+    Object = await interaction.client.db["promotions"].insert_one(
         {
             "management": interaction.user.id,
             "staff": user.id,
@@ -427,7 +426,7 @@ async def issue(
             embed=NoPermissionChannel(channel),
             view=Support(),
         )
-    Object = await interaction.client.db['promotions'].insert_one(
+    Object = await interaction.client.db["promotions"].insert_one(
         {
             "management": interaction.user.id,
             "staff": staff.id,
@@ -629,7 +628,7 @@ class promo(commands.Cog):
             "guild_id": ctx.guild.id,
             "staff": staff.id,
         }
-        Promotions = await self.client.db['promotions'].find(filter).to_list(750)
+        Promotions = await self.client.db["promotions"].find(filter).to_list(750)
         if not len(Promotions) > 0:
             await ctx.send(
                 f"{no} **{ctx.author.display_name}**, this staff member doesn't have any promotions.",

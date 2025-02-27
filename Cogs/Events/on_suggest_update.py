@@ -4,7 +4,6 @@ import os
 from bson import ObjectId
 
 import logging
-from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 from utils.emojis import *
 from Cogs.Events.on_suggestion import Voting
@@ -14,13 +13,6 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# Customisation = db["Customisation"]
-# feed = db["feedback"]
-# Suggestions = db["suggestions"]
-
 
 class On_suggestions_edit(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -28,7 +20,7 @@ class On_suggestions_edit(commands.Cog):
 
     @commands.Cog.listener()
     async def on_suggestion_edit(self, objectID: ObjectId, settings: dict, action):
-        back = await self.client.db['suggestions'].find_one({"_id": objectID})
+        back = await self.client.db["suggestions"].find_one({"_id": objectID})
         if not back:
             return logging.critical("[on_suggestion] I can't find the feedback.")
 
@@ -63,7 +55,9 @@ class On_suggestions_edit(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} I can't access the suggestion."
             )
             return
-        custom = await self.client.db['Customisation'].find_one({"guild_id": guild.id, "type": action})
+        custom = await self.client.db["Customisation"].find_one(
+            {"guild_id": guild.id, "type": action}
+        )
         view = Voting()
         if not custom:
 
@@ -122,7 +116,7 @@ class On_suggestions_edit(commands.Cog):
                 ),
             }
             embed = await DisplayEmbed(custom, author, replacements=replacements)
-            if action in ['Denied Suggestion', 'Accepted Suggestion']:
+            if action in ["Denied Suggestion", "Accepted Suggestion"]:
                 view.upvote.disabled = True
                 view.downvote.disabled = True
                 view.settings.disabled = True

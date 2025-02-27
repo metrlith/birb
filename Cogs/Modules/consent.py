@@ -1,18 +1,10 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import motor.motor_asyncio
 from dotenv import load_dotenv
-import os
 from utils.emojis import *
 
 load_dotenv()
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# consentdb = db["consent"]
-
 
 class Consent(commands.Cog):
     def __init__(self, client):

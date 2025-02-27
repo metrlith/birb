@@ -11,15 +11,9 @@ from utils.emojis import *
 import discord
 from discord.ext import tasks
 
-MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# loa_collection = db["loa"]
-# consent = db["consent"]
-# Configuration = db["Config"]
 
 
 class Shed(commands.Cog):

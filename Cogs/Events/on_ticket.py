@@ -52,7 +52,7 @@ class PTicketControl(discord.ui.View):
             1092977224501710848,
             1092977378638188594,
             1127223190616289430,
-        ] 
+        ]
         self.Developers = [795743076520820776]
         # This is for the escalate button ^^ which is main server only
 
@@ -151,12 +151,14 @@ class PTicketControl(discord.ui.View):
                 "You don't have permission to escalate this ticket.", ephemeral=True
             )
         await interaction.response.defer()
-        Result = await interaction.client.db['Tickets'].find_one({"channel": interaction.channel.id})
+        Result = await interaction.client.db["Tickets"].find_one(
+            {"channel": interaction.channel.id}
+        )
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
             )
-        await interaction.client.db['Tickets'].update_one(
+        await interaction.client.db["Tickets"].update_one(
             {"channel": interaction.channel.id},
             {
                 "$set": {
@@ -185,6 +187,7 @@ class PTicketControl(discord.ui.View):
         view.escalate.label = f"Escalated by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
+
 
 class TicketsPublic(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -493,7 +496,7 @@ class TicketsPublic(commands.Cog):
                     break
         view = PTicketControl()
         if not guild.id == 1092976553752789054:
-         view.remove_item(view.escalate)
+            view.remove_item(view.escalate)
         try:
             msg = await channel.send(
                 embeds=[Embed, ResponseEmbed] if ResponseEmbed else [Embed],
@@ -629,7 +632,6 @@ class TicketsPublic(commands.Cog):
                         url=f"https://astrobirb.dev/transcript/{Result.get('_id')}",
                         emoji="<:Website:1132252914082127882>",
                         style=discord.ButtonStyle.blurple,
-                 
                     )
                 )
                 ReviewerMsg = None

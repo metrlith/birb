@@ -1,6 +1,5 @@
 from discord.ext import commands, tasks
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
 import datetime
 from discord.ext import tasks
 from dotenv import load_dotenv
@@ -11,14 +10,10 @@ import discord
 from discord.ext import tasks
 
 
-MONGO_URL = os.getenv("MONGO_URL")
 load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# loa_collection = db["loa"]
-# consent = db["consent"]
+
 
 
 class LOA(commands.Cog):

@@ -3,9 +3,7 @@ from discord.ext import commands
 from datetime import datetime
 from utils.emojis import *
 import string
-import os
 import random
-
 import traceback
 
 

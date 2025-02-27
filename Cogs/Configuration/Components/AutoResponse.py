@@ -1,7 +1,5 @@
 import discord
 import discord.http
-import os
-import validators
 from utils.emojis import *
 
 from dotenv import load_dotenv

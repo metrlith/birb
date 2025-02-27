@@ -1,20 +1,11 @@
 import discord
 from discord.ext import commands
-import os
 from bson import ObjectId
 
 import logging
-from utils.erm import voidShift
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 
 logger = logging.getLogger(__name__)
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# Customisation = db["Customisation"]
-# feed = db["feedback"]
-
 
 class OnFEEDABCKS(commands.Cog):
     def __init__(self, client: commands.Bot):

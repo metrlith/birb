@@ -4,7 +4,6 @@ from typing import Literal
 from utils.emojis import *
 from datetime import datetime
 import os
-import utils.Paginator as Paginator
 from utils.format import PaginatorButtons
 from utils.permissions import *
 from discord import app_commands

@@ -8,7 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-AdminRoles = [int(x) for x in os.getenv("STAFF").split(",")] if os.getenv("STAFF") else []
+AdminRoles = (
+    [int(x) for x in os.getenv("STAFF").split(",")] if os.getenv("STAFF") else []
+)
+
 
 class AdminCog(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -20,20 +23,26 @@ class AdminCog(commands.Cog):
         if ctx.author.id in AdminRoles:
             return True
         return False
-    
+
     @commands.command()
     async def leave(self, ctx: commands.Context, id: str):
         if not self.AdminPermission(ctx):
             return
-        
+
         guild = self.client.get_guild(int(id))
         if not guild:
-            return await ctx.send(f"` ❌ ` **{ctx.author.display_name},** I couldn't find the guild.")
+            return await ctx.send(
+                f"` ❌ ` **{ctx.author.display_name},** I couldn't find the guild."
+            )
         try:
             await guild.leave()
         except:
-            return await ctx.send(f"` ❌ ` **{ctx.author.display_name},** I couldn't leave the guild.")
-        await ctx.send(f"` ✅ ` **{ctx.author.display_name},** I have left the guild ({guild.name} | `{guild.id}`).")
+            return await ctx.send(
+                f"` ❌ ` **{ctx.author.display_name},** I couldn't leave the guild."
+            )
+        await ctx.send(
+            f"` ✅ ` **{ctx.author.display_name},** I have left the guild ({guild.name} | `{guild.id}`)."
+        )
 
     @commands.command()
     async def guilds(self, ctx: commands.Context):
@@ -42,7 +51,9 @@ class AdminCog(commands.Cog):
 
         guilds = self.client.guilds
         if len(guilds) == 0:
-            return await ctx.send(f"` ❌ ` **{ctx.author.display_name},** I am not in any guilds.")
+            return await ctx.send(
+                f"` ❌ ` **{ctx.author.display_name},** I am not in any guilds."
+            )
         description = ""
         messages = []
         for guild in guilds:
@@ -50,11 +61,14 @@ class AdminCog(commands.Cog):
             if len(messages) == 10:
                 messages.append(description)
                 description = ""
-            
+
         if description:
             messages.append(description)
-        
-        await ctx.send(content=messages[0], view=BasicPaginator(author=ctx.author, messages=messages))
+
+        await ctx.send(
+            content=messages[0],
+            view=BasicPaginator(author=ctx.author, messages=messages),
+        )
 
     @commands.command()
     async def whitelist(self, ctx: commands.Context, id: str):
@@ -89,15 +103,19 @@ class AdminCog(commands.Cog):
         msg = await ctx.send(
             f"` ✅ ` **{ctx.author.display_name},** this guild has been unwhitelisted.",
             view=view,
-            embed=discord.Embed(
-                description="Would you like to remove this the bot from this server?",
-                color=discord.Color.dark_theme(),
-            )
-            .set_thumbnail(url=guild.icon)
-            .add_field(
-                name=f"@{guild.name}",
-                value=f"> **ID:** {guild.id}\n> **Members:** {guild.member_count}\n> **Owner:** <@{guild.owner_id}>\n> **Created:** <t:{int(guild.created_at.timestamp())}:F>",
-            ) if guild else None,
+            embed=(
+                discord.Embed(
+                    description="Would you like to remove this the bot from this server?",
+                    color=discord.Color.dark_theme(),
+                )
+                .set_thumbnail(url=guild.icon)
+                .add_field(
+                    name=f"@{guild.name}",
+                    value=f"> **ID:** {guild.id}\n> **Members:** {guild.member_count}\n> **Owner:** <@{guild.owner_id}>\n> **Created:** <t:{int(guild.created_at.timestamp())}:F>",
+                )
+                if guild
+                else None
+            ),
         )
 
         if not guild:

@@ -4,22 +4,24 @@ from datetime import datetime, timedelta
 
 
 from utils.emojis import *
-import os
 import chat_exporter
 import traceback
 import random
 import io
 
 
-
 async def Reply(
-    self: commands.Bot, message: discord.Message, Config: dict, ModmailData: dict, Guild: discord.Guild
+    self: commands.Bot,
+    message: discord.Message,
+    Config: dict,
+    ModmailData: dict,
+    Guild: discord.Guild,
 ):
     try:
         Channel = await Guild.fetch_channel(int(ModmailData.get("channel_id", 0)))
     except (discord.NotFound, discord.HTTPException):
         traceback.format_exc(e)
-        return await self.db['Modmail'].delete_one({"user_id": message.author.id})
+        return await self.db["Modmail"].delete_one({"user_id": message.author.id})
     if not Channel:
         return await message.add_reaction("⚠️")
 
@@ -63,9 +65,13 @@ async def Close(interaction: discord.Interaction, reason=None):
     )
     # // Commit Modmail Discovery QWEo0p9;aSJDOPAHJSOp'd
     if isinstance(interaction.channel, discord.DMChannel):
-        Modmail = await interaction.client.db['Modmail'].find_one({"user_id": interaction.user.id})
+        Modmail = await interaction.client.db["Modmail"].find_one(
+            {"user_id": interaction.user.id}
+        )
     else:
-        Modmail = await interaction.client.db['Modmail'].find_one({"channel_id": interaction.channel.id})
+        Modmail = await interaction.client.db["Modmail"].find_one(
+            {"channel_id": interaction.channel.id}
+        )
     if not Modmail:
         return await msg.edit(
             content=f"{no} **{interaction.user.display_name},** you have no active modmail."
@@ -91,7 +97,7 @@ async def Close(interaction: discord.Interaction, reason=None):
     TranscriptID = random.randint(100, 50000)
 
     # // Commit Modmail Extermination
-    await interaction.client.db['Modmail'].delete_one({"user_id": interaction.user.id})
+    await interaction.client.db["Modmail"].delete_one({"user_id": interaction.user.id})
     if channel and ModmailType == "channel":
         transcript = await chat_exporter.export(channel)
         TranscriptFile = discord.File(
@@ -242,7 +248,7 @@ async def Close(interaction: discord.Interaction, reason=None):
                 except:
                     pass
 
-    await interaction.client.db['Transcripts'].insert_one(
+    await interaction.client.db["Transcripts"].insert_one(
         {
             "transcriptid": TranscriptID,
             "guild_id": Server.id,
@@ -287,7 +293,9 @@ class Links(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await interaction.response.defer()
-        Modmail = await interaction.client.db['Transcripts'].find_one({"transcript": interaction.message.id})
+        Modmail = await interaction.client.db["Transcripts"].find_one(
+            {"transcript": interaction.message.id}
+        )
         if not Modmail:
             return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** you have no active modmail."
@@ -332,14 +340,18 @@ class Select(discord.ui.Select):
                 ephemeral=True,
             )
 
-        Blacklists = await interaction.client.db['modmailblacklists'].find_one({"guild_id": Guild.id})
+        Blacklists = await interaction.client.db["modmailblacklists"].find_one(
+            {"guild_id": Guild.id}
+        )
         if Blacklists and interaction.user.id in Blacklists.get("blacklist", []):
             return interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** you are blacklisted from using modmail in this server.",
                 ephemeral=True,
             )
 
-        Modmail = await interaction.client.db['Modmail'].find_one({"user_id": interaction.user.id})
+        Modmail = await interaction.client.db["Modmail"].find_one(
+            {"user_id": interaction.user.id}
+        )
         if Modmail:
             return await interaction.edit_original_response(
                 content=f"{no} {interaction.user.display_name}, you've already started a Modmail, calm down.",
@@ -553,8 +565,14 @@ async def OpenModmail(
     }
     if Categoriesed:
         ModmailData["Category"] = Categoriesed
-    await interaction.client.db['Modmail'].insert_one(ModmailData)
-    await Reply(interaction.client, message=message, Config=Config, ModmailData=ModmailData, Guild=Guild)
+    await interaction.client.db["Modmail"].insert_one(ModmailData)
+    await Reply(
+        interaction.client,
+        message=message,
+        Config=Config,
+        ModmailData=ModmailData,
+        Guild=Guild,
+    )
     await interaction.edit_original_response(
         content=None,
         embed=discord.Embed(
@@ -588,19 +606,23 @@ class ModmailEvent(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel):
-        Modmail = await self.client.db['Modmail'].find_one({"channel_id": channel.id})
+        Modmail = await self.client.db["Modmail"].find_one({"channel_id": channel.id})
         if not Modmail:
             return
-        await self.client.db['Modmail'].delete_one({"channel_id": channel.id})
+        await self.client.db["Modmail"].delete_one({"channel_id": channel.id})
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
 
-        if await self.client.db['Appeal Sessions'].find_one({"user_id": message.author.id}):
+        if await self.client.db["Appeal Sessions"].find_one(
+            {"user_id": message.author.id}
+        ):
             return
-        Modmail = await self.client.db['Modmail'].find_one({"user_id": message.author.id})
+        Modmail = await self.client.db["Modmail"].find_one(
+            {"user_id": message.author.id}
+        )
         if isinstance(message.channel, discord.DMChannel):
             if not Modmail:
                 Message = await message.reply(
@@ -669,17 +691,25 @@ class ModmailEvent(commands.Cog):
                 except Exception as e:
                     traceback.format_exc(e)
             else:
-                Config = await self.client.config.find_one({"_id": Modmail.get("guild_id")})
+                Config = await self.client.config.find_one(
+                    {"_id": Modmail.get("guild_id")}
+                )
                 if not Config:
                     return await message.add_reaction("⚠️")
                 Guild = await self.client.fetch_guild(Modmail.get("guild_id"))
                 if not Guild:
                     return await message.add_reaction("⚠️")
                 await Reply(
-                    self.client, message=message, Config=Config, ModmailData=Modmail, Guild=Guild
+                    self.client,
+                    message=message,
+                    Config=Config,
+                    ModmailData=Modmail,
+                    Guild=Guild,
                 )
         if isinstance(message.channel, discord.TextChannel):
-            Modmail = await self.client.db['Modmail'].find_one({"channel_id": message.channel.id})
+            Modmail = await self.client.db["Modmail"].find_one(
+                {"channel_id": message.channel.id}
+            )
             if not Modmail:
                 return
             Config = await self.client.config.find_one({"_id": Modmail.get("guild_id")})

@@ -1,5 +1,4 @@
 import discord
-from discord.ext import commands
 from discord import app_commands
 from utils.format import DefaultTypes
 import typing

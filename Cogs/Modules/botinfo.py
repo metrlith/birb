@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 from utils.format import IsSeperateBot
-import os
 class botinfo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client

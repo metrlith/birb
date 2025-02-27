@@ -1,7 +1,5 @@
 import discord
-from discord.ext import commands
 import discord.http
-import os
 from utils.emojis import *
 
 from dotenv import load_dotenv

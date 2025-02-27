@@ -1,20 +1,7 @@
 import discord
 from discord.ext import commands
-import os
 import psutil
 from utils.emojis import *
-
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# deploy_URL = os.getenv("deploy_url")
-# mongo = AsyncIOMotorClient(MONGO_URL)
-# db = mongo["astro"]
-# badges = db["User Badges"]
-# analytics = db["analytics"]
-# blacklists = db["blacklists"]
-# customroles = db["customroles"]
-# premium = db["premium"]
-# SupportVariables = db['Support Variables']
 
 class management(commands.Cog):
     def __init__(self, client: commands.Bot):

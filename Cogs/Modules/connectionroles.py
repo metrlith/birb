@@ -3,11 +3,10 @@ from discord.ext import commands
 from discord import app_commands
 from utils.format import PaginatorButtons
 from utils.emojis import *
-import utils.Paginator as Paginator
 from utils.autocompletes import ConnectionRoles
 from utils.Module import ModuleCheck
 
-from utils.HelpEmbeds import BotNotConfigured, ModuleNotEnabled, Support
+from utils.HelpEmbeds import ModuleNotEnabled, Support
 
 class ConnectionRoles(commands.Cog):
     def __init__(self, client: commands.Bot):

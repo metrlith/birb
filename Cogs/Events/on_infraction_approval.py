@@ -1,29 +1,12 @@
 import discord
 from discord.ext import commands
-import os
 from bson import ObjectId
 
 import logging
-from utils.erm import voidShift
-from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
-import traceback
 from Cogs.Events.on_infraction import InfractItem
 from utils.emojis import *
 
 logger = logging.getLogger(__name__)
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# infractions = db["infractions"]
-# Customisation = db["Customisation"]
-# integrations = db["integrations"]
-# staffdb = db["staff database"]
-# consent = db["consent"]
-# Suspension = db["Suspensions"]
-# config = db["Config"]
-# infractiontypeactions = db["infractiontypeactions"]
-
 
 async def CaseEmbed(data: str, staff: discord.Member, guild: discord.Guild):
     embed = discord.Embed(

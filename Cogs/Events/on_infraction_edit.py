@@ -3,25 +3,9 @@ from Cogs.Events.on_infraction import InfractItem, DefaultEmbed
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import discord
 from discord.ext import commands
-import os
-from bson import ObjectId
-
 import logging
-from utils.erm import voidShift
 
 logger = logging.getLogger(__name__)
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# infractions = db["infractions"]
-# Customisation = db["Customisation"]
-# integrations = db["integrations"]
-# staffdb = db["staff database"]
-# consent = db["consent"]
-# Suspension = db["Suspensions"]
-# config = db["Config"]
-
 
 class on_infraction_edit(commands.Cog):
     def __init__(self, client: commands.Bot):

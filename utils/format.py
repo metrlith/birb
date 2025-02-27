@@ -2,7 +2,6 @@ from datetime import timedelta, datetime
 import discord
 from utils import Paginator
 import os
-from dotenv import load_dotenv 
 
 def DefaultTypes():
     return [

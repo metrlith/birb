@@ -3,21 +3,7 @@ from discord.ext import commands
 import asyncio
 from utils.emojis import *
 
-import os
 from utils.permissions import has_staff_role
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# forumsconfig = db["Forum Configuration"]
-# blacklist = db["blacklists"]
-# Configuration = db["Config"]
-
-from utils.HelpEmbeds import (
-    BotNotConfigured,
-    Support,
-)
-
 
 class ForumCreaton(commands.Cog):
     def __init__(self, client):

@@ -1,15 +1,8 @@
 import discord
 from discord.ext import commands
 from utils.emojis import *
-import os
 
 from utils.Module import ModuleCheck
-
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# connectionroles = db["connectionroles"]
-
 
 class ConnectionRolesEvent(commands.Cog):
     def __init__(self, client):
