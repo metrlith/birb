@@ -646,9 +646,10 @@ class APIRoutes:
         )
 
         return {"status": "success", "infraction": random_string}
-    
+
     async def GET_TicketQuota(self, auth: str, server: int, discord_id: int, time: str = None):
         from utils.format import strtotime
+        
 
         if not await Validation(auth, server):
             raise HTTPException(
@@ -697,11 +698,10 @@ class APIRoutes:
         if not time:
             TicketQuotaVar = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
             ClaimedTickets = TicketQuotaVar.get("ClaimedTickets") if TicketQuotaVar else 0
-
-
         return {
             "status": "success",
             "ClaimedTickets": ClaimedTickets,
+            "OnLOA": bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True})),
             "user": {
                 "id": str(member.id),
                 "name": member.name,
@@ -789,13 +789,13 @@ class APIRoutes:
 
             if not await check_admin_and_staff(guild, member):
                 continue
-
             leaderboard.append(
                 {
                     "username": member.name,
                     "display": member.display_name,
                     "id": member.id,
                     "ClaimedTickets": claimed_count,
+                    'OnLOA': bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True}))
                 }
             )
 
@@ -854,6 +854,7 @@ class APIRoutes:
                         "display": member.display_name,
                         "id": member.id,
                         "messages": user.get("message_count"),
+                        "OnLOA": bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True}))
                     }
                 )
             except Exception as e:
