@@ -1433,7 +1433,7 @@ class componentmanager(discord.ui.View):
         await interaction.response.edit_message(
             view=view,
             embed=None,
-            content=f"<:List:1223063187063308328> Select which components you want to remove.",
+            content="<:List:1223063187063308328> Select which components you want to remove.",
         )
 
 

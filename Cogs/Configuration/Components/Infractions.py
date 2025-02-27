@@ -89,9 +89,9 @@ class InfractionOption(discord.ui.Select):
                 else discord.ButtonStyle.red
             )
             view.children[0].label = (
-                f"Issuer Button Display (Enabled)"
+                "Issuer Button Display (Enabled)"
                 if Config.get("Module Options", {}).get("infractedbybutton", False)
-                else f"Issuer Button Display (Disabled)"
+                else "Issuer Button Display (Disabled)"
             )
             view.children[1].style = (
                 discord.ButtonStyle.green
@@ -99,9 +99,9 @@ class InfractionOption(discord.ui.Select):
                 else discord.ButtonStyle.red
             )
             view.children[1].label = (
-                f"Notify On Void (Enabled)"
+                "Notify On Void (Enabled)"
                 if Config.get("Module Options", {}).get("onvoid", False)
-                else f"Notify On Void (Disabled)"
+                else "Notify On Void (Disabled)"
             )
             view.children[2].style = (
                 discord.ButtonStyle.green
@@ -110,9 +110,9 @@ class InfractionOption(discord.ui.Select):
             )
 
             view.children[2].label = (
-                f"Show Issuer (Enabled)"
+                "Show Issuer (Enabled)"
                 if Config.get("Module Options", {}).get("showissuer", True)
-                else f"Show Issuer (Disabled)"
+                else "Show Issuer (Disabled)"
             )
             view.children[3].style = (
                 discord.ButtonStyle.green
@@ -127,9 +127,9 @@ class InfractionOption(discord.ui.Select):
                 else discord.ButtonStyle.red
             )
             view.children[4].label = (
-                f"Direct Messages (Enabled)"
+                "Direct Messages (Enabled)"
                 if Config.get("Module Options", {}).get("Direct Message", True)
-                else f"Direct Messages (Disabled)"
+                else "Direct Messages (Disabled)"
             )
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.description = f"> - **Infraction User Button:** It shows a **Issued By {interaction.user.display_name}** under the infraction embed\n> - **Notify On Void: ** It notifies the infracted staff member when their punishment is voided.\n> - **Show Issuer**: Disabling this will make it so the person infracting won't appear on the infraction embed. This won't work on customised embeds. The issuer will still appear on /infractions & all.\n> - **Infraction Confirmation:** Enables or disables confirmation prompts for infractions.\n> - **Direct Messages:** Enables or disables messages to staff members."
@@ -1110,7 +1110,7 @@ async def InfractionEmbed(
     ]
 
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Infractions",
+        name="<:settings:1207368347931516928> Infractions",
         value=value[:1021] + "..." if len(value) > 1024 else value,
         inline=False,
     )

@@ -301,7 +301,7 @@ class Voting(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(
-        label="0", style=discord.ButtonStyle.green, emoji=f"<:whitecheck:1223062421212631211>", custom_id="vote"
+        label="0", style=discord.ButtonStyle.green, emoji="<:whitecheck:1223062421212631211>", custom_id="vote"
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
@@ -344,7 +344,7 @@ class Voting(discord.ui.View):
     @discord.ui.button(
         label="Voters",
         style=discord.ButtonStyle.blurple,
-        emoji=f"<:folder:1235296135728594965>",
+        emoji="<:folder:1235296135728594965>",
         custom_id="viewlist",
     )
     async def list(self, interaction: discord.Interaction, button: discord.ui.Button):

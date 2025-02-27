@@ -494,7 +494,7 @@ async def OpenModmail(
     )
     if Categoriesed:
         embed.set_footer(text=Categoriesed)
-    embed.add_field(value=Roles, name=f"Roles")
+    embed.add_field(value=Roles, name="Roles")
     Role = (
         Config.get("Modmail", {}).get("ping", [])[0]
         if Config.get("Modmail", {}).get("ping")
@@ -626,7 +626,7 @@ class ModmailEvent(commands.Cog):
         if isinstance(message.channel, discord.DMChannel):
             if not Modmail:
                 Message = await message.reply(
-                    content=f"<a:Loading:1167074303905386587> Wait..."
+                    content="<a:Loading:1167074303905386587> Wait..."
                 )
                 try:
                     LastSelect = self.LastSelection.get(message.author.id, None)

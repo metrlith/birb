@@ -359,8 +359,8 @@ class ConfigMenu(discord.ui.Select):
 
 def DefaultEmbed(guild: discord.Guild):
     embed = discord.Embed(
-        title=f"Configuration",
-        description=f"<:Options:1223062969043124306> Select **an option** to manage your server's configuration.",
+        title="Configuration",
+        description="<:Options:1223062969043124306> Select **an option** to manage your server's configuration.",
         color=discord.Color.dark_embed(),
     )
     embed.add_field(

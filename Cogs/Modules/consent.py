@@ -53,7 +53,7 @@ class Consent(commands.Cog):
         )
         embed.add_field(
             name="Notifications",
-            value=f"> **Infraction Alerts:** When you are infracted you'll receive a direct message.\n> **Promotion Alerts:** When you are promoted you'll receive a direct message.\n> **LOA Alerts:** When you are on LOA you'll receive direct messages.\n\n-# <:Help:1184535847513624586> Green indicates on, while red indicates off."
+            value="> **Infraction Alerts:** When you are infracted you'll receive a direct message.\n> **Promotion Alerts:** When you are promoted you'll receive a direct message.\n> **LOA Alerts:** When you are on LOA you'll receive direct messages.\n\n-# <:Help:1184535847513624586> Green indicates on, while red indicates off."
         )
         embed.set_author(name=f"@{interaction.user.name.capitalize()}", icon_url=interaction.user.avatar)
 

@@ -99,7 +99,7 @@ class TicketOpen(commands.Cog):
             user = await Guild.fetch_member(Result.get("UserID"))
         except (discord.NotFound, discord.HTTPException):
             user = None
-        await Channel.send(f"<a:Loading:1167074303905386587> Ticket closing...")
+        await Channel.send("<a:Loading:1167074303905386587> Ticket closing...")
         messages = []
         compact = []
         async for message in Channel.history(limit=None):

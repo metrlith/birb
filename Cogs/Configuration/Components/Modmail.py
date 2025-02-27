@@ -149,7 +149,7 @@ class ModmailOptions(discord.ui.Select):
                 view.UseMessages.label = "Use Messages (Enabled)"
                 view.UseMessages.style = discord.ButtonStyle.green
             embed = discord.Embed(color=discord.Color.dark_embed())
-            embed.description = f"> - **Auto Message:** Makes it so whenever you talk in the modmail channel your message automatically gets sent.\n> - **Use Messages:** Make it so all the modmail messages are in messages instead of embeds."
+            embed.description = "> - **Auto Message:** Makes it so whenever you talk in the modmail channel your message automatically gets sent.\n> - **Use Messages:** Make it so all the modmail messages are in messages instead of embeds."
 
             embed.set_author(
                 name="Preferences",
@@ -528,17 +528,17 @@ class CreateCategory(discord.ui.Modal):
         if config.get("Module Options", {}).get("ModmailType") == "threads":
             options = [
                 
-                discord.SelectOption(label="Ping", value=f"Ping", emoji="<:Ping:1298301862906298378>"),
-                discord.SelectOption(label="Threads Channel", value=f"Threads Channel", emoji="<:threads:1248312604733210735>"
+                discord.SelectOption(label="Ping", value="Ping", emoji="<:Ping:1298301862906298378>"),
+                discord.SelectOption(label="Threads Channel", value="Threads Channel", emoji="<:threads:1248312604733210735>"
 )
             ]
 
         else:
             options = [
-                discord.SelectOption(label="Ping", value=f"Ping", emoji="<:Ping:1298301862906298378>"),
-                discord.SelectOption(label=f"Category", value=f"Category", emoji="<:category:1248312604733210735>"),
+                discord.SelectOption(label="Ping", value="Ping", emoji="<:Ping:1298301862906298378>"),
+                discord.SelectOption(label="Category", value="Category", emoji="<:category:1248312604733210735>"),
                 discord.SelectOption(
-                                    label=f"Transcript Channel", value=f"Transcript Channel", emoji="<:tag:1234998802948034721>"
+                                    label="Transcript Channel", value="Transcript Channel", emoji="<:tag:1234998802948034721>"
                                 ),
 
             ]
@@ -940,7 +940,7 @@ async def ModmailEmbed(
         value = f"{replytop} `Threads Channel:` <#{config.get('Modmail', {}).get('threads', 'Not Configured')}>\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
 
     embed.add_field(
-        name=f"<:settings:1207368347931516928> Modmail",
+        name="<:settings:1207368347931516928> Modmail",
         value=value,
         inline=False,
     )
