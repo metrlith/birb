@@ -11,15 +11,7 @@ from utils.permissions import has_admin_role
 
 from discord import app_commands
 
-# MONGO_URL = os.getenv("MONGO_URL")
-# client = AsyncIOMotorClient(MONGO_URL)
-# db = client["astro"]
-# infractions = db["infractions"]
-# Suggestions = db["suggestions"]
-# loa_collection = db["loa"]
-# Tokens = db["integrations"]
-# PendingUsers = db["Pending"]
-# config = db["Config"]
+
 
 
 class Link(commands.Cog):

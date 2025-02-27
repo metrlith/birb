@@ -1,19 +1,6 @@
 import discord
-
-import os
 from utils.erm import GetIdentifier
 from utils.emojis import *
-from datetime import datetime
-import asyncio
-
-MONGO_URL = os.getenv("MONGO_URL")
-
-mongo = AsyncIOMotorClient(MONGO_URL)
-db = mongo["astro"]
-# integrations = db["integrations"]
-# Tokens = db["integrations"]
-# PendingUsers = db["Pending"]
-
 
 class Integrations(discord.ui.Select):
     def __init__(self, author: discord.Member):
