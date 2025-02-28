@@ -16,3 +16,4 @@ memory_profiler
 sentry_sdk
 boto3
 pillow
+ffmpeg-python
