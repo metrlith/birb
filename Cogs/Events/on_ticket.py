@@ -688,9 +688,9 @@ class TicketsPublic(commands.Cog):
                                 {"_id": ObjectID},
                                 {
                                     "$set": {
-                                        "ReviewMSG": msg.id,
-                                        "ReviewChannel": TranscriptChannel.id,
-                                        "ReviewerMsg": ReviewerMsg.id,
+                                        "ReviewMSG": msg.id if msg else None,
+                                        "ReviewChannel": TranscriptChannel.id if TranscriptChannel else None,
+                                        "ReviewerMsg": ReviewerMsg.id if ReviewerMsg else None,
                                     }
                                 },
                             )
