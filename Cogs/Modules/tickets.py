@@ -322,7 +322,7 @@ class TicketsPub(commands.Cog):
             except discord.NotFound:
                 pass
         if (
-            not Panel.get("embed")
+            not P.get("embed")
             or interaction.guild.id == 1092976553752789054
             or not embed
         ):
