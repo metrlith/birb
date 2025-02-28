@@ -640,7 +640,7 @@ class TicketsPublic(commands.Cog):
                     title="Ticket Closed",
                     color=discord.Color.dark_embed(),
                 )
-                embed.set_author(name=Guild.name, icon_url=Guild.icon.url)
+                embed.set_author(name=Guild.name, icon_url=Guild.icon)
                 embed.add_field(name="ID", value=Result.get("_id"), inline=True)
                 embed.add_field(
                     name="Opened By", value=f"<@{Result.get('UserID')}>", inline=True
