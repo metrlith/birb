@@ -47,22 +47,23 @@ async def CloseReason(
         .to_list(750)
     )
     PreviousTicketReasons = [t for t in PreviousTicketReasons if t is not None]
-    Reasons = []
+    Reasons = set()
     for Ticket in PreviousTicketReasons:
         if not Ticket.get("closed"):
             continue
         if not isinstance(Ticket.get("closed"), dict):
             continue
-        
+
         reason = Ticket.get("closed", {}).get("reason")
 
         if reason and (not current or current.lower() in reason.lower()):
             if reason == "No reason provided":
                 continue
-            Reasons.append(app_commands.Choice(name=reason[:100], value=reason[:100]))
+            Reasons.add(reason[:100])
 
-    return Reasons[:25]
-
+    return [
+        app_commands.Choice(name=reason, value=reason) for reason in list(Reasons)[:25]
+    ]
 
 
 async def Snippets(
