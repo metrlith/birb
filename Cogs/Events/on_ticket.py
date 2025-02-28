@@ -669,10 +669,16 @@ class TicketsPublic(commands.Cog):
                     if P.get("AllowReviews", False):
                         view = discord.ui.View()
                         view.add_item(Review())
-                        ReviewerMsg = await user.send(embed=embed, view=view)
+                        try:
+                         ReviewerMsg = await user.send(embed=embed, view=view)
+                        except:
+                            pass
 
                     else:
-                        ReviewerMsg = await user.send(embed=embed)
+                        try:
+                         ReviewerMsg = await user.send(embed=embed)
+                        except:
+                            pass
                 try:
 
                     msg = await TranscriptChannel.send(embed=embed, view=ButtonLink)
