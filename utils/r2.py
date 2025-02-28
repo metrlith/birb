@@ -7,6 +7,7 @@ import discord
 import logging
 import os
 from datetime import datetime, timezone, timedelta
+import ffmpeg
 load_dotenv()
 
 
@@ -33,6 +34,29 @@ async def CompressImage(image_bytes: bytes) -> bytes:
     img.save(output, format="JPEG", quality=50)  
     return output.getvalue()
 
+import ffmpeg
+from io import BytesIO
+
+async def CompressVideo(video_bytes: bytes) -> bytes:
+    input_file = BytesIO(video_bytes)
+    output_file = BytesIO()
+    process = (
+        ffmpeg
+        .input('pipe:0', format='mp4')
+        .output('pipe:1', format='mp4', vcodec='libx264', crf=30, movflags='+faststart+frag_keyframe+empty_moov')
+        .run_async(pipe_stdin=True, pipe_stdout=True, pipe_stderr=True)
+    )
+
+    stdout, stderr = process.communicate(input=input_file.read())
+
+    if process.returncode != 0:
+        return b""
+
+    output_file.write(stdout)
+    return output_file.getvalue()
+
+
+
 async def upload_file_to_r2(file_bytes: bytes, filename: str, message: discord.Message) -> str:
     if s3_client is None:
         return ""
@@ -42,6 +66,7 @@ async def upload_file_to_r2(file_bytes: bytes, filename: str, message: discord.M
         content_type = 'image/jpeg'
     elif filename.lower().endswith(('mp4', 'avi', 'mov', 'webm')):
         content_type = 'video/mp4' 
+        file_bytes = await CompressVideo(file_bytes)
     elif filename.lower().endswith(('mp3', 'wav', 'ogg')):
         content_type = 'audio/mpeg'  
     else:

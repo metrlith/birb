@@ -2,6 +2,11 @@ FROM python:3.10.12
 
 RUN apt-get update && apt-get install -y git
 
+RUN apt-get update && apt-get install -y \
+    git \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 ENV VIRTUAL_ENV "/venv"
 RUN python -m venv $VIRTUAL_ENV
