@@ -621,7 +621,7 @@ class Confirm(discord.ui.View):
             }
         )
         print(f"LOA Request @{interaction.guild.name} denied")
-        loanotification = await self.client.db['consent'].find_one({"user_id": self.user.id})
+        loanotification = await interaction.client.db['consent'].find_one({"user_id": self.user.id})
         if loanotification and loanotification.get("LOAAlerts", "Enabled") == "Enabled":
             try:
 
