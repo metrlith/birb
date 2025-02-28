@@ -1403,11 +1403,15 @@ class quota(commands.Cog):
                 f"{tick} **{ctx.author.display_name},** staff panel sent successfully.",
                 ephemeral=True,
             )
-        except (discord.errors.HTTPException, discord.errors.Forbidden) as e:
+        except discord.errors.Forbidden:
             await ctx.send(
                 f"{no} **{ctx.author.display_name}**, I don't have permission to send messages in that channel.",
             )
-            print(e)
+            return
+        except discord.errors.HTTPException:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, there is an error with the message. Make sure the embed/message is formed correctly.",
+            )
             return
         await self.client.db["Views"].insert_one(
             {"_id": msg.id, "type": "staff", "guild": ctx.guild.id}

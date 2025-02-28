@@ -16,10 +16,6 @@ from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotCo
 from utils.autocompletes import CloseReason
 
 
-
-
-
-
 async def AccessControl(interaction: discord.Interaction, Panel: dict):
     if not Panel:
         return True
@@ -47,9 +43,9 @@ class ButtonHandler(discord.ui.View):
 class TicketForm(discord.ui.Modal):
     def __init__(self, questions: list, data: dict):
         super().__init__(timeout=None, title="Ticket Form")
-        self.questions = {}  
+        self.questions = {}
         for question in questions:
-            label = question.get("label")  
+            label = question.get("label")
             TextInput = discord.ui.TextInput(
                 placeholder=question.get("placeholder"),
                 min_length=question.get("min", 1),
@@ -58,24 +54,28 @@ class TicketForm(discord.ui.Modal):
                 required=question.get("required", False),
                 default=question.get("default", None),
             )
-            self.questions[label] = question.get("question", label) 
+            self.questions[label] = question.get("question", label)
             self.add_item(TextInput)
         self.data = data
-    
+
     async def on_submit(self, interaction: discord.Interaction):
         responses = {
             self.questions[item.label]: item.value
-            for item in self.children if isinstance(item, discord.ui.TextInput)
+            for item in self.children
+            if isinstance(item, discord.ui.TextInput)
         }
-        
-        self.data['responses'] = responses
+
+        self.data["responses"] = responses
         t = await interaction.client.db["Tickets"].insert_one(self.data)
-        interaction.client.dispatch("pticket_open", t.inserted_id, self.data.get("panel"))
+        interaction.client.dispatch(
+            "pticket_open", t.inserted_id, self.data.get("panel")
+        )
 
         await interaction.response.send_message(
             content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
             ephemeral=True,
         )
+
 
 class Button(discord.ui.Button):
     def __init__(self, button: dict):
@@ -97,7 +97,6 @@ class Button(discord.ui.Button):
             else:
                 emoji = button.get("emoji")
 
-
         super().__init__(
             label=button.get("label"),
             style=style,
@@ -108,7 +107,7 @@ class Button(discord.ui.Button):
         self.custom_id = custom_id
 
     async def callback(self, interaction: discord.Interaction):
-        
+
         AlreadyOpen = await interaction.client.db["Tickets"].count_documents(
             {"UserID": interaction.user.id, "closed": None, "panel": {"$exists": True}}
         )
@@ -150,11 +149,9 @@ class Button(discord.ui.Button):
                 content=f"{no} **{interaction.user.display_name}**, you don't have permission to use this panel.",
                 ephemeral=True,
             )
-        
+
         Dict = {
-            "_id": "".join(
-                random.choices(string.ascii_letters + string.digits, k=10)
-            ),
+            "_id": "".join(random.choices(string.ascii_letters + string.digits, k=10)),
             "GuildID": interaction.guild.id,
             "UserID": interaction.user.id,
             "opened": interaction.created_at.timestamp(),
@@ -164,14 +161,15 @@ class Button(discord.ui.Button):
             "type": self.type,
             "panel": TPanel.get("name"),
             "panel_id": self.custom_id,
+            "lastMessageSent": interaction.created_at.timestamp(),
         }
-        if TPanel.get('Questions') and len(TPanel.get('Questions')) > 0:
-            return await interaction.response.send_modal(TicketForm(TPanel.get('Questions'), Dict))
-        await interaction.response.defer()        
-        if TPanel:  
-            t = await interaction.client.db["Tickets"].insert_one(
-                Dict
+        if TPanel.get("Questions") and len(TPanel.get("Questions")) > 0:
+            return await interaction.response.send_modal(
+                TicketForm(TPanel.get("Questions"), Dict)
             )
+        await interaction.response.defer()
+        if TPanel:
+            t = await interaction.client.db["Tickets"].insert_one(Dict)
             interaction.client.dispatch(
                 "pticket_open", t.inserted_id, TPanel.get("name")
             )
@@ -275,6 +273,7 @@ class TicketsPub(commands.Cog):
                 "type": {"$ne": "Welcome Message"},
             }
         )
+        P = Panel.get("Panel")
         if not Panel:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** this panel does not exist!",
@@ -285,12 +284,8 @@ class TicketsPub(commands.Cog):
                 f"{no} **{interaction.user.display_name},** this panel does not have an embed!",
                 ephemeral=True,
             )
-        embed = await DisplayEmbed(Panel.get("Panel"))
-        if not embed:
-            return await interaction.followup.send(
-                f"{crisis} **{interaction.user.display_name},** I failed to load the panel embed.",
-                ephemeral=True,
-            )
+        if P.get("embed"):
+            embed = await DisplayEmbed(Panel.get("Panel"))
         buttons = []
         if Panel.get("type") == "multi":
             for panel_name in Panel.get("Panels"):
@@ -326,13 +321,26 @@ class TicketsPub(commands.Cog):
                     await last.delete()
             except discord.NotFound:
                 pass
-        if interaction.guild.id == 1092976553752789054: # adding support for main server
-            embed = None 
+        if (
+            not Panel.get("embed")
+            or interaction.guild.id == 1092976553752789054
+            or not embed
+        ):
+            embed = None
         try:
-            msg = await interaction.channel.send(embed=embed, view=view, content=Panel.get('content', ""))
+            msg = await interaction.channel.send(
+                embed=embed,
+                view=view,
+                content=Panel.get("Panel", {}).get("content", ""),
+            )
         except discord.Forbidden:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** I don't have permission to send messages in this channel.",
+                ephemeral=True,
+            )
+        except discord.HTTPException:
+            return await interaction.followup.send(
+                f"{no} **{interaction.user.display_name},** I failed to send the panel. Make sure the embed/message is formed correctly.",
                 ephemeral=True,
             )
         await interaction.followup.send(
@@ -452,6 +460,7 @@ class TicketsPub(commands.Cog):
         Result = await interaction.client.db["Tickets"].find_one(
             {"ChannelID": interaction.channel.id}
         )
+
         if not Result:
             return await interaction.followup.send(
                 content=f"{no} This isn't a ticket channel."
@@ -462,16 +471,42 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        embed = discord.Embed(
-            title="Close Confirmation",
-            description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.",
-            color=discord.Color.green(),
+        p = await interaction.client.db["Panels"].find_one(
+            {"guild": interaction.guild.id, "name": Result.get("panel")}
         )
         try:
             User = await interaction.guild.fetch_member(Result.get("UserID"))
         except (discord.NotFound, discord.HTTPException):
             return await interaction.followup.send(
                 content=f"{no} I can't find the user that opened this ticket."
+            )
+        CS = p.get("Close Request", {})
+        embed = None
+        if CS.get("embed", None):
+            replacements = {
+                "{author.mention}": User.mention,
+                "{author.name}": User.name,
+                "{author.created_at.relative}": f"<t:{int(User.created_at.timestamp())}:R>",
+                "{author.created_at.absolute}": f"<t:{int(User.created_at.timestamp())}:F>",
+                "{author.joined_at.relative}": f"<t:{int(User.joined_at.timestamp())}:R>",
+                "{author.joined_at.absolute}": f"<t:{int(User.joined_at.timestamp())}:F>",
+                "{author.id}": str(User.id),
+                "{author.avatar}": str(User.avatar.url),
+                "{author.display_name}": User.display_name,
+                "{guild.name}": interaction.guild.name,
+                "{guild.id}": str(interaction.guild.id),
+                "{time.relative}": f"<t:{int(datetime.utcnow().timestamp())}:R>",
+                "{time.absolute}": f"<t:{int(datetime.utcnow().timestamp())}:F>",
+                "{ticket.id}": str(Result.get("_id")),
+            }
+            embed = await DisplayEmbed(
+                p.get("Close Request", {}), replacements=replacements
+            )
+        if not embed:
+            embed = discord.Embed(
+                title="Close Confirmation",
+                description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.",
+                color=discord.Color.green(),
             )
 
         await interaction.followup.send(

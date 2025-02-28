@@ -124,6 +124,8 @@ class PTicketControl(discord.ui.View):
             name=interaction.user.display_name, icon_url=interaction.user.display_avatar
         )
         view = PTicketControl()
+        if not interaction.guild.id == 1092976553752789054:
+            view.remove_item(view.escalate)
         view.claim.disabled = True
         view.claim.label = f"Claimed by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
@@ -185,6 +187,8 @@ class PTicketControl(discord.ui.View):
         view = PTicketControl()
         view.escalate.disabled = True
         view.escalate.label = f"Escalated by @{interaction.user.name}"
+        if not interaction.guild.id == 1092976553752789054:
+            view.remove_item(view.escalate)
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
 
@@ -293,7 +297,11 @@ class TicketsPublic(commands.Cog):
                 f"[TICKETS] Message with ID {Result.get('ReviewMSG')} not found"
             )
         embed = Message.embeds[0]
-        embed.add_field(name="Rating", value=f"⭐ {rating}", inline=False)
+        embed.add_field(
+            name="Rating",
+            value=f"` ⭐ ` {rating}\n` 💬 ` {Result.get('review', 'N/A')}",
+            inline=False,
+        )
         try:
             await Message.edit(embed=embed)
         except discord.Forbidden:
@@ -408,6 +416,15 @@ class TicketsPublic(commands.Cog):
         replacements = {
             "{author.mention}": author.mention,
             "{author.name}": author.name,
+            "{author.created_at.relative}": f"<t:{int(author.created_at.timestamp())}:R>",
+            "{author.created_at.absolute}": f"<t:{int(author.created_at.timestamp())}:F>",
+            "{author.joined_at.relative}": f"<t:{int(author.joined_at.timestamp())}:R>",
+            "{author.joined_at.absolute}": f"<t:{int(author.joined_at.timestamp())}:F>",
+            "{author.id}": str(author.id),
+            "{author.avatar}": str(author.avatar.url),
+            "{author.display_name}": author.display_name,
+            "{guild.name}": guild.name,
+            "{guild.id}": str(guild.id),
             "{time.relative}": f"<t:{int(datetime.datetime.utcnow().timestamp())}:R>",
             "{time.absolute}": f"<t:{int(datetime.datetime.utcnow().timestamp())}:F>",
             "{ticket.id}": str(Ticket.get("_id")),
@@ -705,17 +722,56 @@ class Review(discord.ui.Select):
                 ephemeral=True,
             )
 
-        interaction.client.dispatch(
-            "pticket_review", Ticket.get("_id"), int(self.values[0]), interaction.user
+        await interaction.response.send_modal(FormalReview(Ticket, self.values[0]))
+
+
+class FormalReview(discord.ui.Modal):
+    def __init__(self, ticket: dict, rating: int):
+        super().__init__(timeout=None, title="Exit Review", custom_id="REVIEW")
+
+        self.ticket = ticket
+        self.rating = rating
+        self.review = discord.ui.TextInput(
+            label="Review",
+            placeholder="Write your review here.",
+            min_length=10,
+            max_length=500,
         )
 
+        self.add_item(self.review)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not self.ticket.get("closed"):
+            return await interaction.response.send_message(
+                "This ticket is not closed.", ephemeral=True
+            )
+        if self.ticket.get("review"):
+            return await interaction.response.send_message(
+                f"{no} **{interaction.user.display_name},** you've already reviewed this.",
+                ephemeral=True,
+            )
+
+        await interaction.client.db["Tickets"].update_one(
+            {"_id": self.ticket.get("_id")},
+            {"$set": {"review": self.review.value, "rating": self.rating}},
+        )
+        Result = await interaction.client.db["Tickets"].find_one(
+            {"_id": self.ticket.get("_id")}
+        )
+        if not Result:
+            return await interaction.response.send_message(
+                "I can't find the ticket.", ephemeral=True
+            )
+        interaction.client.dispatch(
+            "pticket_review", Result.get("_id"), self.rating, interaction.user
+        )
         view = discord.ui.View()
         view.add_item(
             discord.ui.Button(
-                style=discord.ButtonStyle.green,
                 label="Reviewed",
-                emoji=tick if len(tick) > 0 else None,
+                style=discord.ButtonStyle.success,
                 disabled=True,
+                emoji="<:whitecheck:1190819388941668362>",
             )
         )
         await interaction.response.edit_message(view=view)

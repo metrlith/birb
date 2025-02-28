@@ -27,6 +27,7 @@ Birb is designed to simplify tasks related to managing staff, staff punishment, 
 * !!leave
 * !!whitelist
 * !!unwhitelist
+* !!sync (Owner Only)
 
 
 ## Liscensing

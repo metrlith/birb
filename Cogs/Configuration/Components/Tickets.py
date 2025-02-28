@@ -8,11 +8,6 @@ from dotenv import load_dotenv
 from typing import Literal
 
 load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# Customisation = DB["Customisation"]
-# Panels = DB["Panels"]
 
 
 class Tickets(discord.ui.Select):
@@ -162,10 +157,18 @@ class ModifyPanelSelect(discord.ui.Select):
         if self.PanelType == "single":
             View = SingelPanelCustomisation(interaction.user, SelectedPanel)
             Styler = await interaction.client.db["Panels"].find_one(
-            {"guild": interaction.guild.id, "type": "single", "name": SelectedPanel}
+                {"guild": interaction.guild.id, "type": "single", "name": SelectedPanel}
             )
-            View.Reviews.label =  "Allow Ratings (Enabled)" if Styler.get("AllowReviews", False) else "Allow Ratings (Disabled)"
-            View.Reviews.style = discord.ButtonStyle.green if Styler.get("AllowReviews", False) else discord.ButtonStyle.red
+            View.Reviews.label = (
+                "Allow Ratings (Enabled)"
+                if Styler.get("AllowReviews", False)
+                else "Allow Ratings (Disabled)"
+            )
+            View.Reviews.style = (
+                discord.ButtonStyle.green
+                if Styler.get("AllowReviews", False)
+                else discord.ButtonStyle.red
+            )
         else:
             View = MultiPanelCustomisation(interaction.user, SelectedPanel)
 
@@ -448,9 +451,8 @@ class SingelPanelCustomisation(discord.ui.View):
         embed = discord.Embed(color=discord.Color.dark_embed())
         embed.set_author(
             name=f"{dict.get('name', 'Unnamed')} Panel",
-            
         )
-        
+
         for i, question in enumerate(dict.get("Questions", [])):
             embed.add_field(
                 name=f"Question {i + 1}",
@@ -458,14 +460,13 @@ class SingelPanelCustomisation(discord.ui.View):
                 f"> **Placeholder:** {question.get('placeholder') if question.get('placeholder') else 'None'}\n"
                 f"> **Min Length:** {question.get('min') if question.get('min') else 'None'}\n"
                 f"> **Max Length:** {question.get('max') if question.get('max') else 'None'}\n"
-                f"> **Required:** {question.get('required') if question.get('required') else 'None'}\n"
+                f"> **Required:** {question.get('required') if question.get('required') else 'None'}\n",
             )
-        
+
         if len(dict.get("Questions", [])) < 0:
             embed.description = "> You can add up to 5 questions to this form."
 
         return embed
-            
 
     @discord.ui.button(
         label="Forms",
@@ -478,24 +479,23 @@ class SingelPanelCustomisation(discord.ui.View):
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)        
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
         custom = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
-        
 
         view = TicketForms(interaction.user, self.name, self.FormEmbed)
         view.AddQuestion.label = f"({len(custom.get('Questions', []))}/5)"
         if len(custom.get("Questions", [])) >= 5:
             view.AddQuestion.disabled = True
-        await interaction.response.send_message(view=view, embed=self.FormEmbed(custom) ,ephemeral=True)
+        await interaction.response.send_message(
+            view=view, embed=self.FormEmbed(custom), ephemeral=True
+        )
 
-    
     @discord.ui.button(
-            label="Allow Ratings (Disabled)",
-            style=discord.ButtonStyle.red,
-            emoji="<:Reviews:1340741536492814458>",
-
+        label="Allow Ratings (Disabled)",
+        style=discord.ButtonStyle.red,
+        emoji="<:Reviews:1340741536492814458>",
     )
     async def Reviews(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -505,14 +505,14 @@ class SingelPanelCustomisation(discord.ui.View):
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)           
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
         custom = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name}
         )
         if not custom:
             return await interaction.response.send_message(
-            content=f"{no} **{interaction.user.display_name},** this panel does not exist.",
-            ephemeral=True,
+                content=f"{no} **{interaction.user.display_name},** this panel does not exist.",
+                ephemeral=True,
             )
 
         AllowReviews = not custom.get("AllowReviews", False)
@@ -522,11 +522,14 @@ class SingelPanelCustomisation(discord.ui.View):
             {"$set": {"AllowReviews": AllowReviews}},
         )
 
-        button.style = discord.ButtonStyle.green if AllowReviews else discord.ButtonStyle.red
-        button.label = "Allow Ratings (Enabled)" if AllowReviews else "Allow Ratings (Disabled)"
-        
-        await interaction.response.edit_message(view=self)
+        button.style = (
+            discord.ButtonStyle.green if AllowReviews else discord.ButtonStyle.red
+        )
+        button.label = (
+            "Allow Ratings (Enabled)" if AllowReviews else "Allow Ratings (Disabled)"
+        )
 
+        await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
         label="Finish",
@@ -708,28 +711,32 @@ async def CustomiseEmbed(interaction: discord.Interaction, option, name):
         from Cogs.Configuration.Components.EmbedBuilder import (
             DisplayEmbed,
             Embed,
+            NoEmbed,
         )
 
+        Default = {
+                "thumb": "",
+                "author_url": "",
+                "option": option,
+                "image": "",
+                "name": name,
+            }
+        
         if not custom or custom.get(option) is None:
             view = Embed(
                 interaction.user,
                 FinalFunction,
                 option,
-                {
-                    "thumb": "",
-                    "author_url": "",
-                    "option": option,
-                    "image": "",
-                    "name": name,
-                },
+                Default,
             )
             embed = discord.Embed(
                 title="Unknown",
             )
 
             view.remove_item(view.Buttons)
-            view.remove_item(view.RemoveEmbed)
-            view.remove_item(view.Content)
+            if option != "Panel":
+                view.remove_item(view.Content)
+                view.remove_item(view.RemoveEmbed)
             view.remove_item(view.Permissions)
             view.remove_item(view.ForumsChannel)
             view.remove_item(view.Ping)
@@ -738,42 +745,39 @@ async def CustomiseEmbed(interaction: discord.Interaction, option, name):
             return await interaction.edit_original_response(
                 embed=embed, view=view, content=None
             )
-        view = Embed(
-            interaction.user,
-            FinalFunction,
-            option,
-            {
-                "thumb": custom.get("embed", {}).get("thumbnail", ""),
-                "author_url": custom.get("embed", {})
-                .get("author", {})
-                .get("icon_url", ""),
-                "image": custom.get("image"),
-                "option": option,
-                "name": name,
-            },
-        )
-        embed = await DisplayEmbed(custom.get(option), interaction.user)
-        view.remove_item(view.Buttons)
-        view.remove_item(view.RemoveEmbed)
+        view = Embed(interaction.user, FinalFunction, option, Default)
+        if custom.get(option).get("embed") is not None:
+            embed = await DisplayEmbed(custom.get(option), interaction.user)
+
+        if not embed:
+            view = NoEmbed(interaction.user, FinalFunction, name, Default)
+
         if option != "Panel":
-         view.remove_item(view.Content)
+            view.remove_item(view.Content)
+            view.remove_item(view.RemoveEmbed)
+        view.remove_item(view.Buttons)
         view.remove_item(view.Permissions)
-        view.remove_item(view.ForumsChannel)
-        view.remove_item(view.Ping)
+        if embed:
+         view.remove_item(view.ForumsChannel)
+         view.remove_item(view.Ping)
         view.remove_item(view.reset)
 
-
         return await interaction.edit_original_response(
-            embed=embed, view=view, content=None
+            embed=embed, view=view, content=custom.get(option).get("content", None)
         )
     except Exception as e:
         traceback.print_exc()
 
 
 async def FinalFunction(interaction: discord.Interaction, d={}):
-    embed = interaction.message.embeds[0]
+    embed = interaction.message.embeds
+    if embed and interaction.message is None:
+        return await interaction.response.send_message(
+            content=f"{tick} **{interaction.user.display_name},** you can't have an empty message.",
+        )
+    RemoveEmbed = False
     if embed:
-
+        embed = embed[0]
         data = {
             f"{d.get('option')}": {
                 "content": interaction.message.content,
@@ -799,10 +803,23 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 },
             }
         }
+    else:
+        print(d)
+        data = {
+            f"{d.get('option')}": {
+                "content": interaction.message.content,
+                "creator": interaction.user.id,
+            }
+        }
+        RemoveEmbed = True
+
+    Update = {"$set": data}
+
+    if RemoveEmbed:
+        Update["$unset"] = {"embed": ""}
+
     await interaction.client.db["Panels"].update_one(
-        {"guild": interaction.guild.id, "name": d.get("name")},
-        {"$set": data},
-        upsert=True,
+        {"guild": interaction.guild.id, "name": d.get("name")}, Update, upsert=True
     )
 
     await interaction.response.edit_message(
@@ -818,6 +835,7 @@ class EmbedSelection(discord.ui.Select):
             options = [
                 discord.SelectOption(label="Panel", value="Panel"),
                 discord.SelectOption(label="Welcome Message", value="Welcome Message"),
+                discord.SelectOption(label="Close Request", value="Close Request"),
             ]
         else:
             options = [
@@ -948,8 +966,9 @@ class TicketForms(discord.ui.View):
     async def AddQuestion(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        await interaction.response.send_modal(Question(interaction.user, self.panel,self.embed))
-
+        await interaction.response.send_modal(
+            Question(interaction.user, self.panel, self.embed)
+        )
 
     @discord.ui.button(
         style=discord.ButtonStyle.gray,
@@ -966,27 +985,36 @@ class TicketForms(discord.ui.View):
                 content=f"{no} **{interaction.user.display_name},** this panel does not exist.",
                 ephemeral=True,
             )
-        
+
         if len(Config.get("Questions", [])) == 0:
             return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name},** there are no questions to delete.",
                 ephemeral=True,
             )
-        
+
         Questions = [label for label in Config.get("Questions", [])]
         view = discord.ui.View()
-        view.add_item(DeleteQuestionSelect(interaction.user, self.panel, Questions,  self.embed))
+        view.add_item(
+            DeleteQuestionSelect(interaction.user, self.panel, Questions, self.embed)
+        )
 
         await interaction.response.edit_message(view=view)
 
 
 class DeleteQuestionSelect(discord.ui.Select):
-    def __init__(self, author: discord.Member, name: str, options: list, embed: callable):
-        super().__init__(options=[discord.SelectOption(label=option['label'], value=option['label']) for option in options])
+    def __init__(
+        self, author: discord.Member, name: str, options: list, embed: callable
+    ):
+        super().__init__(
+            options=[
+                discord.SelectOption(label=option["label"], value=option["label"])
+                for option in options
+            ]
+        )
         self.author = author
         self.name = name
         self.embed = embed
-    
+
     async def callback(self, interaction: discord.Interaction):
         question_label = self.values[0]
         Config = await interaction.client.db["Panels"].find_one(
@@ -997,14 +1025,17 @@ class DeleteQuestionSelect(discord.ui.Select):
                 content=f"{no} **{interaction.user.display_name},** this panel does not exist.",
                 ephemeral=True,
             )
-        
-        question = next((q for q in Config.get("Questions", []) if q["label"] == question_label), None)
+
+        question = next(
+            (q for q in Config.get("Questions", []) if q["label"] == question_label),
+            None,
+        )
         if not question:
             return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name},** this question does not exist.",
                 ephemeral=True,
             )
-        
+
         Config["Questions"].remove(question)
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
@@ -1015,11 +1046,8 @@ class DeleteQuestionSelect(discord.ui.Select):
         if len(Config.get("Questions", [])) == 5:
             view.AddQuestion.disabled = True
         await interaction.response.edit_message(
-            embed=self.embed(Config),
-            content=None,
-            view=view
+            embed=self.embed(Config), content=None, view=view
         )
-
 
 
 class Question(discord.ui.Modal):
@@ -1027,36 +1055,33 @@ class Question(discord.ui.Modal):
         super().__init__(title="Add Question")
         self.author = author
         self.question = discord.ui.TextInput(
-            label="Question",
-            placeholder="Enter the question",
-            max_length=80
+            label="Question", placeholder="Enter the question", max_length=80
         )
-        
+
         self.placeholder = discord.ui.TextInput(
             label="Placeholder",
             placeholder="Enter the placeholder",
             max_length=80,
-            required=False
+            required=False,
         )
-        
+
         self.min = discord.ui.TextInput(
             label="Min Length",
             placeholder="Enter the minimum length",
             max_length=4,
-            required=False
-
+            required=False,
         )
         self.max = discord.ui.TextInput(
             label="Max Length",
             placeholder="Enter the maximum length",
             max_length=4,
-            required=False
+            required=False,
         )
         self.required = discord.ui.TextInput(
             label="Required",
             placeholder="Is this question required? (True/False)",
             max_length=5,
-            required=False
+            required=False,
         )
         self.add_item(self.question)
         self.add_item(self.min)
@@ -1067,12 +1092,14 @@ class Question(discord.ui.Modal):
         self.embed = embed
 
     async def on_submit(self, interaction: discord.Interaction):
-        
+
         question = self.question.value
-        placeholder = self.placeholder.value if not self.placeholder.value == "" else None
+        placeholder = (
+            self.placeholder.value if not self.placeholder.value == "" else None
+        )
         min = self.min.value if not self.min.value == "" else None
         max = self.max.value if not self.max.value == "" else None
-        required = self.required.value  if not self.required.value == "" else False
+        required = self.required.value if not self.required.value == "" else False
         Config = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.panel}
         )
@@ -1086,35 +1113,35 @@ class Question(discord.ui.Modal):
                 content=f"{no} **{interaction.user.display_name},** this panel does not exist.",
                 ephemeral=True,
             )
-        
+
         if not Config.get("Questions"):
             Config["Questions"] = []
-        
+
         if len(Config.get("Questions", [])) == 5:
             return await interaction.response.send_message(
                 content=f"{no} **{interaction.user.display_name},** you can only have 5 questions.",
                 ephemeral=True,
             )
-        
-        Config["Questions"].append({
-            "label": question,
-            "placeholder": placeholder if placeholder else None,
-            "min": min,
-            "max": max,
-            "required": required,
-        })
+
+        Config["Questions"].append(
+            {
+                "label": question,
+                "placeholder": placeholder if placeholder else None,
+                "min": min,
+                "max": max,
+                "required": required,
+            }
+        )
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.panel},
             {"$set": Config},
         )
         view = TicketForms(self.author, self.panel, self.embed)
         view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
-        if len (Config.get("Questions", [])) == 5:
+        if len(Config.get("Questions", [])) == 5:
             view.AddQuestion.disabled = True
         await interaction.response.edit_message(
-            content=None,
-            view=view,
-            embed=self.embed(Config)
+            content=None, view=view, embed=self.embed(Config)
         )
 
 

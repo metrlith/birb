@@ -89,6 +89,7 @@ async def DisplayEmbed(data: dict, user: discord.User = None, replacements: dict
     if not data:
         return None
     embed = discord.Embed(color=discord.Color.dark_embed())
+
     async def ReplaceData(data, replacements):
         if isinstance(data, dict):
             for key, value in data.items():
@@ -180,8 +181,9 @@ async def DisplayEmbed(data: dict, user: discord.User = None, replacements: dict
     except (ValueError, TypeError) as e:
         embed.color = discord.Color.dark_embed()
 
-    if not embed.title and not embed.description:
+    if (embed.title is None or embed.title == "") and (embed.description is None or embed.description == ""):
         embed.description = "You need a Title & Description"
+
 
     return embed
 
@@ -195,6 +197,7 @@ class NoEmbed(discord.ui.View):
         self.author = author
         self.typed = type
         self.data = data
+        print(f"[1] {self.data} | {self.typed}")
         self.add_item(
             discord.ui.Button(
                 label="Documentation",
@@ -359,10 +362,17 @@ class NoEmbed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
-                view.add_item(PSelect(interaction.user, Config.get("Promo", {}).get("System", {}).get("type", "og")))
+                view.add_item(
+                    PSelect(
+                        interaction.user,
+                        Config.get("Promo", {}).get("System", {}).get("type", "og"),
+                    )
+                )
                 view.add_item(ConfigMenu(Options(Config=Config), interaction.user))
                 await interaction.response.edit_message(
                     embed=await PromotionEmbed(
@@ -382,7 +392,9 @@ class NoEmbed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(InfractionOption(interaction.user))
@@ -412,6 +424,8 @@ class NoEmbed(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
+        print(self.data)
+
         await self.finalfunc(interaction, self.data)
         self.stop()
 
@@ -429,6 +443,8 @@ class Embed(discord.ui.View):
         self.typed = type
         self.finalfunc = finalfunc
         self.data = data
+        print(f"[2] {self.data} | {self.typed}")
+
         self.add_item(
             discord.ui.Button(
                 label="Documentation",
@@ -447,13 +463,14 @@ class Embed(discord.ui.View):
     async def RemoveEmbed(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        print(self.data)
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        view = NoEmbed(self.author, self.finalfunc, self.data)
+        view = NoEmbed(self.author, self.finalfunc, self.typed, self.data)
         if self.typed == "Promotions" or self.typed == "Infractions":
             view.remove_item(view.Buttons)
             view.remove_item(view.Permissions)
@@ -783,7 +800,9 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(PSelect(interaction.user))
@@ -806,7 +825,9 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(InfractionOption(interaction.user))
@@ -829,7 +850,9 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(SuspensionOptions(interaction.user))
@@ -852,7 +875,9 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(StaffFeedback(interaction.user))
@@ -879,7 +904,9 @@ class Embed(discord.ui.View):
                     ConfigMenu,
                 )
 
-                Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+                Config = await interaction.client.config.find_one(
+                    {"_id": interaction.guild.id}
+                )
 
                 view = discord.ui.View()
                 view.add_item(Suggestions(interaction.user))
@@ -905,6 +932,7 @@ class Embed(discord.ui.View):
     async def Finished(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        print(self.data)
         await self.finalfunc(interaction, self.data)
         self.stop()
 
@@ -1236,7 +1264,7 @@ class Colour(discord.ui.Modal, title="Colour"):
                 ephemeral=True,
             )
             return
-            
+
         try:
             color = discord.Color(int(color_value, 16))
         except ValueError:
