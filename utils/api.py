@@ -33,7 +33,6 @@ Tickets = db["Tickets"]
 
 
 async def Validation(key: str, server: int):
-    print(key, server)
     doc = await Keys.find_one({"key": key, "_id": server})
     return bool(doc)
 

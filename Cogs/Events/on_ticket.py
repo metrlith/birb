@@ -208,11 +208,12 @@ class TicketsPublic(commands.Cog):
         async def SendAutoMation(Ticket, semaphore):
             async with semaphore:
                 await asyncio.sleep(0.4)
+                if Ticket.get("lastMessenger") == int(self.client.user.id):
+                    return
                 Guild = self.client.get_guild(Ticket.get("GuildID"))
                 if not Guild:
                     return
                 Channel = Guild.get_channel(Ticket.get("ChannelID"))
-
                 if not Channel:
                     return
                 P = await self.client.db["Panels"].find_one(
@@ -226,6 +227,9 @@ class TicketsPublic(commands.Cog):
                 if not ActivityReminder:
                     return
 
+                if Ticket.get("LastMessageWasBot", False) is True:
+                    return
+
                 LastMessagSent = Ticket.get("lastMessageSent", None)
                 if not Ticket.get("automations", True):
                     return
@@ -236,7 +240,12 @@ class TicketsPublic(commands.Cog):
                 ):
                     await self.client.db["Tickets"].update_one(
                         {"_id": Ticket.get("_id")},
-                        {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+                        {
+                            "$set": {
+                                "lastMessageSent": datetime.datetime.utcnow(),
+                                "LastMessageWasBot": True,
+                            }
+                        },
                     )
                     try:
                         await Channel.send(
@@ -258,8 +267,6 @@ class TicketsPublic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot:
-            return
         if not message.guild:
             return
         Ticket = await self.client.db["Tickets"].find_one(
@@ -271,7 +278,13 @@ class TicketsPublic(commands.Cog):
             return
         await self.client.db["Tickets"].update_one(
             {"ChannelID": message.channel.id},
-            {"$set": {"lastMessageSent": datetime.datetime.utcnow()}},
+            {
+                "$set": {
+                    "lastMessageSent": datetime.datetime.utcnow(),
+                    "lastMessenger": message.author.id,
+                    "LastMessageWasBot": False,
+                }
+            },
         )
 
     @commands.Cog.listener()

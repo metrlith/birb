@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from utils.format import DefaultTypes
+import datetime
 import typing
 
 
@@ -40,23 +41,26 @@ async def DepartmentAutocomplete(
 async def CloseReason(
     interaction: discord.Interaction, current: str
 ) -> list[app_commands.Choice[str]]:
-    PreviousTicketReasons = interaction.client.db["Tickets"].find(
-        {"GuildID": interaction.guild.id, "Closed": {"$exists": True}}
+    PreviousTicketReasons = (
+        await interaction.client.db["Tickets"]
+        .find({"GuildID": interaction.guild.id, "closed": {"$exists": True}})
+        .to_list(750)
     )
+    PreviousTicketReasons = [t for t in PreviousTicketReasons if t is not None]
     Reasons = []
-    async for Ticket in PreviousTicketReasons:
-        if Ticket.get("closed", {}).get("reason"):
-            if (
-                current.lower() in Ticket.get("closed", {}).get("reason").lower()
-                or not current
-            ):
-                Reasons.append(
-                    app_commands.Choice(
-                        name=Ticket.get("closed", {}).get("reason")[:100],
-                        value=Ticket.get("closed", {}).get("reason")[:100],
-                    )
-                )
+    for Ticket in PreviousTicketReasons:
+        if not Ticket.get("closed"):
+            continue
+        
+        reason = Ticket.get("closed", {}).get("reason")
+
+        if reason and (not current or current.lower() in reason.lower()):
+            if reason == "No reason provided":
+                continue
+            Reasons.append(app_commands.Choice(name=reason[:100], value=reason[:100]))
+
     return Reasons[:25]
+
 
 
 async def Snippets(
@@ -96,9 +100,7 @@ async def ConnectionRoles(
         print(e)
 
 
-async def infractiontypes(
-    interaction: discord.Interaction, current: str
-):
+async def infractiontypes(interaction: discord.Interaction, current: str):
     try:
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:

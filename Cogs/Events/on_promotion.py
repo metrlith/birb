@@ -111,12 +111,12 @@ async def PromotionSystem(
         return await self.db["promotions"].find_one({"_id": PromotionData.get("_id")})
 
     PromoSystemType = settings.get("Promo", {}).get("System", {}).get("type", "old")
-
-    if PromoSystemType == "old":
+    if PromoSystemType == "og":
         if not PromotionData.get("new"):
             return
         try:
             newrole = guild.get_role(int(PromotionData.get("new")))
+
         except discord.DiscordException as e:
             logger.error(f"Error fetching new role: {e}")
             return
