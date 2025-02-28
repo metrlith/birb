@@ -51,6 +51,8 @@ async def CloseReason(
     for Ticket in PreviousTicketReasons:
         if not Ticket.get("closed"):
             continue
+        if not isinstance(Ticket.get("closed"), dict):
+            continue
         
         reason = Ticket.get("closed", {}).get("reason")
 

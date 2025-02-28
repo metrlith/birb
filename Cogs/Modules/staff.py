@@ -1357,7 +1357,6 @@ class quota(commands.Cog):
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
         if custom and custom.get("embed"):
             from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
-
             embed = await DisplayEmbed(custom, ctx.author)
         People = (
             await self.client.db["staff database"]
