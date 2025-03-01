@@ -379,9 +379,10 @@ class Infractions(commands.Cog):
                 else "expired" if scope == "Expired" else "any"
             )
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, there are no {scope_text} infractions found{f' for **@{staff.display_name}**' if staff else ''}.",
+                f"{no} **{ctx.author.display_name}**, no {scope_text} infractions were found{f' for **@{staff.display_name}**' if staff else ''}."
             )
             return
+
 
         if await IsSeperateBot():
             msg = await ctx.send(
