@@ -1061,7 +1061,7 @@ class Question(discord.ui.Modal):
         self.placeholder = discord.ui.TextInput(
             label="Placeholder",
             placeholder="Enter the placeholder",
-            max_length=80,
+            max_length=45,
             required=False,
         )
 
