@@ -832,7 +832,7 @@ class TicketsPub(commands.Cog):
             name="Ticket Stats",
             value=(
                 f"> **Claimed Tickets:** {TotalClaimed or 0}\n"
-                f"> **Average Response Time:** {FormattedResponseTime.strip() or "0s"}\n"
+                f'> **Average Response Time:** {FormattedResponseTime.strip() or "0s"}\n'
                 f"> **Messages Sent in Tickets:** {TotalMessagesSent or 0}"
             ),
         )
