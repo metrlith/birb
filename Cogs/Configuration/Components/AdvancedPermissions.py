@@ -33,7 +33,7 @@ class ManagePermissions(discord.ui.View):
         super().__init__(timeout=360)
         self.author = author
 
-    @discord.ui.button(label="+", style=discord.ButtonStyle.gray)
+    @discord.ui.button(emoji="<:Add:1163095623600447558>", style=discord.ButtonStyle.gray)
     async def Add(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
@@ -121,7 +121,7 @@ class ManagePermissions(discord.ui.View):
         )
         await interaction.edit_original_response(view=view, embed=embed)
 
-    @discord.ui.button(label="-", style=discord.ButtonStyle.gray)
+    @discord.ui.button(emoji="<:Subtract:1229040262161109003>", style=discord.ButtonStyle.gray)
     async def Remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
