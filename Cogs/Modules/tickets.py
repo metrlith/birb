@@ -307,21 +307,39 @@ class TicketsPub(commands.Cog):
                 "type": {"$ne": "Welcome Message"},
             }
         )
-        P = Panel.get("Panel")
+
         if not Panel:
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** this panel does not exist!",
                 ephemeral=True,
             )
-        if not Panel.get("Panel"):
-            return await interaction.followup.send(
-                f"{no} **{interaction.user.display_name},** this panel does not have an embed!",
-                ephemeral=True,
+
+        P = Panel.get("Panel")
+        DefaultEmbed = False
+        embed = None
+        content = None
+
+        if P and P.get("embed"):
+            embed = await DisplayEmbed(P)
+            content = P.get("content", None)
+        elif not P or not P.get("content"):
+            embed = discord.Embed(
+                description="By clicking a button below, you can open a ticket.",
+                color=discord.Color.blurple(),
+            ).set_author(
+                name=f"{Panel.get('name')}",
+                icon_url=(
+                    interaction.guild.icon.url if interaction.guild.icon else None
+                ),
             )
-        if P.get("embed"):
-            embed = await DisplayEmbed(Panel.get("Panel"))
+
         buttons = []
         if Panel.get("type") == "multi":
+            if not Panel.get("Panels"):
+                return await interaction.followup.send(
+                    f"{no} **{interaction.user.display_name},** this multi-panel doesn't have any sub-panels.",
+                    ephemeral=True,
+                )
             for panel_name in Panel.get("Panels"):
                 sub = await interaction.client.db["Panels"].find_one(
                     {
@@ -353,14 +371,18 @@ class TicketsPub(commands.Cog):
                 if channel:
                     last = await channel.fetch_message(Panel.get("MsgID"))
                     await last.delete()
-            except discord.NotFound:
+            except (discord.Forbidden, discord.HTTPException, discord.NotFound):
                 pass
+
+        if not P:
+            P = {}
         if (
             not P.get("embed")
             or interaction.guild.id == 1092976553752789054
             or not embed
         ):
-            embed = None
+            if not DefaultEmbed and content:
+                embed = None
         try:
             msg = await interaction.channel.send(
                 embed=embed,
