@@ -199,7 +199,7 @@ async def TicketError(interaction: discord.Interaction, t: dict, TMSG: discord.M
         if result.get("error"):
             embed = discord.Embed(
                 description=f"An error occured while trying to open the ticket.\n```{result.get('error', {}).get('message')}```",
-                color=discord.Color.red()
+                color=discord.Color.red(),
             )
             try:
                 await interaction.edit_original_response(
@@ -767,7 +767,7 @@ class TicketsPub(commands.Cog):
 
         Tickets = (
             await interaction.client.db["Tickets"]
-            .find({"GuildID": interaction.guild.id, "UserID": user.id})
+            .find({"GuildID": interaction.guild.id})
             .to_list(length=None)
         )
         if time:
@@ -777,7 +777,6 @@ class TicketsPub(commands.Cog):
                 .find(
                     {
                         "GuildID": interaction.guild.id,
-                        "UserID": user.id,
                         "opened": {"$gte": time.timestamp()},
                     }
                 )
@@ -832,9 +831,9 @@ class TicketsPub(commands.Cog):
         embed.add_field(
             name="Ticket Stats",
             value=(
-                f"> **Claimed Tickets:** {TotalClaimed}\n"
-                f"> **Average Response Time:** {FormattedResponseTime.strip()}\n"
-                f"> **Messages Sent in Tickets:** {TotalMessagesSent}"
+                f"> **Claimed Tickets:** {TotalClaimed or 0}\n"
+                f"> **Average Response Time:** {FormattedResponseTime.strip() or "0s"}\n"
+                f"> **Messages Sent in Tickets:** {TotalMessagesSent or 0}"
             ),
         )
         embed.set_thumbnail(url=user.display_avatar)
