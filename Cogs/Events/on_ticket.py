@@ -410,10 +410,16 @@ class TicketsPublic(commands.Cog):
             {"name": Panelled, "type": "single", "guild": Ticket.get("GuildID")}
         )
         if not P:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Panel not found."}}
+            )
             return logging.critical("[on_pticket_open] I can't find the panel.")
         guild_id = Ticket.get("GuildID")
         guild = await self.client.fetch_guild(guild_id)
         if not guild:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Guild not found."}}
+            )            
             return logging.critical(
                 f"[on_pticket_open] I can't find the server with ID {guild_id}."
             )
@@ -421,6 +427,9 @@ class TicketsPublic(commands.Cog):
         author_id = Ticket.get("UserID", {})
         author = await guild.fetch_member(author_id)
         if not author:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Author not found."}}
+            )            
             return logging.critical(
                 f"[on_pticket_open] can't find the author with ID {author_id}."
             )
@@ -450,29 +459,49 @@ class TicketsPublic(commands.Cog):
 
         if not Embed:
             Embed = await DefaultEmbed(author, Ticket)
-        logging.debug(f"[on_pticket_open] Data: {P}")
-
         CategoryID = P.get("Category")
         if not CategoryID:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "The category isn't setup. Make sure to set the category in config."}}
+            )            
             return logging.critical("[on_pticket_open] can't find the category ID.")
-
-        category = await guild.fetch_channel(CategoryID)
+        try:
+         category = await guild.fetch_channel(CategoryID)
+        except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "The bot can't find the category. Make sure to give the bot permission to view the category."}}
+            )
+            return logging.critical(
+                f"[on_pticket_open] can't find the category with ID {CategoryID}."
+            )
         if not category:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Category not found."}}
+            )            
             return logging.critical(
                 f"[on_pticket_open] can't find the category with ID {CategoryID}."
             )
 
         if not isinstance(category, discord.CategoryChannel):
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Category not found."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] The fetched channel with ID {CategoryID} is not a valid category."
             )
 
         if category.guild is None:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": f"The category with the ID {CategoryID} does not belong to a valid guild."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] The category with ID {CategoryID} does not belong to a valid guild."
             )
         cli = await guild.fetch_member(self.client.user.id)
         if cli is None or not category.permissions_for(cli).manage_channels:
+            await self.client.db["Tickets"].update_one(
+                { "_id": objectID}, {"$set": {"error.message": "Bot does not have permission to manage channels in the category."}}
+                )
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to manage channels in the category {CategoryID}."
             )
@@ -497,10 +526,16 @@ class TicketsPublic(commands.Cog):
                 name=f"ticket-{author.name}", overwrites=Overwrites
             )
         except discord.Forbidden as e:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": f"Bot does not have permission to create a text channel: {e}"}}
+            )
             return logging.critical(
                 f"[on_pticket_open] The bot does not have permission to create a text channel: {e}"
             )
         except Exception as e:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": f"Failed to create text channel: {e}"}}
+            )
             return logging.critical(
                 f"[on_pticket_open] Failed to create text channel: {e}"
             )
@@ -535,6 +570,9 @@ class TicketsPublic(commands.Cog):
                 view=view,
             )
         except discord.Forbidden:
+            await self.client.db["Tickets"].update_one(
+               { "_id": objectID}, {"$set": {"error.message": "Bot does not have permission to send messages in the channel."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to send messages in the channel {channel.id}"
             )

@@ -71,10 +71,11 @@ class TicketForm(discord.ui.Modal):
             "pticket_open", t.inserted_id, self.data.get("panel")
         )
 
-        await interaction.response.send_message(
+        TSMG = await interaction.response.send_message(
             content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
             ephemeral=True,
         )
+        await TicketError(interaction, t, TSMG)
 
 
 class Button(discord.ui.Button):
@@ -173,7 +174,7 @@ class Button(discord.ui.Button):
             interaction.client.dispatch(
                 "pticket_open", t.inserted_id, TPanel.get("name")
             )
-            await interaction.followup.send(
+            TMSG: discord.Message = await interaction.followup.send(
                 content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
                 ephemeral=True,
             )
@@ -183,6 +184,39 @@ class Button(discord.ui.Button):
                 ephemeral=True,
                 view=Debug(),
             )
+        await TicketError(interaction, t, TMSG)
+
+
+async def TicketError(interaction: discord.Interaction, t: dict, TMSG: discord.Message):
+    attempts = 10
+    while True:
+        attempts -= 1
+        await asyncio.sleep(3)
+        result = await interaction.client.db["Tickets"].find_one({"_id": t.inserted_id})
+        if not result:
+            continue
+
+        if result.get("error"):
+            embed = discord.Embed(
+                description=f"An error occured while trying to open the ticket.\n```{result.get('error', {}).get('message')}```",
+                color=discord.Color.red()
+            )
+            try:
+                await interaction.edit_original_response(
+                    content=None,
+                    embed=embed,
+                    view=Support(),
+                )
+                await interaction.client.db["Tickets"].delete_one(
+                    {"_id": t.inserted_id}
+                )
+                break
+            except discord.NotFound:
+
+                pass
+
+        if attempts > 10:
+            break
 
 
 class Debug(discord.ui.View):

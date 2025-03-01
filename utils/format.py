@@ -13,6 +13,7 @@ def DefaultTypes():
         "Termination",
     ]
 
+
 async def IsSeperateBot():
     return any([os.getenv("CUSTOM_GUILD"), os.getenv("DEFAULT_ALLOWED_SERVERS"), os.getenv("REMOVE_EMOJIS")])
 
