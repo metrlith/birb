@@ -83,8 +83,6 @@ async def PermissionsEmbed(
     Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
     if not Config:
         Config = {"Permissions": {}}
-    print(Config.get("Permissions", {}).get("staffrole"))
-    print(Config.get("Permissions", {}).get("adminrole"))
     StaffRole = (
         ", ".join(
             f"<@&{int(Role)}>"
