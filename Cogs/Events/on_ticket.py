@@ -793,11 +793,13 @@ class FormalReview(discord.ui.Modal):
             placeholder="Write your review here.",
             min_length=10,
             max_length=500,
+            required=False
         )
 
         self.add_item(self.review)
 
     async def on_submit(self, interaction: discord.Interaction):
+        review = self.review.value if not self.review.value == "" else "N/A"
         if not self.ticket.get("closed"):
             return await interaction.response.send_message(
                 "This ticket is not closed.", ephemeral=True
@@ -810,7 +812,7 @@ class FormalReview(discord.ui.Modal):
 
         await interaction.client.db["Tickets"].update_one(
             {"_id": self.ticket.get("_id")},
-            {"$set": {"review": self.review.value, "rating": self.rating}},
+            {"$set": {"review": review, "rating": self.rating}},
         )
         Result = await interaction.client.db["Tickets"].find_one(
             {"_id": self.ticket.get("_id")}
