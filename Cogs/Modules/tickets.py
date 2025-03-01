@@ -161,7 +161,7 @@ class Button(discord.ui.Button):
             "type": self.type,
             "panel": TPanel.get("name"),
             "panel_id": self.custom_id,
-            "lastMessageSent": interaction.created_at.timestamp(),
+            "lastMessageSent": datetime.utcnow(),
         }
         if TPanel.get("Questions") and len(TPanel.get("Questions")) > 0:
             return await interaction.response.send_modal(
