@@ -205,7 +205,7 @@ class Utility(commands.Cog):
                 embed.add_field(name=f"Flags [{badgecount}]", value=f"{badge_values}")
             embed.add_field(
                 name="**Profile**",
-                value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n*>**Created:** <t:{int(user.created_at.timestamp())}:F>",
+                value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n> **Created:** <t:{int(user.created_at.timestamp())}:F>",
                 inline=False,
             )
             await interaction.followup.send(embed=embed)
