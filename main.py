@@ -106,7 +106,7 @@ class Client(commands.AutoShardedBot):
         intents = self._initialize_intents()
         self._initialize_super(intents)
         self.client = client
-        # self.cogslist = self._initialize_cogslist()
+        self.cogslist = self._initialize_cogslist()
         if environment != "custom":
             self.cogslist.extend(["utils.api", "utils.dokploy"])
         if os.getenv("STAFF"):
@@ -362,12 +362,12 @@ class Client(commands.AutoShardedBot):
         self.add_view(CaseApproval())
         self.add_view(PTicketControl())
 
-        # self.loop.create_task(self.load_jishaku())
-        # for ext in ProgressBar(
-        #     self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
-        # ):
-        #     await self.load_extension(ext)
-        #     print(f"[✅] {ext} loaded")
+        self.loop.create_task(self.load_jishaku())
+        for ext in ProgressBar(
+            self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
+        ):
+            await self.load_extension(ext)
+            print(f"[✅] {ext} loaded")
 
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
@@ -399,7 +399,7 @@ class Client(commands.AutoShardedBot):
     async def _handle_custom_environment(self):
         if not guildid:
             print("[❌] CUSTOM_GUILD not defined in .env")
-            
+            sys.exit(1)
         try:
             guild = await self.fetch_guild(guildid)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
