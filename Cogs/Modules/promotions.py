@@ -11,12 +11,13 @@ from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
 
-MONGO_URL = os.getenv("MONGO_URL")
-environment = os.getenv("ENVIRONMENT")
+
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+environment = os.getenv("ENVIRONMENT")
 
 from utils.HelpEmbeds import (
     BotNotConfigured,
@@ -25,7 +26,6 @@ from utils.HelpEmbeds import (
     ModuleNotEnabled,
     NoChannelSet,
     Support,
-    NoPremium,
 )
 
 

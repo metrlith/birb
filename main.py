@@ -399,7 +399,7 @@ class Client(commands.AutoShardedBot):
     async def _handle_custom_environment(self):
         if not guildid:
             print("[❌] CUSTOM_GUILD not defined in .env")
-            
+            sys.exit(1)
         try:
             guild = await self.fetch_guild(guildid)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
