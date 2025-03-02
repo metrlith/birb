@@ -115,6 +115,8 @@ class Client(commands.AutoShardedBot):
     def _initialize_databases(self):
         self.db = db
         self.qdb = qdb
+        self.config = Config
+        
     def _initialize_maintenance_flags(self):
         self.infractions_maintenance = False
         self.promotions_maintenance = False
