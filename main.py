@@ -395,14 +395,16 @@ class Client(commands.AutoShardedBot):
         await SyncCommands(self)
         await self._print_startup_info()
         await self._set_custom_status()
-        if environment != "custom":
-            await self._cache_modmail_enabled_servers()
+        await self._cache_modmail_enabled_servers()
 
     async def _handle_custom_environment(self):
-        guild = await self.fetch_guild(guildid)
+        try:
+         guild = await self.fetch_guild(guildid)
+        except (discord.HTTPException, discord.Forbidden, discord.NotFound):
+            print(f"[❌] Failed to fetch guild {guildid}")
         if guild:
             try:
-                await guild.chunk(cache=True)
+                await guild.chunk(cache=False)
             except (discord.NotFound, discord.HTTPException, discord.Forbidden):
                 print(f"[❌] Failed to chunk guild {guild.name} ({guild.id})")
             print(f"[✅] Connected to guild {guild.name} ({guild.id})")
@@ -435,7 +437,10 @@ class Client(commands.AutoShardedBot):
     async def _cache_modmail_enabled_servers(self):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
         prfx = f"[📖] {prfx}"
-        Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
+        if environment == "custom" and guildid:
+         Modmail = await self.config.find({"Modules.Modmail": True, "_id": int(guildid)}).to_list(length=None)
+        else:
+          Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
         Guilds = 0
         DevServers = [1092976553752789054]
         for server in DevServers:
