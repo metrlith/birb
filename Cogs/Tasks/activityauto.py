@@ -13,32 +13,11 @@ from utils.emojis import *
 from utils.Module import ModuleCheck
 from utils.permissions import *
 from datetime import timedelta, datetime
-from utils.HelpEmbeds import (
-    BotNotConfigured,
-    Support,
-)
 
 
 load_dotenv()
-MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-
-client = AsyncIOMotorClient(MONGO_URL)
-db = client["astro"]
-# collection = db["infractions"]
-# consent = db["consent"]
-# customization = db["Customisation"]
-# infractiontypeactions = db["infractiontypeactions"]
-# staffdb = db["staff database"]
-# integrations = db["integrations"]
-# reasons = db["reasons"]
-# config = db["Config"]
-
-# # Message Quota DB
-# dbq = mongo["quotadb"]
-# mccollection = dbq["messages"]
-# message_quota_collection = dbq["message_quota"]
 
 
 class activityauto(commands.Cog):
@@ -50,11 +29,15 @@ class activityauto(commands.Cog):
     async def quota_activity(self):
         print("[INFO] Checking for quota activity")
         if environment == "custom":
-            autoactivityresult = await self.client.db['auto activity'].find(
-                {"guild_id": int(guildid)}
-            ).to_list(length=None)
+            autoactivityresult = (
+                await self.client.db["auto activity"]
+                .find({"guild_id": int(guildid)})
+                .to_list(length=None)
+            )
         else:
-            autoactivityresult = await self.client.db['auto activity'].find({}).to_list(length=None)
+            autoactivityresult = (
+                await self.client.db["auto activity"].find({}).to_list(length=None)
+            )
         if autoactivityresult:
 
             for data in autoactivityresult:
@@ -72,9 +55,17 @@ class activityauto(commands.Cog):
                         pass
                     if not channel:
                         continue
-                    days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+                    days = [
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday",
+                        "sunday",
+                    ]
                     nextdate = data.get("nextdate", None)
-                    day = data.get("day", "").lower() 
+                    day = data.get("day", "").lower()
                     current_day_index = datetime.now().weekday()
                     if day not in days:
                         continue
@@ -91,7 +82,6 @@ class activityauto(commands.Cog):
                     if next_occurrence_date < datetime.now():
                         next_occurrence_date = datetime.now() + timedelta(days=7)
 
-  
                     if not datetime.now() >= nextdate:
                         continue
 
@@ -105,7 +95,7 @@ class activityauto(commands.Cog):
                             continue
                         if not guild:
                             continue
-                        await self.client.db['auto activity'].update_one(
+                        await self.client.db["auto activity"].update_one(
                             {"guild_id": guild.id},
                             {
                                 "$set": {
@@ -119,9 +109,11 @@ class activityauto(commands.Cog):
                             f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!"
                         )
                         if guild:
-                            result = await self.client.qdb['auto activity'].find(
-                                {"guild_id": guild.id}
-                            ).to_list(length=None)
+                            result = (
+                                await self.client.qdb["auto activity"]
+                                .find({"guild_id": guild.id})
+                                .to_list(length=None)
+                            )
                             passed = []
                             failed = []
                             on_loa = []
@@ -141,7 +133,9 @@ class activityauto(commands.Cog):
                                     if user:
                                         if not await check_admin_and_staff(guild, user):
                                             continue
-                                        result = await self.client.qdb['messages'].find_one(
+                                        result = await self.client.qdb[
+                                            "messages"
+                                        ].find_one(
                                             {"guild_id": guild.id, "user_id": user.id}
                                         )
                                         Config = await self.client.config.find_one(
@@ -265,8 +259,6 @@ class ResetLeaderboard(discord.ui.View):
         super().__init__(timeout=None)
         self.failures = failures
 
-
-
     @discord.ui.button(
         label="Reset Leaderboard",
         style=discord.ButtonStyle.danger,
@@ -276,13 +268,11 @@ class ResetLeaderboard(discord.ui.View):
     async def reset_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if not await has_admin_role(
-            interaction
-        ):
+        if not await has_admin_role(interaction):
             return
         button.label = f"Reset By @{interaction.user.display_name}"
         button.disabled = True
-        await interaction.client.qdb['messages'].update_many(
+        await interaction.client.qdb["messages"].update_many(
             {"guild_id": interaction.guild.id}, {"$set": {"message_count": 0}}
         )
         await interaction.response.edit_message(view=self)
@@ -299,7 +289,9 @@ class ResetLeaderboard(discord.ui.View):
         if not await has_admin_role(interaction):
             return
         if not self.failures:
-            result = await interaction.client.db['auto activity'].find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db["auto activity"].find_one(
+                {"guild_id": interaction.guild.id}
+            )
             self.failures = result.get("failed", [])
             if not result or self.failures is None or len(self.failures) == 0:
                 await interaction.response.send_message(
@@ -331,7 +323,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
         notes = None
         expiration = None
         anonymous = True
-        TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
+        TypeActions = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -386,7 +378,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
-            InfractionResult = await self.client.db['infractions'].insert_one(
+            InfractionResult = await self.client.db["infractions"].insert_one(
                 {
                     "guild_id": interaction.guild.id,
                     "staff": user.id,
