@@ -116,10 +116,10 @@ class LOA(commands.Cog):
                                 )
                         except Exception as e:
                             print(f"[⚠️] Failed to send DM to {UserID}: {e}")
-
+        
         except Exception as e:
             print(f"[⚠️] Error in LOA task: {e}")
-
+        del loa_requests
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(LOA(client))

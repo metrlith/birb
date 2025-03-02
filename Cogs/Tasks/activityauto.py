@@ -257,6 +257,8 @@ class activityauto(commands.Cog):
                     print(f"[QUOTA ERROR] {e}")
                     continue
 
+                del autoactivityresult
+
 
 class ResetLeaderboard(discord.ui.View):
     def __init__(self, failures: list = None):

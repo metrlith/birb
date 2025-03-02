@@ -121,7 +121,7 @@ class EmptyCog(commands.Cog):
                             )
                         except (discord.NotFound, discord.HTTPException):
                             continue
-
+        del suspension_requests
 
 async def setup(client):
     await client.add_cog(EmptyCog(client))

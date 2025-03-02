@@ -120,6 +120,8 @@ class StaffList(commands.Cog):
                 except Exception as e:
                     print(f"[ERROR] {e}")
                     continue
+        del activelistresult
+                
 
     @updatelist.before_loop
     async def before_updatelist(self):

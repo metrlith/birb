@@ -45,15 +45,7 @@ class qotd(commands.Cog):
             result = await self.client.db['qotd'].find({}).to_list(length=None)
 
         if not result:
-            logging.critical(
-                "---------------------------------------------------------------------------------------"
-            )
-            logging.critical(
-                "                           [ FATAL ERROR QOTD RESULT IS NONE]                          "
-            )
-            logging.critical(
-                "---------------------------------------------------------------------------------------"
-            )
+            del result
             return
 
         for results in result:
@@ -139,6 +131,8 @@ class qotd(commands.Cog):
                         await msg.create_thread(name="QOTD Discussion")
                     except Exception as e:
                         continue
+                del messages
+                del result
             
 
     @commands.Cog.listener()

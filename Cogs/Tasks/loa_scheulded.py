@@ -94,6 +94,6 @@ class Shed(commands.Cog):
 
         except Exception as e:
             print(f"[⚠️] Error in scheduled LOA task: {e}")
-
+        del loa_requests
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(Shed(client))

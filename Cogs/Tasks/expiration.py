@@ -112,5 +112,7 @@ class expiration(commands.Cog):
 
         except Exception as e:
             print(f"Error checking infractions: {e}")
+        del infractions
+
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(expiration(client))
