@@ -363,8 +363,8 @@ class Client(commands.AutoShardedBot):
         self.add_view(PTicketControl())
 
         self.loop.create_task(self.load_jishaku())
-        DoNotLoad = os.getenv('DoNotLoad', '').split(',')
-        self.cogslist = [cog for cog in self.cogslist if cog not in DoNotLoad]
+        DoNotLoad = os.getenv('DoNotLoad', '').replace(' ', '').split(',')
+        self.cogslist = [cog for cog in self.cogslist if cog and cog not in DoNotLoad]
         for ext in ProgressBar(
             self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
         ):
