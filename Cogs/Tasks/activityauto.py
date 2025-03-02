@@ -119,7 +119,7 @@ class activityauto(commands.Cog):
                             f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!"
                         )
                         if guild:
-                            result = await self.client.qdb[''].find(
+                            result = await self.client.qdb['auto activity'].find(
                                 {"guild_id": guild.id}
                             ).to_list(length=None)
                             passed = []

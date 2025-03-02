@@ -397,6 +397,9 @@ class Client(commands.AutoShardedBot):
         await self._cache_modmail_enabled_servers()
 
     async def _handle_custom_environment(self):
+        if not guildid:
+            print("[❌] CUSTOM_GUILD not defined in .env")
+            
         try:
             guild = await self.fetch_guild(guildid)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
@@ -439,7 +442,11 @@ class Client(commands.AutoShardedBot):
         filter = {"Modules.Modmail": True}
         if environment == "custom":
             filter["_id"] = int(guildid)
+        print(filter)
         Modmail = await self.db["Config"].find(filter).to_list(length=None)
+        if not Modmail:
+            print(prfx + " No modmail enabled servers found.")
+            return
         Guilds = 0
         DevServers = [1092976553752789054]
         for server in DevServers:
