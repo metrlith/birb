@@ -9,20 +9,21 @@ import os
 from datetime import datetime, timezone, timedelta
 import ffmpeg
 load_dotenv()
-
+import optparse
 
 logger = logging.getLogger(__name__)
 
 s3_client = None
-if (os.getenv("R2_URL") and os.getenv("ACCESS_KEY_ID") and os.getenv("SECRET_ACCESS_KEY") and os.getenv("BUCKET")):
-    s3_client = boto3.client(
-        service_name="s3",
-        endpoint_url=os.getenv("R2_URL"),
-        aws_access_key_id=os.getenv("ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("SECRET_ACCESS_KEY"),
-        config=Config(signature_version="s3v4"),
-        region_name="weur",
-    )
+if os.getenv('ENVIRONMENT') != 'custom':
+    if (os.getenv("R2_URL") and os.getenv("ACCESS_KEY_ID") and os.getenv("SECRET_ACCESS_KEY") and os.getenv("BUCKET")):
+        s3_client = boto3.client(
+            service_name="s3",
+            endpoint_url=os.getenv("R2_URL"),
+            aws_access_key_id=os.getenv("ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("SECRET_ACCESS_KEY"),
+            config=Config(signature_version="s3v4"),
+            region_name="weur",
+        )
 
 
 async def CompressImage(image_bytes: bytes) -> bytes:
