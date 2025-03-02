@@ -20,6 +20,7 @@ from Cogs.Events.on_ticket import PTicketControl
 from Cogs.Tasks.qotd import *
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Modules.tickets import ButtonHandler
+
 sys.dont_write_bytecode = True
 
 
@@ -53,14 +54,19 @@ Views = db["Views"]
 SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
-def ProgressBar(iterable, prefix='', suffix='', decimals=1, length=50, fill='█', print_end="\r"):
+
+def ProgressBar(
+    iterable, prefix="", suffix="", decimals=1, length=50, fill="█", print_end="\r"
+):
     total = len(iterable)
-    
+
     def print_progress_bar(iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        percent = ("{0:." + str(decimals) + "f}").format(
+            100 * (iteration / float(total))
+        )
         filled_length = int(length * iteration // total)
-        bar = fill * filled_length + '-' * (length - filled_length)
-        sys.stdout.write(f'\r{prefix} |{bar}| {percent}% {suffix}')
+        bar = fill * filled_length + "-" * (length - filled_length)
+        sys.stdout.write(f"\r{prefix} |{bar}| {percent}% {suffix}")
         sys.stdout.flush()
 
     print_progress_bar(0)
@@ -69,25 +75,28 @@ def ProgressBar(iterable, prefix='', suffix='', decimals=1, length=50, fill='█
         print_progress_bar(i + 1)
     print()
 
+
 if not (TOKEN or MONGO_URL, PREFIX):
     print("[❌] Missing .env variables. [TOKEN, MONGO_URL]")
     sys.exit(1)
 
 if os.getenv("RemoveEmojis", False) == "True" or environment == "custom":
     from branding import ClearEmojis
-    ClearEmojis(True, os.getenv('FolderPath', '/app'))
 
-if os.getenv('SENTRY_URL', None):
+    ClearEmojis(True, os.getenv("FolderPath", "/app"))
+
+if os.getenv("SENTRY_URL", None):
     import sentry_sdk
     from sentry_sdk.integrations.aiohttp import AioHttpIntegration
     from sentry_sdk.integrations.logging import LoggingIntegration
 
     sentry_sdk.init(
-        dsn=os.getenv('SENTRY_URL'),
-        integrations=[AioHttpIntegration(), LoggingIntegration(level=logging.INFO)]
+        dsn=os.getenv("SENTRY_URL"),
+        integrations=[AioHttpIntegration(), LoggingIntegration(level=logging.INFO)],
     )
 
     logger.info("Sentry SDK initialized")
+
 
 class Client(commands.AutoShardedBot):
     def __init__(self):
@@ -100,31 +109,12 @@ class Client(commands.AutoShardedBot):
         self.cogslist = self._initialize_cogslist()
         if environment != "custom":
             self.cogslist.extend(["utils.api", "utils.dokploy"])
-        if os.getenv('STAFF'):
+        if os.getenv("STAFF"):
             self.cogslist.append("Cogs.Modules.Developer.admin")
 
     def _initialize_databases(self):
         self.db = db
         self.qdb = qdb
-        self.infractions = db["infractions"]
-        self.premium = db["premium"]
-        self.badges = db["badges"]
-        self.promotions = db["promotions"]
-        self.modmail = db["modmail"]
-        self.suggestions = db["suggestions"]
-        self.prefix = db["prefixes"]
-        self.suspension = db["Suspensions"]
-        self.feedback = db["feedback"]
-        self.customcommands = db["Custom Commands"]
-        self.loa = db["loa"]
-        self.consent = db["consent"]
-        self.analytics = db["analytics"]
-        self.staffdb = db["staff database"]
-        self.qotd = db["qotd"]
-        self.customisation = db["Customisation"]
-        self.config = db["Config"]
-        self.infractiontypeactions = db["infractiontypeactions"]
-
     def _initialize_maintenance_flags(self):
         self.infractions_maintenance = False
         self.promotions_maintenance = False
@@ -167,7 +157,6 @@ class Client(commands.AutoShardedBot):
             super().__init__(
                 command_prefix=commands.when_mentioned_or(PREFIX),
                 intents=intents,
-            
                 chunk_guilds_at_startup=os.getenv("CACHE", False),
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
@@ -248,8 +237,11 @@ class Client(commands.AutoShardedBot):
         await self.CacheCommands()
 
     async def _load_views(self):
-        TicketViews = await self.db["Panels"].find({}).to_list(length=None)
-        V = await Views.find({}).to_list(length=None)
+        filter = {}
+        if environment == "custom":
+            filter["guild"] = int(guildid)
+        TicketViews = await self.db["Panels"].find(filter).to_list(length=None)
+        V = await Views.find(filter).to_list(length=None)
         print("[Views] Loading Any Views")
         for view in V:
             if not view:
@@ -259,6 +251,8 @@ class Client(commands.AutoShardedBot):
         print("[Views] Loading Ticket Views")
         for view in TicketViews:
             await self._load_ticket_view(view)
+        del TicketViews
+        del V
 
     async def _load_staff_view(self, view):
         DbResults = await staffdb.find({"guild_id": view.get("guild")}).to_list(
@@ -366,7 +360,9 @@ class Client(commands.AutoShardedBot):
         self.add_view(PTicketControl())
 
         self.loop.create_task(self.load_jishaku())
-        for ext in ProgressBar(self.cogslist, prefix='[⏳] Loading Cogs:', suffix='Complete', length=50):
+        for ext in ProgressBar(
+            self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
+        ):
             await self.load_extension(ext)
             print(f"[✅] {ext} loaded")
 
@@ -399,7 +395,7 @@ class Client(commands.AutoShardedBot):
 
     async def _handle_custom_environment(self):
         try:
-         guild = await self.fetch_guild(guildid)
+            guild = await self.fetch_guild(guildid)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
             print(f"[❌] Failed to fetch guild {guildid}")
         if guild:
@@ -438,9 +434,13 @@ class Client(commands.AutoShardedBot):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
         prfx = f"[📖] {prfx}"
         if environment == "custom" and guildid:
-         Modmail = await self.config.find({"Modules.Modmail": True, "_id": int(guildid)}).to_list(length=None)
+            Modmail = await self.config.find(
+                {"Modules.Modmail": True, "_id": int(guildid)}
+            ).to_list(length=None)
         else:
-          Modmail = await self.config.find({"Modules.Modmail": True}).to_list(length=None)
+            Modmail = await self.config.find({"Modules.Modmail": True}).to_list(
+                length=None
+            )
         Guilds = 0
         DevServers = [1092976553752789054]
         for server in DevServers:

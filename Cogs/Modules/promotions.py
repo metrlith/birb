@@ -593,6 +593,10 @@ async def SyncCommands(self: commands.Bot):
             SyncedAmount += 1
         except:
             continue
+    del All
+    del Multi
+    del Single
+    del TheOG
 
 
 class promo(commands.Cog):
