@@ -106,7 +106,7 @@ class Client(commands.AutoShardedBot):
         intents = self._initialize_intents()
         self._initialize_super(intents)
         self.client = client
-        self.cogslist = self._initialize_cogslist()
+        # self.cogslist = self._initialize_cogslist()
         if environment != "custom":
             self.cogslist.extend(["utils.api", "utils.dokploy"])
         if os.getenv("STAFF"):
@@ -167,53 +167,52 @@ class Client(commands.AutoShardedBot):
             )
 
     def _initialize_cogslist(self):
-        return []
-        # return [
-        #     # "Cogs.Modules.Developer.astro",
-        #     # "Cogs.Modules.suggestions",
-        #     # "Cogs.Modules.loa",
-        #     # "Cogs.Modules.utility",
-        #     # "Cogs.Modules.botinfo",
-        #     # "Cogs.Modules.suspension",
-        #     # "Cogs.Modules.feedback",
-        #     # "Cogs.Modules.connectionroles",
-        #     # "Cogs.Modules.staff",
-        #     # "Cogs.Modules.promotions",
-        #     # "Cogs.Modules.infractions",
-        #     # "Cogs.Modules.modmail",
-        #     # "Cogs.Modules.consent",
-        #     # "Cogs.Modules.customcommands",
-        #     # "Cogs.Configuration.Configuration",
-        #     # "Cogs.Events.Dev.guilds",
-        #     # "Cogs.Events.Dev.welcome",
-        #     # "Cogs.Events.quota",
-        #     # "Cogs.Events.modmail",
-        #     # "Cogs.Events.on_thread_create",
-        #     # "Cogs.Events.Dev.topgg",
-        #     # "Cogs.Events.Dev.analytics",
-        #     # "Cogs.Events.on_error",
-        #     # "Cogs.Events.autoresponse",
-        #     # "Cogs.Events.on_ban",
-        #     # "Cogs.Events.on_infraction",
-        #     # "Cogs.Events.ConnectionRoles",
-        #     # "Cogs.Modules.data",
-        #     # "Cogs.Tasks.expiration",
-        #     # "Cogs.Events.on_promotion",
-        #     # "Cogs.Events.on_infraction_edit",
-        #     # "Cogs.Tasks.loa",
-        #     # "Cogs.Tasks.stafflist",
-        #     # "Cogs.Tasks.suspension",
-        #     # "Cogs.Tasks.activityauto",
-        #     # "Cogs.Tasks.qotd",
-        #     # "Cogs.Events.on_feedback",
-        #     # "Cogs.Events.on_suggestion",
-        #     # "Cogs.Events.on_suggest_update",
-        #     # "Cogs.Modules.integrations",
-        #     # "Cogs.Tasks.loa_scheulded",
-        #     # "Cogs.Events.on_infraction_approval",
-        #     # "Cogs.Modules.tickets",
-        #     # "Cogs.Events.on_ticket",
-        # ]
+        return [
+            "Cogs.Modules.Developer.astro",
+            "Cogs.Modules.suggestions",
+            "Cogs.Modules.loa",
+            "Cogs.Modules.utility",
+            "Cogs.Modules.botinfo",
+            "Cogs.Modules.suspension",
+            "Cogs.Modules.feedback",
+            "Cogs.Modules.connectionroles",
+            "Cogs.Modules.staff",
+            "Cogs.Modules.promotions",
+            "Cogs.Modules.infractions",
+            "Cogs.Modules.modmail",
+            "Cogs.Modules.consent",
+            "Cogs.Modules.customcommands",
+            "Cogs.Configuration.Configuration",
+            "Cogs.Events.Dev.guilds",
+            "Cogs.Events.Dev.welcome",
+            "Cogs.Events.quota",
+            "Cogs.Events.modmail",
+            "Cogs.Events.on_thread_create",
+            "Cogs.Events.Dev.topgg",
+            "Cogs.Events.Dev.analytics",
+            "Cogs.Events.on_error",
+            "Cogs.Events.autoresponse",
+            "Cogs.Events.on_ban",
+            "Cogs.Events.on_infraction",
+            "Cogs.Events.ConnectionRoles",
+            "Cogs.Modules.data",
+            "Cogs.Tasks.expiration",
+            "Cogs.Events.on_promotion",
+            "Cogs.Events.on_infraction_edit",
+            "Cogs.Tasks.loa",
+            "Cogs.Tasks.stafflist",
+            "Cogs.Tasks.suspension",
+            "Cogs.Tasks.activityauto",
+            "Cogs.Tasks.qotd",
+            "Cogs.Events.on_feedback",
+            "Cogs.Events.on_suggestion",
+            "Cogs.Events.on_suggest_update",
+            "Cogs.Modules.integrations",
+            "Cogs.Tasks.loa_scheulded",
+            "Cogs.Events.on_infraction_approval",
+            "Cogs.Modules.tickets",
+            "Cogs.Events.on_ticket",
+        ]
 
     async def load_jishaku(self):
         await self.wait_until_ready()
@@ -363,12 +362,12 @@ class Client(commands.AutoShardedBot):
         self.add_view(CaseApproval())
         self.add_view(PTicketControl())
 
-        self.loop.create_task(self.load_jishaku())
-        for ext in ProgressBar(
-            self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
-        ):
-            await self.load_extension(ext)
-            print(f"[✅] {ext} loaded")
+        # self.loop.create_task(self.load_jishaku())
+        # for ext in ProgressBar(
+        #     self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
+        # ):
+        #     await self.load_extension(ext)
+        #     print(f"[✅] {ext} loaded")
 
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
