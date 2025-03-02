@@ -15,7 +15,6 @@ environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
 
-
 class LOA(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -39,7 +38,7 @@ class LOA(commands.Cog):
                     "end_time": {"$lte": current_time},
                 }
 
-            loa_requests = await self.client.db['loa'].find(filter).to_list(length=None)
+            loa_requests = await self.client.db["loa"].find(filter).to_list(length=None)
             for request in loa_requests:
                 EndTime = request["end_time"]
                 UserID = request["user"]
@@ -52,7 +51,7 @@ class LOA(commands.Cog):
                     continue
 
                 if not guild or not user:
-                    await self.client.db['loa'].delete_one(
+                    await self.client.db["loa"].delete_one(
                         {"guild_id": guild_id, "user": UserID, "end_time": EndTime}
                     )
                     continue
@@ -71,7 +70,7 @@ class LOA(commands.Cog):
                     continue
                 if current_time >= EndTime:
                     print(f"[LOA TASK] @{user.name}'s LOA has ended.")
-                    await self.client.db['loa'].update_many(
+                    await self.client.db["loa"].update_many(
                         {"guild_id": guild_id, "user": UserID},
                         {"$set": {"active": False}},
                     )
@@ -98,7 +97,7 @@ class LOA(commands.Cog):
                                 except discord.Forbidden:
                                     print(f"[⚠️] Failed to remove role from {UserID}.")
                         try:
-                            loanotification = await self.client.db['consent'].find_one(
+                            loanotification = await self.client.db["consent"].find_one(
                                 {"user_id": user.id}
                             )
                             if (
@@ -116,10 +115,11 @@ class LOA(commands.Cog):
                                 )
                         except Exception as e:
                             print(f"[⚠️] Failed to send DM to {UserID}: {e}")
-        
+
         except Exception as e:
             print(f"[⚠️] Error in LOA task: {e}")
         del loa_requests
+
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(LOA(client))
