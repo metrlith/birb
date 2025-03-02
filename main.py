@@ -363,6 +363,8 @@ class Client(commands.AutoShardedBot):
         self.add_view(PTicketControl())
 
         self.loop.create_task(self.load_jishaku())
+        DoNotLoad = os.getenv('DoNotLoad', '').replace(' ', '').split(',')
+        self.cogslist = [cog for cog in self.cogslist if cog and cog not in DoNotLoad]
         for ext in ProgressBar(
             self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
         ):
@@ -442,7 +444,6 @@ class Client(commands.AutoShardedBot):
         filter = {"Modules.Modmail": True}
         if environment == "custom":
             filter["_id"] = int(guildid)
-        print(filter)
         Modmail = await self.db["Config"].find(filter).to_list(length=None)
         if not Modmail:
             print(prfx + " No modmail enabled servers found.")
