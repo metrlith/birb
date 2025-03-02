@@ -502,8 +502,11 @@ async def SyncCommands(self: commands.Bot):
     Multi = set()
     Single = set()
     TheOG = set()
+    filter = {}
+    if environment == "custom":
+        filter["_id"] = int(os.getenv("CUSTOM_GUILD"))
 
-    C = await self.config.find({}).to_list(length=None)
+    C = await self.config.find(filter).to_list(length=None)
     for CO in C:
         if CO.get("_id") == 1092976553752789054:
             continue

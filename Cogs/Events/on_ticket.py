@@ -201,8 +201,11 @@ class TicketsPublic(commands.Cog):
 
     @tasks.loop(seconds=360)
     async def AutomAtions(self):
+        Filter = {"closed": None}
+        if os.getenv('ENVIRONMENT') == "custom":
+            Filter["GuildID"] = int(os.getenv("CUSTOM_GUILD"))
         Tickets = (
-            await self.client.db["Tickets"].find({"closed": None}).to_list(length=None)
+            await self.client.db["Tickets"].find(Filter).to_list(length=None)
         )
 
         async def SendAutoMation(Ticket, semaphore):

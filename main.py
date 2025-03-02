@@ -436,14 +436,10 @@ class Client(commands.AutoShardedBot):
     async def _cache_modmail_enabled_servers(self):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
         prfx = f"[📖] {prfx}"
-        if environment == "custom" and guildid:
-            Modmail = await self.config.find(
-                {"Modules.Modmail": True, "_id": int(guildid)}
-            ).to_list(length=None)
-        else:
-            Modmail = await self.config.find({"Modules.Modmail": True}).to_list(
-                length=None
-            )
+        filter = {"Modules.Modmail": True}
+        if environment == "custom":
+            filter["_id"] = int(guildid)
+        Modmail = await self.db["Config"].find(filter).to_list(length=None)
         Guilds = 0
         DevServers = [1092976553752789054]
         for server in DevServers:

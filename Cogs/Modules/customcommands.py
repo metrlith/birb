@@ -215,7 +215,10 @@ class CustomCommands(commands.Cog):
                 )
 
     async def RegisterCustomCommands(self):
-        customcommands = await self.client.customcommands.find({}).to_list(length=None)
+        filter = {}
+        if os.getenv('CUSTOM_GUILD'):
+            filter["guild_id"] = int(os.getenv('CUSTOM_GUILD'))
+        customcommands = await self.client.customcommands.find(filter).to_list(length=None)
         Commands = []
         GuildsToSync = set()
         SyncedServers = 0
