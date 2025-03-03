@@ -58,7 +58,7 @@ class AdminCog(commands.Cog):
         messages = []
         for guild in guilds:
             description += f"➤ **@{guild.name}** | `{guild.id}`\n"
-            if len(messages) == 10:
+            if len(description.split('\n')) >= 10:
                 messages.append(description)
                 description = ""
 
