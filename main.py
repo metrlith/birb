@@ -83,7 +83,7 @@ if not (TOKEN or MONGO_URL, PREFIX):
 if os.getenv("REMOVE_EMOJIS", False) == "True" or environment == "custom":
     from branding import ClearEmojis
 
-    ClearEmojis(True, "FOLDER_PATH", "/app")
+    ClearEmojis(True, os.getenv("FOLDER_PATH", "/app"))
 
 if os.getenv("SENTRY_URL", None):
     import sentry_sdk
