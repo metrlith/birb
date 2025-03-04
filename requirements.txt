@@ -14,6 +14,6 @@ uvicorn
 memory_profiler 
 
 sentry_sdk
-boto3
+aioboto3
 pillow
 ffmpeg-python

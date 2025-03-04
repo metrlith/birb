@@ -361,16 +361,16 @@ class TicketsPublic(commands.Cog):
                 f"[on_pticket_claim] Bot does not have permission to edit the channel {Channel.id}"
             )
 
-    # @tasks.loop(hours=12)
-    # async def ClearOld(self):
-    #     if not (
-    #         os.getenv("R2_URL")
-    #         and os.getenv("ACCESS_KEY_ID")
-    #         and os.getenv("SECRET_ACCESS_KEY")
-    #         and os.getenv("BUCKET")
-    #     ):
-    #         return
-    #     await ClearOldFiles()
+    @tasks.loop(hours=12)
+    async def ClearOld(self):
+        if not (
+            os.getenv("R2_URL")
+            and os.getenv("ACCESS_KEY_ID")
+            and os.getenv("SECRET_ACCESS_KEY")
+            and os.getenv("BUCKET")
+        ):
+            return
+        await ClearOldFiles()
 
     @commands.Cog.listener()
     async def on_unclaim(self, objectID: ObjectId):
@@ -624,12 +624,12 @@ class TicketsPublic(commands.Cog):
                     "author_avatar": str(
                         message.author.avatar.url if message.author.avatar else ""
                     ),
-                    # "attachments": [
-                    #     await upload_file_to_r2(
-                    #         await attachment.read(), attachment.filename, message
-                    #     )
-                    #     for attachment in message.attachments
-                    # ],
+                    "attachments": [
+                        await upload_file_to_r2(
+                            await attachment.read(), attachment.filename, message
+                        )
+                        for attachment in message.attachments
+                    ],
                     "embeds": [embed.to_dict() for embed in message.embeds],
                     "timestamp": message.created_at.timestamp(),
                 }
