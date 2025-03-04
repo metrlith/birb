@@ -213,8 +213,6 @@ class StaffManage(discord.ui.View):
         )
 
 
-
-
 class quota(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -281,6 +279,10 @@ class quota(commands.Cog):
             .find({"guild_id": ctx.guild.id})
             .to_list(length=None)
         )
+        if len(results) == 0 or not results:
+            return await ctx.send(
+                f"{no} **{ctx.author.display_name}**, there are no ranks in the staff list.\n{replybottom} You can add a rank using `/staff list add <rank> <position>`."
+            )
         results = sorted(results, key=lambda x: int(x.get("position", 0)))
         member_roles = {}
         highest_role_seen = {}
@@ -1036,14 +1038,16 @@ class quota(commands.Cog):
                     )
                 )
             )
-        
-            if staff.get("message_count") is not None and staff.get("ClaimedTickets") is not None:
+
+            if (
+                staff.get("message_count") is not None
+                and staff.get("ClaimedTickets") is not None
+            ):
                 Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
             elif staff.get("message_count") is not None:
                 Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
             elif staff.get("ClaimedTickets") is not None:
                 Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
-
 
             if (
                 Config.get("Message Quota", {}).get("quota", 0) != 0
@@ -1357,6 +1361,7 @@ class quota(commands.Cog):
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
         if custom and custom.get("embed"):
             from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
+
             embed = await DisplayEmbed(custom, ctx.author)
         People = (
             await self.client.db["staff database"]
