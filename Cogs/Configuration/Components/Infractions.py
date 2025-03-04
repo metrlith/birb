@@ -9,10 +9,7 @@ from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 
 load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# infractiontypeactions = DB["infractiontypeactions"]
-# Customisation = DB["Customisation"]
+
 
 
 class InfractionOption(discord.ui.Select):
