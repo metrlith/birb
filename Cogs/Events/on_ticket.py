@@ -448,7 +448,7 @@ class TicketsPublic(commands.Cog):
             "{author.joined_at.relative}": f"<t:{int(author.joined_at.timestamp())}:R>",
             "{author.joined_at.absolute}": f"<t:{int(author.joined_at.timestamp())}:F>",
             "{author.id}": str(author.id),
-            "{author.avatar}": str(author.avatar.url),
+            "{author.avatar}": str(author.avatar.url) if author.avatar else "",
             "{author.display_name}": author.display_name,
             "{guild.name}": guild.name,
             "{guild.id}": str(guild.id),
