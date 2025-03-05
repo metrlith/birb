@@ -77,7 +77,7 @@ async def upload_file_to_r2(
             content_type = "image/jpeg"
         elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
             content_type = "video/mp4"
-            file_bytes = await CompressVideo(file_bytes)
+            # file_bytes = await CompressVideo(file_bytes)
         elif filename.lower().endswith(("mp3", "wav", "ogg")):
             content_type = "audio/mpeg"
         else:
