@@ -30,7 +30,6 @@ async def CompressImage(image_bytes: bytes) -> bytes:
     img.save(output, format="JPEG", quality=50)
     return output.getvalue()
 
-import ffmpeg
 
 async def CompressVideo(video_bytes: bytes) -> bytes:
     input_file = BytesIO(video_bytes)
@@ -77,7 +76,8 @@ async def upload_file_to_r2(
             content_type = "image/jpeg"
         elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
             content_type = "video/mp4"
-            # file_bytes = await CompressVideo(file_bytes)
+            if len(file_bytes) > 8 * 1024 * 1024:
+                return ""
         elif filename.lower().endswith(("mp3", "wav", "ogg")):
             content_type = "audio/mpeg"
         else:

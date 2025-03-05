@@ -115,17 +115,17 @@ class Utility(commands.Cog):
     @app_commands.command()
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def user(
-        self, interaction: discord.Interaction, user: Optional[discord.User] = None
-    ) -> None:
-        """Displays users information"""
+    async def user(self, interaction: discord.Interaction, User: Optional[discord.User] = None) -> None:
+        """Displays user's information"""
         await interaction.response.defer()
-        if user is None:
-            user = interaction.user
-        user_badges = self.client.db["User Badges"].find({"user_id": user.id})
-        badge_values = ""
-
-        public_flags_emojis = {
+        
+        if User is None:
+            User = interaction.user
+        
+        UserBadges = self.client.db["User Badges"].find({"user_id": User.id})
+        BadgeValues = ""
+        
+        Badges = {
             "staff": "<:Staff:1221449338744602655>",
             "partner": "<:blurple_partner:1221449485792841791>",
             "hypesquad": "<:hypesquad_events:1221444926995169361>",
@@ -141,102 +141,75 @@ class Utility(commands.Cog):
             "booster": "<:boost:1231403830390816808>",
             "Premium": "<:Premium:1250160559203287080>",
         }
-        badgecount = 0
-        async for badge_data in user_badges:
-            badge = badge_data["badge"]
-            badge_values += f"> {badge}\n"
-            badgecount += 1
-        member = None
-
+        
+        BadgeCount = 0
+        async for BadgeData in UserBadges:
+            Badge = BadgeData["badge"]
+            BadgeValues += f"> {Badge}\n"
+            BadgeCount += 1
+        
+        Member = None
         if interaction.guild:
-            guild = await self.client.fetch_guild(1092976553752789054)
-            print(guild)
             try:
-                if guild:
-
-                    if await guild.fetch_member(user.id):
-
-                        booster = guild.get_role(1160541890035339264)  # Booster
-                        donator = guild.get_role(1229172969830617199)  # Ko-fi
-                        donator2 = guild.get_role(1182011116650496031)  # Normal
-                        premiums = guild.get_role(1233945875680596010)  # Premiumo
-
-                        member = await guild.fetch_member(user.id)
-                        if donator2 in member.roles:
-                            badge_values += "> <:Patreon:1229499944533233695> [Patreon Donator](https://www.patreon.com/astrobirb)\n"
-                            badgecount += 1
-                        if donator in member.roles:
-                            badge_values += "> <:kofi:1229499870193258556> [Ko-fi Donator](https://ko-fi.com/astrobird#)\n"
-                            badgecount += 1
-                        if booster in member.roles:
-                            badge_values += f"> {public_flags_emojis['booster']} Astro Birb Booster\n"
-                            badgecount += 1
-                        if premiums in member.roles:
-                            badge_values += (
-                                f"> {public_flags_emojis['Premium']} Premium\n"
-                            )
-                            badgecount += 1
-
-                try:
-                    member = await interaction.guild.fetch_member(user.id)
-                except discord.HTTPException:
-                    member = None
+             Guild = await self.client.fetch_guild(1092976553752789054)
+            except (discord.HTTPException, discord.NotFound, discord.Forbidden):
+                Guild = None
+            try:
+                if Guild:
+                    Member = await Guild.fetch_member(User.id)
+                    if Member:
+                        RolesToCheck = {
+                            "booster": 1160541890035339264,
+                            "donator": 1229172969830617199,
+                            "donator2": 1182011116650496031,
+                            "premium": 1233945875680596010,
+                        }
+                        for RoleName, RoleID in RolesToCheck.items():
+                            Role = Guild.get_role(RoleID)
+                            if Role in Member.roles:
+                                BadgeValues += f"> {Badges.get(RoleName, '')} {RoleName.capitalize()}\n"
+                                BadgeCount += 1
+                    
+                    Member = await interaction.guild.fetch_member(User.id)
             except (discord.HTTPException, discord.NotFound):
-                print("Not in guild")
                 pass
-        userFlags = user.public_flags.all()
-        for flag in userFlags:
-            flag_name = flag.name
-            if flag_name in public_flags_emojis:
-                flag_name2 = (
-                    str(flag_name).replace("Userflags.", "").replace("_", " ").title()
-                )
-                if flag_name2 == "Bug Hunter Level 2":
-                    flag_name2 = "Bug Hunter"
-                badge_values += f"> {public_flags_emojis[flag_name]} {flag_name2}\n"
-                badgecount += 1
-
-        if not member:
-            embed = discord.Embed(
-                title=f"@{user.display_name}", description=f"", color=0x2B2D31
-            )
-            embed.set_thumbnail(url=user.display_avatar.url)
-            if userFlags or badge_values:
-                embed.add_field(name=f"Flags [{badgecount}]", value=f"{badge_values}")
-            embed.add_field(
-                name="**Profile**",
-                value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n> **Created:** <t:{int(user.created_at.timestamp())}:F>",
-                inline=False,
-            )
-            await interaction.followup.send(embed=embed)
-            return
-        embed = discord.Embed(
-            title=f"@{user.display_name}",
-            description=f"",
-            color=(
-                user.accent_colour or member.top_role.color
-                if member
-                else discord.Color.dark_embed()
-            ),
+        
+        UserFlags = User.public_flags.all()
+        for Flag in UserFlags:
+            FlagName = Flag.name
+            if FlagName in Badges:
+                FlagDisplayName = FlagName.replace("_", " ").title()
+                if FlagDisplayName == "Bug Hunter Level 2":
+                    FlagDisplayName = "Bug Hunter"
+                BadgeValues += f"> {Badges[FlagName]} {FlagDisplayName}\n"
+                BadgeCount += 1
+        
+        Embed = discord.Embed(
+            title=f"@{User.display_name}",
+            description="",
+            color=(User.accent_colour or Member.top_role.color if Member else discord.Color.dark_embed()),
         )
-        if userFlags or badge_values:
-            embed.add_field(name=f"Flags [{badgecount}]", value=f"{badge_values}")
-        embed.set_thumbnail(url=user.display_avatar.url)
-        embed.add_field(
+        
+        Embed.set_thumbnail(url=User.display_avatar.url)
+        
+        if UserFlags or BadgeValues:
+            Embed.add_field(name=f"Flags [{BadgeCount}]", value=BadgeValues)
+        
+        Embed.add_field(
             name="**Profile**",
-            value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n> **Join:** <t:{int(user.joined_at.timestamp())}:F>\n> **Created:** <t:{int(user.created_at.timestamp())}:F>",
+            value=f"> **User:** {User.mention}\n> **Display:** {User.display_name}\n> **ID:** {User.id}\n> **Join:** <t:{int(User.joined_at.timestamp())}:F>\n> **Created:** <t:{int(User.created_at.timestamp())}:F>",
             inline=False,
         )
-        user_roles = " ".join(
-            [
-                role.mention
-                for role in reversed(user.roles)
-                if role != interaction.guild.default_role
-            ][:20]
-        )
-        rolecount = len(user.roles) - 1
-        embed.add_field(name=f"**Roles** [{rolecount}]", value=user_roles, inline=False)
-        await interaction.followup.send(embed=embed)
+        
+        if Member:
+            UserRoles = " ".join([
+                Role.mention for Role in reversed(Member.roles) if Role != interaction.guild.default_role
+            ][:20])
+            RoleCount = len(Member.roles) - 1
+            Embed.add_field(name=f"**Roles** [{RoleCount}]", value=UserRoles, inline=False)
+        
+        await interaction.followup.send(embed=Embed)
+
 
     async def fetch_birb_image(self):
         birb_api_url = "https://api.alexflipnote.dev/birb"

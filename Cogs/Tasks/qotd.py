@@ -35,6 +35,7 @@ class qotd(commands.Cog):
     @tasks.loop(minutes=15, reconnect=True)
     async def sendqotd(self) -> None:
         print("[👀] Checking QOTD")
+        result = None
         if bool(environment == "custom"):
 
             result = await self.client.db["qotd"].find({"guild_id": int(guildid)}).to_list(
@@ -47,6 +48,7 @@ class qotd(commands.Cog):
         if not result:
             del result
             return
+        
 
         for results in result:
             await asyncio.sleep(3)
@@ -131,8 +133,9 @@ class qotd(commands.Cog):
                         await msg.create_thread(name="QOTD Discussion")
                     except Exception as e:
                         continue
-                del messages
+        
                 del result
+                del messages
             
 
     @commands.Cog.listener()
