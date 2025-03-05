@@ -1055,7 +1055,7 @@ class Question(discord.ui.Modal):
         super().__init__(title="Add Question")
         self.author = author
         self.question = discord.ui.TextInput(
-            label="Question", placeholder="Enter the question", max_length=80
+            label="Question", placeholder="Enter the question", max_length=45
         )
 
         self.placeholder = discord.ui.TextInput(
