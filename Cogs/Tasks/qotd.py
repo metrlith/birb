@@ -113,7 +113,7 @@ class qotd(commands.Cog):
                         {"guild_id": guild_id}, {"$set": {"attempts": attempts}}
                     )
 
-    @tasks.loop(minutes=15, reconnect=True)
+    @tasks.loop(minutes=5, reconnect=True)
     async def sendqotd(self) -> None:
         print("[👀] Checking QOTD")
         result = None
