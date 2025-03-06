@@ -62,6 +62,8 @@ class qotd(commands.Cog):
                     channel = await guild.fetch_channel(ChannelID)
                 except Exception:
                     return
+                if not ModuleCheck("qotd", guild.id):
+                    return
 
                 pingmsg = (
                     f"<@&{results.get('pingrole')}>" if results.get("pingrole") else ""
