@@ -104,7 +104,14 @@ class qotd(commands.Cog):
                     await msg.create_thread(name="QOTD Discussion")
 
             except Exception as e:
-                logging.warn(f"Error processing QOTD for guild {guild_id}: {e}")
+                attempts = results.get("attempts", 0) + 1
+                if len(attempts) > 10:
+                    await self.client.db["qotd"].delete_one({"guild_id": guild_id})
+                    return
+                else:
+                    await self.client.db["qotd"].update_one(
+                        {"guild_id": guild_id}, {"$set": {"attempts": attempts}}
+                    )
 
     @tasks.loop(minutes=15, reconnect=True)
     async def sendqotd(self) -> None:
