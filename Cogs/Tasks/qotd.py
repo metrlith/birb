@@ -47,6 +47,7 @@ class qotd(commands.Cog):
                 guild_id = int(results.get("guild_id"))
                 guild = await self.client.fetch_guild(guild_id)
                 if guild is None:
+                    await self.ProcessErrors(results, "Guild not found")
                     return
 
                 messages = results.get("messages", [])
@@ -56,13 +57,16 @@ class qotd(commands.Cog):
 
                 ChannelID = results.get("channel_id", None)
                 if ChannelID is None:
+                    await self.ProcessErrors(results, "Channel not found")
                     return
                 ChannelID = int(ChannelID)
                 try:
                     channel = await guild.fetch_channel(ChannelID)
                 except Exception:
+                    await self.ProcessErrors(results, "Channel not found")
                     return
                 if not await ModuleCheck("qotd", guild.id):
+                    await self.ProcessErrors(results, "Module not found")
                     return
 
                 pingmsg = (
@@ -104,14 +108,19 @@ class qotd(commands.Cog):
                     await msg.create_thread(name="QOTD Discussion")
 
             except Exception as e:
-                attempts = results.get("attempts", 0) + 1
-                if len(attempts) > 10:
-                    await self.client.db["qotd"].delete_one({"guild_id": guild_id})
-                    return
-                else:
-                    await self.client.db["qotd"].update_one(
-                        {"guild_id": guild_id}, {"$set": {"attempts": attempts}}
-                    )
+                await self.ProcessErrors(results, e)
+
+    async def ProcessErrors(self, results, e):
+        GuildID = results.get("guild_id")
+        attempts = results.get("attempts", 0) + 1
+        if attempts > 10:
+            await self.client.db["qotd"].delete_one({"guild_id": GuildID})
+            return
+        else:
+            await self.client.db["qotd"].update_one(
+                {"guild_id": GuildID},
+                {"$set": {"attempts": attempts}, "$push": {"errors": str(e)}},
+            )
 
     @tasks.loop(minutes=5, reconnect=True)
     async def sendqotd(self) -> None:
