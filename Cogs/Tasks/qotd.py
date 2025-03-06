@@ -99,6 +99,11 @@ class qotd(commands.Cog):
                             + datetime.timedelta(days=1),
                             "messages": messages,
                             "day": day,
+                            "LastMessage": {
+                                'id': msg.id,
+                                'channel_id': msg.channel.id,
+                                'question': question
+                            }
                         }
                     },
                     upsert=True,
