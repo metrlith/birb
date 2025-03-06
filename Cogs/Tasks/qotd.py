@@ -65,7 +65,7 @@ class qotd(commands.Cog):
                 except Exception:
                     await self.ProcessErrors(results, "Channel not found")
                     return
-                if not await ModuleCheck("qotd", guild.id):
+                if not await ModuleCheck("QOTD", guild.id):
                     await self.ProcessErrors(results, "Module not found")
                     return
 
