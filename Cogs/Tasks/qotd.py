@@ -111,6 +111,7 @@ class qotd(commands.Cog):
         filter = {"nextdate": {"$lte": datetime.datetime.utcnow()}}
         if bool(environment == "custom"):
             filter["guild_id"] = int(guildid)
+        result = await self.client.db["qotd"].find(filter).to_list(length=None)
         if not result:
             return
 
