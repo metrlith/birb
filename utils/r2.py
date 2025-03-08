@@ -76,7 +76,8 @@ async def upload_file_to_r2(
             content_type = "image/jpeg"
         elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
             content_type = "video/mp4"
-            if len(file_bytes) > 25 * 1024 * 1024:
+            if len(file_bytes) > 25 * 1024 * 1024 if os.getenv('MAX_FILE_SIZE') is None else int(os.getenv('MAX_FILE_SIZE')):
+
                 return ""
         elif filename.lower().endswith(("mp3", "wav", "ogg")):
             content_type = "audio/mpeg"
@@ -121,11 +122,11 @@ async def ClearOldFiles():
                     file_extension = obj["Key"].split(".")[-1].lower()
 
                     if file_extension in ["mp4", "avi", "mov", "webm"] and (
-                        datetime.now(timezone.utc) - last_modified > timedelta(days=15)
+                        datetime.now(timezone.utc) - last_modified > timedelta(days=os.getenv('VIDEO_DAYS', 7))
                     ):
                         delete_keys.append({"Key": obj["Key"]})
 
-                    elif (datetime.now(timezone.utc) - last_modified) > timedelta(days=31):
+                    elif (datetime.now(timezone.utc) - last_modified) > timedelta(days=os.getenv('IMAGE_DAYS', 35)):
                         delete_keys.append({"Key": obj["Key"]})
 
                 if delete_keys:
