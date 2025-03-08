@@ -360,7 +360,12 @@ class SingelPanelCustomisation(discord.ui.View):
                 ],
             )
         )
-        await interaction.response.send_message(view=view, ephemeral=True)
+        embed = discord.Embed(
+            description="Select the roles that can manage the ticket.",
+            color=discord.Color.dark_embed()
+        ).set_author(name="Permissions", icon_url=interaction.guild.icon)
+
+        await interaction.response.send_message(view=view, embed=embed, ephemeral=True)
 
     @discord.ui.button(
         label="Mentions On Open",
@@ -423,7 +428,11 @@ class SingelPanelCustomisation(discord.ui.View):
                 ],
             )
         )
-        await interaction.response.send_message(view=view, ephemeral=True)
+        embed = discord.Embed(
+            description="Select the roles that can open tickets.",
+            color=discord.Color.dark_embed()
+        ).set_author(name="Access Control", icon_url=interaction.guild.icon)
+        await interaction.response.send_message(view=view, embed=embed, ephemeral=True)
 
     @discord.ui.button(
         label="Automations",
@@ -715,13 +724,13 @@ async def CustomiseEmbed(interaction: discord.Interaction, option, name):
         )
 
         Default = {
-                "thumb": "",
-                "author_url": "",
-                "option": option,
-                "image": "",
-                "name": name,
-            }
-        
+            "thumb": "",
+            "author_url": "",
+            "option": option,
+            "image": "",
+            "name": name,
+        }
+
         if not custom or custom.get(option) is None:
             view = Embed(
                 interaction.user,
@@ -758,8 +767,8 @@ async def CustomiseEmbed(interaction: discord.Interaction, option, name):
         view.remove_item(view.Buttons)
         view.remove_item(view.Permissions)
         if embed:
-         view.remove_item(view.ForumsChannel)
-         view.remove_item(view.Ping)
+            view.remove_item(view.ForumsChannel)
+            view.remove_item(view.Ping)
         view.remove_item(view.reset)
 
         return await interaction.edit_original_response(
@@ -920,6 +929,7 @@ class Permissions(discord.ui.RoleSelect):
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** permissions updated successfully.",
             view=None,
+            embed=None
         )
 
 
@@ -1230,6 +1240,7 @@ class AccessControl(discord.ui.RoleSelect):
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** access control updated successfully.",
             view=None,
+            embed=None
         )
 
 
