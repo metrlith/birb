@@ -111,7 +111,7 @@ async def PromotionSystem(
         return await self.db["promotions"].find_one({"_id": PromotionData.get("_id")})
 
     PromoSystemType = settings.get("Promo", {}).get("System", {}).get("type", "old")
-    if PromoSystemType == "old":
+    if PromoSystemType == "old" or PromoSystemType == "og":
         if not PromotionData.get("new"):
             return
         try:
