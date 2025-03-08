@@ -676,7 +676,7 @@ class TicketsPublic(commands.Cog):
                 )
 
                 msgcontent = message.get("content")
-                msg = ""
+
                 forwadedmsg = None
                 if message.get("message_snapshots"):
                     forwadedmsg = (
@@ -684,14 +684,26 @@ class TicketsPublic(commands.Cog):
                         .get("message")
                         .get("content")
                     )
+                msg = ""
                 if forwadedmsg:
-                    msg += f"💬 **Forwarded Message:**\n{forwadedmsg}\n"
-                    msg += f"👤 **User's Message:**\n{msgcontent if not msgcontent == '' else 'N/A'}\n"
+                    if forwadedmsg == "" and msgcontent == "":
+                        msg += f"💬 **Forwarded Message__**"
+                    else:
+                        msg += f"💬 **Forwarded Message:**{forwadedmsg}\n"
+                        msg += f"👤 **User's Message:** {msgcontent if not msgcontent == '' else 'N/A'}\n"
+                else:
+                    msg = msgcontent
 
                 compact.append(
                     {
                         "author_id": message.get("author").get("id"),
-                        "content": msg,
+                        "content": (
+                            message.get("message_snapshots")[0]
+                            .get("message")
+                            .get("content")
+                            if message.get("message_snapshots")
+                            else message.get("content")
+                        ),
                         "author_name": message.get("author").get("username"),
                         "message_id": message.get("id"),
                         "author_avatar": str(
@@ -730,7 +742,11 @@ class TicketsPublic(commands.Cog):
                             if message.get("message_snapshots")
                             else [embed for embed in message.get("embeds", [])]
                         ),
-                        "timestamp": message.get("timestamp"),
+                        "timestamp": (
+                            datetime.fromisoformat(message.get("timestamp")).timestamp()
+                            if message.get("timestamp")
+                            else None
+                        ),
                     }
                 )
 
