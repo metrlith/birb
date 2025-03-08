@@ -686,7 +686,7 @@ class TicketsPublic(commands.Cog):
                     )
                 if forwadedmsg:
                     msg += f"💬 **Forwarded Message:**\n{forwadedmsg}\n"
-                    msg += f"👤 **User's Message:**\n{msgcontent if not msgcontent == "" else "N/A"}\n"
+                    msg += f"👤 **User's Message:**\n{msgcontent if not msgcontent == '' else 'N/A'}\n"
 
                 compact.append(
                     {
