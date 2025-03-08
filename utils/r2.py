@@ -76,7 +76,7 @@ async def upload_file_to_r2(
             content_type = "image/jpeg"
         elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
             content_type = "video/mp4"
-            if len(file_bytes) > 8 * 1024 * 1024:
+            if len(file_bytes) > 25 * 1024 * 1024:
                 return ""
         elif filename.lower().endswith(("mp3", "wav", "ogg")):
             content_type = "audio/mpeg"

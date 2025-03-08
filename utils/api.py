@@ -37,8 +37,6 @@ async def Validation(key: str, server: int):
     return bool(doc)
 
 
-
-
 async def isAdmin(guild: discord.Guild, user: discord.Member):
     Config = await config.find_one({"_id": guild.id})
     if not Config or not Config.get("Permissions"):
@@ -92,8 +90,6 @@ class APIRoutes:
                     methods=[i.split("_")[0].upper()],
                 )
 
-
-
     async def GET_shards(self):
         shards = []
         for shard_id, shard_instance in self.client.shards.items():
@@ -117,7 +113,11 @@ class APIRoutes:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found"
             )
 
-        return {"status": "success", "transcript": Result.get("transcript"), "GuildID": str(Result.get("GuildID"))}
+        return {
+            "status": "success",
+            "transcript": Result.get("transcript"),
+            "GuildID": str(Result.get("GuildID")),
+        }
 
     async def GET_stats(self):
         return {
@@ -645,9 +645,10 @@ class APIRoutes:
 
         return {"status": "success", "infraction": random_string}
 
-    async def GET_TicketQuota(self, auth: str, server: int, discord_id: int, time: str = None):
+    async def GET_TicketQuota(
+        self, auth: str, server: int, discord_id: int, time: str = None
+    ):
         from utils.format import strtotime
-        
 
         if not await Validation(auth, server):
             raise HTTPException(
@@ -660,9 +661,17 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuota = await self.client.db["Tickets"].find(
-            {"GuildID": server, "claimed.claimer": discord_id, "opened": {"$gte": Time.timestamp() if time else 0}}
-        ).to_list(length=None)
+        TicketQuota = (
+            await self.client.db["Tickets"]
+            .find(
+                {
+                    "GuildID": server,
+                    "claimed.claimer": discord_id,
+                    "opened": {"$gte": Time.timestamp() if time else 0},
+                }
+            )
+            .to_list(length=None)
+        )
         if not TicketQuota:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
@@ -691,15 +700,23 @@ class APIRoutes:
 
         for ticket in TicketQuota:
             ticket["_id"] = str(ticket["_id"])
-        
+
         ClaimedTickets = len(TicketQuota)
         if not time:
-            TicketQuotaVar = await self.client.db['Ticket Quota'].find_one({"GuildID": server, "UserID": discord_id})
-            ClaimedTickets = TicketQuotaVar.get("ClaimedTickets") if TicketQuotaVar else 0
+            TicketQuotaVar = await self.client.db["Ticket Quota"].find_one(
+                {"GuildID": server, "UserID": discord_id}
+            )
+            ClaimedTickets = (
+                TicketQuotaVar.get("ClaimedTickets") if TicketQuotaVar else 0
+            )
         return {
             "status": "success",
             "ClaimedTickets": ClaimedTickets,
-            "OnLOA": bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True})),
+            "OnLOA": bool(
+                await self.client.db["loa"].find_one(
+                    {"user": member.id, "guild_id": server, "active": True}
+                )
+            ),
             "user": {
                 "id": str(member.id),
                 "name": member.name,
@@ -707,7 +724,7 @@ class APIRoutes:
                 "avatar": member.display_avatar.url if member.display_avatar else None,
             },
         }
-    
+
     def HandleRatelimits(self, auth: str):
         if auth in self.ratelimits:
             if time.time() < self.ratelimits[auth]:
@@ -716,23 +733,30 @@ class APIRoutes:
                 )
         self.ratelimits[auth] = time.time() + 3
         return True
-    
-    async def POST_ResetQuota(self, auth: str, server:int):
+
+    async def POST_ResetQuota(self, auth: str, server: int):
         if not await Validation(auth, server):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
         if not self.HandleRatelimits(auth):
             return
-        Result1 = await self.client.db['Ticket Quota'].update_many({"GuildID": server}, {"$set": {"ClaimedTickets": 0}})
-        Result2 = await self.client.dbq['messages'].update_many({"guild_id": server}, {"$set": {"message_count": 0}})
+        Result1 = await self.client.db["Ticket Quota"].update_many(
+            {"GuildID": server}, {"$set": {"ClaimedTickets": 0}}
+        )
+        Result2 = await self.client.dbq["messages"].update_many(
+            {"guild_id": server}, {"$set": {"message_count": 0}}
+        )
         if not Result1.modified_count and not Result2.modified_count:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="No quotas found"
             )
 
-        return {"status": "success", "modified": Result1.modified_count + Result2.modified_count}
-    
+        return {
+            "status": "success",
+            "modified": Result1.modified_count + Result2.modified_count,
+        }
+
     async def GET_TicketLeaderboard(self, auth: str, server: int, time: str = None):
         from utils.format import strtotime
 
@@ -749,9 +773,13 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuotas = await self.client.db["Tickets"].find(
-            {"GuildID": server, "opened": {"$gte": Time.timestamp() if time else 0}}
-        ).to_list(length=None)
+        TicketQuotas = (
+            await self.client.db["Tickets"]
+            .find(
+                {"GuildID": server, "opened": {"$gte": Time.timestamp() if time else 0}}
+            )
+            .to_list(length=None)
+        )
 
         if not TicketQuotas:
             raise HTTPException(
@@ -793,7 +821,11 @@ class APIRoutes:
                     "display": member.display_name,
                     "id": member.id,
                     "ClaimedTickets": claimed_count,
-                    'OnLOA': bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True}))
+                    "OnLOA": bool(
+                        await self.client.db["loa"].find_one(
+                            {"user": member.id, "guild_id": server, "active": True}
+                        )
+                    ),
                 }
             )
 
@@ -852,7 +884,11 @@ class APIRoutes:
                         "display": member.display_name,
                         "id": member.id,
                         "messages": user.get("message_count"),
-                        "OnLOA": bool(await self.client.db['loa'].find_one({'user': member.id, 'guild_id': server, 'active': True}))
+                        "OnLOA": bool(
+                            await self.client.db["loa"].find_one(
+                                {"user": member.id, "guild_id": server, "active": True}
+                            )
+                        ),
                     }
                 )
             except Exception as e:
