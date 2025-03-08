@@ -1,5 +1,6 @@
 import discord
 from utils.emojis import *
+from utils.format import IsSeperateBot
 
 
 class PermissionsDropdown(discord.ui.Select):
@@ -23,6 +24,10 @@ class PermissionsDropdown(discord.ui.Select):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
+        view = ManagePermissions(interaction.user)
+        if await IsSeperateBot():
+            view.Add.label = "Add"
+            view.Remove.label = "Remove"
         await interaction.response.send_message(
             view=ManagePermissions(interaction.user), ephemeral=True
         )
@@ -33,7 +38,9 @@ class ManagePermissions(discord.ui.View):
         super().__init__(timeout=360)
         self.author = author
 
-    @discord.ui.button(emoji="<:Add:1163095623600447558>", style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji="<:Add:1163095623600447558>", style=discord.ButtonStyle.gray
+    )
     async def Add(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
@@ -121,7 +128,9 @@ class ManagePermissions(discord.ui.View):
         )
         await interaction.edit_original_response(view=view, embed=embed)
 
-    @discord.ui.button(emoji="<:Subtract:1229040262161109003>", style=discord.ButtonStyle.gray)
+    @discord.ui.button(
+        emoji="<:Subtract:1229040262161109003>", style=discord.ButtonStyle.gray
+    )
     async def Remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
