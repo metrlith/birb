@@ -743,7 +743,7 @@ class TicketsPublic(commands.Cog):
                             else [embed for embed in message.get("embeds", [])]
                         ),
                         "timestamp": (
-                            datetime.fromisoformat(message.get("timestamp")).timestamp()
+                            datetime.datetime.fromisoformat(message.get("timestamp")).timestamp()
                             if message.get("timestamp")
                             else None
                         ),
