@@ -115,14 +115,14 @@ class Utility(commands.Cog):
     @app_commands.command()
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def user(self, interaction: discord.Interaction, User: Optional[discord.User] = None) -> None:
+    async def user(self, interaction: discord.Interaction, user: Optional[discord.User] = None) -> None:
         """Displays user's information"""
         await interaction.response.defer()
         
-        if User is None:
-            User = interaction.user
+        if user is None:
+            user = interaction.user
         
-        UserBadges = self.client.db["User Badges"].find({"user_id": User.id})
+        UserBadges = self.client.db["User Badges"].find({"user_id": user.id})
         BadgeValues = ""
         
         Badges = {
@@ -156,7 +156,7 @@ class Utility(commands.Cog):
                 Guild = None
             try:
                 if Guild:
-                    Member = await Guild.fetch_member(User.id)
+                    Member = await Guild.fetch_member(user.id)
                     if Member:
                         RolesToCheck = {
                             "booster": 1160541890035339264,
@@ -170,11 +170,11 @@ class Utility(commands.Cog):
                                 BadgeValues += f"> {Badges.get(RoleName, '')} {RoleName.capitalize()}\n"
                                 BadgeCount += 1
                     
-                    Member = await interaction.guild.fetch_member(User.id)
+                    Member = await interaction.guild.fetch_member(user.id)
             except (discord.HTTPException, discord.NotFound):
                 pass
         
-        UserFlags = User.public_flags.all()
+        UserFlags = user.public_flags.all()
         for Flag in UserFlags:
             FlagName = Flag.name
             if FlagName in Badges:
@@ -185,19 +185,19 @@ class Utility(commands.Cog):
                 BadgeCount += 1
         
         Embed = discord.Embed(
-            title=f"@{User.display_name}",
+            title=f"@{user.display_name}",
             description="",
-            color=(User.accent_colour or Member.top_role.color if Member else discord.Color.dark_embed()),
+            color=(user.accent_colour or Member.top_role.color if Member else discord.Color.dark_embed()),
         )
         
-        Embed.set_thumbnail(url=User.display_avatar.url)
+        Embed.set_thumbnail(url=user.display_avatar.url)
         
         if UserFlags or BadgeValues:
             Embed.add_field(name=f"Flags [{BadgeCount}]", value=BadgeValues)
         
         Embed.add_field(
             name="**Profile**",
-            value=f"> **User:** {User.mention}\n> **Display:** {User.display_name}\n> **ID:** {User.id}\n> **Join:** <t:{int(User.joined_at.timestamp())}:F>\n> **Created:** <t:{int(User.created_at.timestamp())}:F>",
+            value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n> **Join:** <t:{int(user.joined_at.timestamp())}:F>\n> **Created:** <t:{int(user.created_at.timestamp())}:F>",
             inline=False,
         )
         
