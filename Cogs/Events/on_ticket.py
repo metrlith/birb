@@ -701,10 +701,11 @@ class TicketsPublic(commands.Cog):
                         "author_name": message.get("author").get("username"),
                         "message_id": message.get("id"),
                         "author_avatar": str(
-                            message.get("author").get("avatar")
+                            f"https://cdn.discordapp.com/avatars/{message.get('author').get('id')}/{message.get('author').get('avatar')}.png"
                             if message.get("author").get("avatar")
                             else ""
                         ),
+
                         "attachments": (
                             [
                                 await upload_file_to_r2(
