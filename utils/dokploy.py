@@ -27,49 +27,43 @@ async def DeployAll():
 
 
 async def Create(name, user: discord.User):
-    url = f"{os.getenv('DOCKER_URL')}/api/trpc/application.create?batch=1"
+    url = f"{os.getenv('DOCKER_URL')}/api/application.create"
     headers = {
-        "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+        "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
         "Content-Type": "application/json",
     }
 
+    project_id = "AnhFqj439TjExphKiI7-x"
+
     data = {
-        "0": {
-            "json": {
-                "name": name,
-                "appName": f"custom-{name}",
-                "description": f"{user.id} - {datetime.now().isoformat()}",
-                "projectId": "AnhFqj439TjExphKiI7-x",
-                "serverId": None,
-            },
-            "meta": {"values": {"serverId": ["undefined"]}},
-        }
+        "name": str(name),
+        "appName": f"custom-{name}",
+        "description": f"{user.id} - {datetime.now().isoformat()}",
+        "projectId": project_id,
     }
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers, json=data) as response:
             if response.status == 200:
                 Response = await response.json()
-                return Response[0]["result"]["data"]["json"]["applicationId"]
+                print(Response)
+                return Response["applicationId"]
             else:
+                print(await response.text())
                 return None
 
 
 async def UpdateENV(application_id, env, build_args=None):
-    url = "https://birb.lgm.lol/api/trpc/application.update?batch=1"
+    url = "https://birb.lgm.lol/api/application.update"
     headers = {
-        "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+        "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
         "Content-Type": "application/json",
     }
 
     data = {
-        "0": {
-            "json": {
-                "applicationId": application_id,
-                "env": env,
-                "buildArgs": build_args if build_args else "",
-            }
-        }
+        "applicationId": application_id,
+        "env": env,
+        "buildArgs": build_args if build_args else "",
     }
 
     async with aiohttp.ClientSession() as session:
@@ -83,12 +77,14 @@ async def GetProjects():
     async with aiohttp.ClientSession() as session:
         async with session.get(
             f"{os.getenv('DOCKER_URL')}/api/project.one?projectId=AnhFqj439TjExphKiI7-x",
-            headers={"Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}"},
+            headers={"x-api-key": f"{os.getenv('DOCKER_TOKEN')}"},
         ) as r:
             if r.status == 200:
                 data = await r.json()
                 return data
             else:
+                print(await r.text())
+
                 return None
 
 
@@ -98,7 +94,7 @@ async def StopApplication(AppID: int):
             f"{os.getenv('DOCKER_URL')}/api/application.stop",
             json={"applicationId": AppID},
             headers={
-                "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+                "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
                 "Content-Type": "application/json",
             },
         ) as r:
@@ -112,7 +108,7 @@ async def GetApplication(AppID: int):
     async with aiohttp.ClientSession() as session:
         async with session.get(
             f"{os.getenv('DOCKER_URL')}/api/application.one?applicationId={AppID}",
-            headers={"Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}"},
+            headers={"x-api-key": f"{os.getenv('DOCKER_TOKEN')}"},
         ) as r:
             if r.status == 200:
                 data = await r.json()
@@ -127,7 +123,7 @@ async def Deploy(applicationId):
             f"{os.getenv('DOCKER_URL')}/api/application.deploy",
             json={"applicationId": applicationId},
             headers={
-                "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+                "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
                 "Content-Type": "application/json",
             },
         ) as r:
@@ -143,7 +139,7 @@ async def Reload(applicationId):
             f"{os.getenv('DOCKER_URL')}/api/application.reload",
             json={"applicationId": applicationId},
             headers={
-                "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+                "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
                 "Content-Type": "application/json",
             },
         ) as r:
@@ -159,7 +155,7 @@ async def Start(applicationId):
             f"{os.getenv('DOCKER_URL')}/api/application.start",
             json={"applicationId": applicationId},
             headers={
-                "Authorization": f"Bearer {os.getenv('DOCKER_TOKEN')}",
+                "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
                 "Content-Type": "application/json",
             },
         ) as r:
@@ -470,7 +466,7 @@ class Setup(discord.ui.View):
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)        
+            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         result = await bots.find_one({"user_id": self.author.id})
         if result:
@@ -583,9 +579,7 @@ class SetUP(discord.ui.Modal):
             "Here are your bot details:"
         )
         name = re.sub(r"[^a-zA-Z0-9]", "", interaction.user.name)
-        ProjectID = await Create(
-            name,  interaction.user
-        )
+        ProjectID = await Create(name, interaction.user)
         if ProjectID:
             environment = (
                 f"TOKEN={self.token.value}\n"
