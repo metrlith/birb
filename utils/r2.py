@@ -122,11 +122,11 @@ async def ClearOldFiles():
                     file_extension = obj["Key"].split(".")[-1].lower()
 
                     if file_extension in ["mp4", "avi", "mov", "webm"] and (
-                        datetime.now(timezone.utc) - last_modified > timedelta(days=os.getenv('VIDEO_DAYS', 7))
+                        datetime.now(timezone.utc) - last_modified > timedelta(days=int(os.getenv('VIDEO_DAYS', 7)))
                     ):
                         delete_keys.append({"Key": obj["Key"]})
 
-                    elif (datetime.now(timezone.utc) - last_modified) > timedelta(days=os.getenv('IMAGE_DAYS', 35)):
+                    elif (datetime.now(timezone.utc) - last_modified) > timedelta(days=int(os.getenv('IMAGE_DAYS', 35))):
                         delete_keys.append({"Key": obj["Key"]})
 
                 if delete_keys:
