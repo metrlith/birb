@@ -665,6 +665,7 @@ class TicketsPublic(commands.Cog):
                 content=f"<a:Loading:1167074303905386587> Ticket closing... (Saving transcript this may take a second.)"
             )
             async for message in Channel.history(limit=None):
+                DataUse = message
                 message = await self.client.http.get_message(Channel.id, message.id)
                 if not message:
                     continue
@@ -709,7 +710,7 @@ class TicketsPublic(commands.Cog):
                         "attachments": (
                             [
                                 await upload_file_to_r2(
-                                    await attachment.read(),
+                                    await attachment.read() if hasattr(attachment, 'read') else attachment['url'],
                                     attachment.filename,
                                     message,
                                 )
@@ -720,13 +721,14 @@ class TicketsPublic(commands.Cog):
                             if message.get("message_snapshots")
                             else [
                                 await upload_file_to_r2(
-                                    await attachment.read(),
+                                    await attachment.read() if hasattr(attachment, 'read') else attachment['url'],
                                     attachment.filename,
                                     message,
                                 )
-                                for attachment in message.get("attachments", [])
+                                for attachment in DataUse.attachments
                             ]
                         ),
+
                         "embeds": (
                             [
                                 embed
