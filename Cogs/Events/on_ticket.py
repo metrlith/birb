@@ -697,13 +697,7 @@ class TicketsPublic(commands.Cog):
                 compact.append(
                     {
                         "author_id": message.get("author").get("id"),
-                        "content": (
-                            message.get("message_snapshots")[0]
-                            .get("message")
-                            .get("content")
-                            if message.get("message_snapshots")
-                            else message.get("content")
-                        ),
+                        "content": msg,
                         "author_name": message.get("author").get("username"),
                         "message_id": message.get("id"),
                         "author_avatar": str(
