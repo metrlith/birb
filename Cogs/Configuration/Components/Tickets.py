@@ -497,10 +497,10 @@ class SingelPanelCustomisation(discord.ui.View):
         view = TicketForms(interaction.user, self.name, self.FormEmbed)
         if await IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
-            view.AddQuestion.label = f"Add {(custom.get('Questions', []))}/5)"
+            view.AddQuestion.label = f"Add ({len(custom.get('Questions', []))}/5)"
         
         else:
-         view.AddQuestion.label = f"({len(custom.get('Questions', []))}/5)"
+            view.AddQuestion.label = f"({len(custom.get('Questions', []))}/5)"
         if len(custom.get("Questions", [])) >= 5:
             view.AddQuestion.disabled = True
         await interaction.response.send_message(
