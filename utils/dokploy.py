@@ -586,7 +586,13 @@ class SetUP(discord.ui.Modal):
                 f"MONGO_URL={MONGO_URL}\n"
                 f"PREFIX=!!\n"
                 f"ENVIRONMENT=custom\n"
-                f"CUSTOM_GUILD={self.server.value}"
+                f"CUSTOM_GUILD={self.server.value}\n"
+                f"ACCESS_KEY_ID={os.getenv('ACCESS_KEY_ID')}\n"
+                f"SECRET_ACCESS_KEY={os.getenv('SECRET_ACCESS')}\n"
+                f"BUCKET={os.getenv('BUCKET')}\n"
+                f"FILE_URL={os.getenv('FILE_URL')}\n"
+                f"R2_URL={os.getenv('R2_URL')}\n"
+                f"R2_TOKEN={os.getenv('R2_TOKEN')}"
             )
             env = await UpdateENV(ProjectID, environment)
             if not env:

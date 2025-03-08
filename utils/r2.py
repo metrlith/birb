@@ -74,7 +74,7 @@ async def upload_file_to_r2(
         if filename.lower().endswith(("png", "jpg", "jpeg", "gif", "bmp")):
             file_bytes = await CompressImage(file_bytes)
             content_type = "image/jpeg"
-        elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
+        elif filename.lower().endswith(("mp4", "avi", "mov", "webm", "mkv")):
             content_type = "video/mp4"
             max_size = int(os.getenv('MAX_FILE_SIZE', 25 * 1024 * 1024))
             if len(file_bytes) > max_size:
