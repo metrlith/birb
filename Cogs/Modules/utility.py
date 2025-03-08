@@ -8,7 +8,7 @@ from typing import Optional
 import aiohttp
 from utils.emojis import *
 from typing import Literal
-
+from utils.format import IsSeperateBot
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -115,16 +115,18 @@ class Utility(commands.Cog):
     @app_commands.command()
     @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def user(self, interaction: discord.Interaction, user: Optional[discord.User] = None) -> None:
+    async def user(
+        self, interaction: discord.Interaction, user: Optional[discord.User] = None
+    ) -> None:
         """Displays user's information"""
         await interaction.response.defer()
-        
+
         if user is None:
             user = interaction.user
-        
+
         UserBadges = self.client.db["User Badges"].find({"user_id": user.id})
         BadgeValues = ""
-        
+
         Badges = {
             "staff": "<:Staff:1221449338744602655>",
             "partner": "<:blurple_partner:1221449485792841791>",
@@ -141,17 +143,17 @@ class Utility(commands.Cog):
             "booster": "<:boost:1231403830390816808>",
             "Premium": "<:Premium:1250160559203287080>",
         }
-        
+
         BadgeCount = 0
         async for BadgeData in UserBadges:
             Badge = BadgeData["badge"]
             BadgeValues += f"> {Badge}\n"
             BadgeCount += 1
-        
+
         Member = None
         if interaction.guild:
             try:
-             Guild = await self.client.fetch_guild(1092976553752789054)
+                Guild = await self.client.fetch_guild(1092976553752789054)
             except (discord.HTTPException, discord.NotFound, discord.Forbidden):
                 Guild = None
             try:
@@ -169,11 +171,11 @@ class Utility(commands.Cog):
                             if Role in Member.roles:
                                 BadgeValues += f"> {Badges.get(RoleName, '')} {RoleName.capitalize()}\n"
                                 BadgeCount += 1
-                    
+
                     Member = await interaction.guild.fetch_member(user.id)
             except (discord.HTTPException, discord.NotFound):
                 pass
-        
+
         UserFlags = user.public_flags.all()
         for Flag in UserFlags:
             FlagName = Flag.name
@@ -183,33 +185,42 @@ class Utility(commands.Cog):
                     FlagDisplayName = "Bug Hunter"
                 BadgeValues += f"> {Badges[FlagName]} {FlagDisplayName}\n"
                 BadgeCount += 1
-        
+
         Embed = discord.Embed(
             title=f"@{user.display_name}",
             description="",
-            color=(user.accent_colour or Member.top_role.color if Member else discord.Color.dark_embed()),
+            color=(
+                user.accent_colour or Member.top_role.color
+                if Member
+                else discord.Color.dark_embed()
+            ),
         )
-        
+
         Embed.set_thumbnail(url=user.display_avatar.url)
-        
+
         if UserFlags or BadgeValues:
             Embed.add_field(name=f"Flags [{BadgeCount}]", value=BadgeValues)
-        
+
         Embed.add_field(
             name="**Profile**",
             value=f"> **User:** {user.mention}\n> **Display:** {user.display_name}\n> **ID:** {user.id}\n> **Join:** <t:{int(user.joined_at.timestamp())}:F>\n> **Created:** <t:{int(user.created_at.timestamp())}:F>",
             inline=False,
         )
-        
-        if Member:
-            UserRoles = " ".join([
-                Role.mention for Role in reversed(Member.roles) if Role != interaction.guild.default_role
-            ][:20])
-            RoleCount = len(Member.roles) - 1
-            Embed.add_field(name=f"**Roles** [{RoleCount}]", value=UserRoles, inline=False)
-        
-        await interaction.followup.send(embed=Embed)
 
+        if Member:
+            UserRoles = " ".join(
+                [
+                    Role.mention
+                    for Role in reversed(Member.roles)
+                    if Role != interaction.guild.default_role
+                ][:20]
+            )
+            RoleCount = len(Member.roles) - 1
+            Embed.add_field(
+                name=f"**Roles** [{RoleCount}]", value=UserRoles, inline=False
+            )
+
+        await interaction.followup.send(embed=Embed)
 
     async def fetch_birb_image(self):
         birb_api_url = "https://api.alexflipnote.dev/birb"
@@ -254,10 +265,13 @@ class Utility(commands.Cog):
 
         embed.set_author(name=server_name, icon_url=server_icon)
         embed.set_thumbnail(url=server_icon)
+        view = NetWorkPage(self.client, interaction.user)
+        if IsSeperateBot():
+            view.left.label = "◀"
+            view.Right.label = "▶"
+
         if interaction.guild:
-            await interaction.followup.send(
-                embed=embed, view=NetWorkPage(self.client, interaction.user)
-            )
+            await interaction.followup.send(embed=embed, view=view)
         else:
             await interaction.followup.send(embed=embed)
 
