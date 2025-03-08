@@ -687,7 +687,7 @@ class TicketsPublic(commands.Cog):
                 msg = ""
                 if forwadedmsg:
                     if forwadedmsg == "" and msgcontent == "":
-                        msg += f"💬 **Forwarded Message__**"
+                        msg += f"💬 **__Forwarded Message__**"
                     else:
                         msg += f"💬 **Forwarded Message:**{forwadedmsg}\n"
                         msg += f"👤 **User's Message:** {msgcontent if not msgcontent == '' else 'N/A'}\n"
