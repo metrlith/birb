@@ -667,32 +667,27 @@ class TicketsPublic(commands.Cog):
             async for message in Channel.history(limit=None):
                 if not message:
                     continue
-
-                timestamp = datetime.datetime.fromisoformat(
-                    message.created_at.isoformat().replace("Z", "+00:00")
-                )
                 messages.append(
-                    f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {message.author.name}: {message.content}"
+                    f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.author.name}: {message.content}"
                 )
 
-            
                 compact.append(
                     {
                         "author_id": message.author.id,
                         "content": message.content,
                         "author_name": message.author.name,
                         "message_id": message.id,
-                        "author_avatar": message.author.display_avatar.url if message.author.display_avatar else None,
+                        "author_avatar": str(
+                            message.author.avatar.url if message.author.avatar else ""
+                        ),
                         "attachments": [
                             await upload_file_to_r2(
-                                await attachment.read(),
-                                attachment.filename,
-                                message,
+                                await attachment.read(), attachment.filename, message
                             )
                             for attachment in message.attachments
                         ],
                         "embeds": [embed.to_dict() for embed in message.embeds],
-                        "timestamp": message.created_at.timestamp() if message.created_at else None,
+                        "timestamp": message.created_at.timestamp(),
                     }
                 )
 
