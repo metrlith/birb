@@ -706,13 +706,16 @@ class TicketsPublic(commands.Cog):
                             if message.get("author").get("avatar")
                             else ""
                         ),
-
                         "attachments": (
                             [
                                 await upload_file_to_r2(
-                                    await attachment.read() if hasattr(attachment, 'read') else attachment['url'],
+                                    (
+                                        await attachment.read()
+                                        if hasattr(attachment, "read")
+                                        else attachment["url"]
+                                    ),
                                     attachment.filename,
-                                    message,
+                                    DataUse,
                                 )
                                 for attachment in message.get("message_snapshots")[0]
                                 .get("message")
@@ -721,14 +724,17 @@ class TicketsPublic(commands.Cog):
                             if message.get("message_snapshots")
                             else [
                                 await upload_file_to_r2(
-                                    await attachment.read() if hasattr(attachment, 'read') else attachment['url'],
+                                    (
+                                        await attachment.read()
+                                        if hasattr(attachment, "read")
+                                        else attachment["url"]
+                                    ),
                                     attachment.filename,
-                                    message,
+                                    DataUse,
                                 )
                                 for attachment in DataUse.attachments
                             ]
                         ),
-
                         "embeds": (
                             [
                                 embed
@@ -740,7 +746,9 @@ class TicketsPublic(commands.Cog):
                             else [embed for embed in message.get("embeds", [])]
                         ),
                         "timestamp": (
-                            datetime.datetime.fromisoformat(message.get("timestamp")).timestamp()
+                            datetime.datetime.fromisoformat(
+                                message.get("timestamp")
+                            ).timestamp()
                             if message.get("timestamp")
                             else None
                         ),

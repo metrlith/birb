@@ -1,6 +1,7 @@
 import discord
 import discord.http
 import traceback
+from utils.format import IsSeperateBot
 
 from utils.emojis import *
 
@@ -494,7 +495,12 @@ class SingelPanelCustomisation(discord.ui.View):
         )
 
         view = TicketForms(interaction.user, self.name, self.FormEmbed)
-        view.AddQuestion.label = f"({len(custom.get('Questions', []))}/5)"
+        if await IsSeperateBot():
+            view.DeleteQuestion = "Delete"
+            view.AddQuestion.label = f"Add {(custom.get('Questions', []))}/5)"
+        
+        else:
+         view.AddQuestion.label = f"({len(custom.get('Questions', []))}/5)"
         if len(custom.get("Questions", [])) >= 5:
             view.AddQuestion.disabled = True
         await interaction.response.send_message(
@@ -1052,8 +1058,13 @@ class DeleteQuestionSelect(discord.ui.Select):
             {"$set": Config},
         )
         view = TicketForms(self.author, self.name, self.embed)
-        view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
-        if len(Config.get("Questions", [])) == 5:
+        if await IsSeperateBot():
+            view.DeleteQuestion = "Delete"
+            view.AddQuestion.label = f"Add {(Config.get('Questions', []))}/5)"
+        
+        else:
+         view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
+        if len(Config.get("Questions", [])) >= 5:
             view.AddQuestion.disabled = True
         await interaction.response.edit_message(
             embed=self.embed(Config), content=None, view=view
@@ -1147,8 +1158,13 @@ class Question(discord.ui.Modal):
             {"$set": Config},
         )
         view = TicketForms(self.author, self.panel, self.embed)
-        view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
-        if len(Config.get("Questions", [])) == 5:
+        if await IsSeperateBot():
+            view.DeleteQuestion = "Delete"
+            view.AddQuestion.label = f"Add {(Config.get('Questions', []))}/5)"
+        
+        else:
+         view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
+        if len(Config.get("Questions", [])) >= 5:
             view.AddQuestion.disabled = True
         await interaction.response.edit_message(
             content=None, view=view, embed=self.embed(Config)
