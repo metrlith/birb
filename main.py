@@ -482,7 +482,7 @@ class Client(commands.AutoShardedBot):
         print("[✅] Resumed connection to Discord Gateway!")
 
     async def is_owner(self, user: discord.User):
-        if user.id in [795743076520820776]:
+        if user.id in [795743076520820776] if not os.getenv("OWNER") else os.getenv("OWNER").split(","):
             return True
         return await super().is_owner(user)
 
