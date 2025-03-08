@@ -76,8 +76,8 @@ async def upload_file_to_r2(
             content_type = "image/jpeg"
         elif filename.lower().endswith(("mp4", "avi", "mov", "webm")):
             content_type = "video/mp4"
-            if len(file_bytes) > 25 * 1024 * 1024 if os.getenv('MAX_FILE_SIZE') is None else int(os.getenv('MAX_FILE_SIZE')):
-
+            max_size = int(os.getenv('MAX_FILE_SIZE', 25 * 1024 * 1024))
+            if len(file_bytes) > max_size:
                 return ""
         elif filename.lower().endswith(("mp3", "wav", "ogg")):
             content_type = "audio/mpeg"
