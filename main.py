@@ -513,6 +513,7 @@ async def UpdateChannelName():
         print("[⚠️] Failed to update channel name.")
 
 
+
 async def GetUsers():
     total_members = sum(guild.member_count or 0 for guild in client.guilds)
     return total_members

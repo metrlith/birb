@@ -10,6 +10,7 @@ import datetime
 import asyncio
 from utils.r2 import upload_file_to_r2, ClearOldFiles
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -66,6 +67,7 @@ class PTicketControl(discord.ui.View):
     )
     async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
+
         if not await TicketPermissions(interaction):
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}** you don't have permission to close this ticket.",
@@ -204,11 +206,9 @@ class TicketsPublic(commands.Cog):
     @tasks.loop(seconds=360)
     async def AutomAtions(self):
         Filter = {"closed": None}
-        if os.getenv('ENVIRONMENT') == "custom":
+        if os.getenv("ENVIRONMENT") == "custom":
             Filter["GuildID"] = int(os.getenv("CUSTOM_GUILD"))
-        Tickets = (
-            await self.client.db["Tickets"].find(Filter).to_list(length=None)
-        )
+        Tickets = await self.client.db["Tickets"].find(Filter).to_list(length=None)
 
         async def SendAutoMation(Ticket, semaphore):
             async with semaphore:
@@ -416,15 +416,15 @@ class TicketsPublic(commands.Cog):
         )
         if not P:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Panel not found."}}
+                {"_id": objectID}, {"$set": {"error.message": "Panel not found."}}
             )
             return logging.critical("[on_pticket_open] I can't find the panel.")
         guild_id = Ticket.get("GuildID")
         guild = await self.client.fetch_guild(guild_id)
         if not guild:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Guild not found."}}
-            )            
+                {"_id": objectID}, {"$set": {"error.message": "Guild not found."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] I can't find the server with ID {guild_id}."
             )
@@ -433,8 +433,8 @@ class TicketsPublic(commands.Cog):
         author = await guild.fetch_member(author_id)
         if not author:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Author not found."}}
-            )            
+                {"_id": objectID}, {"$set": {"error.message": "Author not found."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] can't find the author with ID {author_id}."
             )
@@ -467,29 +467,39 @@ class TicketsPublic(commands.Cog):
         CategoryID = P.get("Category")
         if not CategoryID:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "The category isn't setup. Make sure to set the category in config."}}
-            )            
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": "The category isn't setup. Make sure to set the category in config."
+                    }
+                },
+            )
             return logging.critical("[on_pticket_open] can't find the category ID.")
         try:
-         category = await guild.fetch_channel(CategoryID)
+            category = await guild.fetch_channel(CategoryID)
         except (discord.NotFound, discord.HTTPException, discord.Forbidden):
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "The bot can't find the category. Make sure to give the bot permission to view the category."}}
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": "The bot can't find the category. Make sure to give the bot permission to view the category."
+                    }
+                },
             )
             return logging.critical(
                 f"[on_pticket_open] can't find the category with ID {CategoryID}."
             )
         if not category:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Category not found."}}
-            )            
+                {"_id": objectID}, {"$set": {"error.message": "Category not found."}}
+            )
             return logging.critical(
                 f"[on_pticket_open] can't find the category with ID {CategoryID}."
             )
 
         if not isinstance(category, discord.CategoryChannel):
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Category not found."}}
+                {"_id": objectID}, {"$set": {"error.message": "Category not found."}}
             )
             return logging.critical(
                 f"[on_pticket_open] The fetched channel with ID {CategoryID} is not a valid category."
@@ -497,7 +507,12 @@ class TicketsPublic(commands.Cog):
 
         if category.guild is None:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": f"The category with the ID {CategoryID} does not belong to a valid guild."}}
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": f"The category with the ID {CategoryID} does not belong to a valid guild."
+                    }
+                },
             )
             return logging.critical(
                 f"[on_pticket_open] The category with ID {CategoryID} does not belong to a valid guild."
@@ -505,8 +520,13 @@ class TicketsPublic(commands.Cog):
         cli = await guild.fetch_member(self.client.user.id)
         if cli is None or not category.permissions_for(cli).manage_channels:
             await self.client.db["Tickets"].update_one(
-                { "_id": objectID}, {"$set": {"error.message": "Bot does not have permission to manage channels in the category."}}
-                )
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": "Bot does not have permission to manage channels in the category."
+                    }
+                },
+            )
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to manage channels in the category {CategoryID}."
             )
@@ -532,14 +552,20 @@ class TicketsPublic(commands.Cog):
             )
         except discord.Forbidden as e:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": f"Bot does not have permission to create a text channel: {e}"}}
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": f"Bot does not have permission to create a text channel: {e}"
+                    }
+                },
             )
             return logging.critical(
                 f"[on_pticket_open] The bot does not have permission to create a text channel: {e}"
             )
         except Exception as e:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": f"Failed to create text channel: {e}"}}
+                {"_id": objectID},
+                {"$set": {"error.message": f"Failed to create text channel: {e}"}},
             )
             return logging.critical(
                 f"[on_pticket_open] Failed to create text channel: {e}"
@@ -576,7 +602,12 @@ class TicketsPublic(commands.Cog):
             )
         except discord.Forbidden:
             await self.client.db["Tickets"].update_one(
-               { "_id": objectID}, {"$set": {"error.message": "Bot does not have permission to send messages in the channel."}}
+                {"_id": objectID},
+                {
+                    "$set": {
+                        "error.message": "Bot does not have permission to send messages in the channel."
+                    }
+                },
             )
             return logging.critical(
                 f"[on_pticket_open] Bot does not have permission to send messages in the channel {channel.id}"
@@ -608,47 +639,10 @@ class TicketsPublic(commands.Cog):
             user = await Guild.fetch_member(Result.get("UserID"))
         except (discord.NotFound, discord.HTTPException):
             user = None
-        await Channel.send("<a:Loading:1167074303905386587> Ticket closing...")
+        msg = await Channel.send("<a:Loading:1167074303905386587> Ticket closing...")
         messages = []
         compact = []
-        async for message in Channel.history(limit=None):
-            messages.append(
-                f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.author.name}: {message.content}"
-            )
-            compact.append(
-                {
-                    "author_id": message.author.id,
-                    "content": message.content,
-                    "author_name": message.author.name,
-                    "message_id": message.id,
-                    "author_avatar": str(
-                        message.author.avatar.url if message.author.avatar else ""
-                    ),
-                    "attachments": [
-                        await upload_file_to_r2(
-                            await attachment.read(), attachment.filename, message
-                        )
-                        for attachment in message.attachments
-                    ],
-                    "embeds": [embed.to_dict() for embed in message.embeds],
-                    "timestamp": message.created_at.timestamp(),
-                }
-            )
 
-        await self.client.db["Tickets"].update_one(
-            {"_id": ObjectID},
-            {
-                "$push": {"transcript": {"messages": messages, "compact": compact}},
-                "$set": {
-                    "closed": datetime.datetime.utcnow(),
-                    "closed": {
-                        "reason": reason,
-                        "closer": member.id,
-                        "closedAt": datetime.datetime.now(),
-                    },
-                },
-            },
-        )
         P = await self.client.db["Panels"].find_one(
             {"name": Result.get("panel"), "guild": Guild.id}
         )
@@ -667,6 +661,93 @@ class TicketsPublic(commands.Cog):
             pass
 
         if P.get("TranscriptChannel"):
+            await msg.edit(
+                content=f"<a:Loading:1167074303905386587> Ticket closing... (Saving transcript this may take a second.)"
+            )
+            async for message in Channel.history(limit=None):
+                message = await self.client.http.get_message(Channel.id, message.id)
+                if not message:
+                    continue
+                timestamp = datetime.datetime.fromisoformat(
+                    message.get("timestamp").replace("Z", "+00:00")
+                )
+                messages.append(
+                    f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {message.get('author').get('username')}: {message.get('content')}"
+                )
+
+                msgcontent = message.get("content")
+                msg = ""
+                forwadedmsg = None
+                if message.get("message_snapshots"):
+                    forwadedmsg = (
+                        message.get("message_snapshots")[0]
+                        .get("message")
+                        .get("content")
+                    )
+                if forwadedmsg:
+                    msg += f"💬 **Forwarded Message:**\n{forwadedmsg}\n"
+                    msg += f"👤 **User's Message:**\n{msgcontent if not msgcontent == "" else "N/A"}\n"
+
+                compact.append(
+                    {
+                        "author_id": message.get("author").get("id"),
+                        "content": msg,
+                        "author_name": message.get("author").get("username"),
+                        "message_id": message.get("id"),
+                        "author_avatar": str(
+                            message.get("author").get("avatar")
+                            if message.get("author").get("avatar")
+                            else ""
+                        ),
+                        "attachments": (
+                            [
+                                await upload_file_to_r2(
+                                    await attachment.read(),
+                                    attachment.filename,
+                                    message,
+                                )
+                                for attachment in message.get("message_snapshots")[0]
+                                .get("message")
+                                .get("attachments", [])
+                            ]
+                            if message.get("message_snapshots")
+                            else [
+                                await upload_file_to_r2(
+                                    await attachment.read(),
+                                    attachment.filename,
+                                    message,
+                                )
+                                for attachment in message.get("attachments", [])
+                            ]
+                        ),
+                        "embeds": (
+                            [
+                                embed
+                                for embed in message.get("message_snapshots")[0]
+                                .get("message")
+                                .get("embeds", [])
+                            ]
+                            if message.get("message_snapshots")
+                            else [embed for embed in message.get("embeds", [])]
+                        ),
+                        "timestamp": message.get("timestamp"),
+                    }
+                )
+
+            await self.client.db["Tickets"].update_one(
+                {"_id": ObjectID},
+                {
+                    "$push": {"transcript": {"messages": messages, "compact": compact}},
+                    "$set": {
+                        "closed": datetime.datetime.utcnow(),
+                        "closed": {
+                            "reason": reason,
+                            "closer": member.id,
+                            "closedAt": datetime.datetime.now(),
+                        },
+                    },
+                },
+            )
             TranscriptChannel = Guild.get_channel(P.get("TranscriptChannel"))
             if TranscriptChannel:
                 Users = {
@@ -713,13 +794,13 @@ class TicketsPublic(commands.Cog):
                         view = discord.ui.View()
                         view.add_item(Review())
                         try:
-                         ReviewerMsg = await user.send(embed=embed, view=view)
+                            ReviewerMsg = await user.send(embed=embed, view=view)
                         except:
                             pass
 
                     else:
                         try:
-                         ReviewerMsg = await user.send(embed=embed)
+                            ReviewerMsg = await user.send(embed=embed)
                         except:
                             pass
                 try:
@@ -732,8 +813,14 @@ class TicketsPublic(commands.Cog):
                                 {
                                     "$set": {
                                         "ReviewMSG": msg.id if msg else None,
-                                        "ReviewChannel": TranscriptChannel.id if TranscriptChannel else None,
-                                        "ReviewerMsg": ReviewerMsg.id if ReviewerMsg else None,
+                                        "ReviewChannel": (
+                                            TranscriptChannel.id
+                                            if TranscriptChannel
+                                            else None
+                                        ),
+                                        "ReviewerMsg": (
+                                            ReviewerMsg.id if ReviewerMsg else None
+                                        ),
                                     }
                                 },
                             )
@@ -798,7 +885,7 @@ class FormalReview(discord.ui.Modal):
             placeholder="Write your review here.",
             min_length=10,
             max_length=500,
-            required=False
+            required=False,
         )
 
         self.add_item(self.review)
