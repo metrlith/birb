@@ -1060,12 +1060,10 @@ class DeleteQuestionSelect(discord.ui.Select):
         view = TicketForms(self.author, self.name, self.embed)
         if await IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
-            view.AddQuestion.label = f"Add {(Config.get('Questions', []))}/5)"
+            view.AddQuestion.label = f"Add ({len(Config.get('Questions', []))}/5)"
         
         else:
-         view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
-        if len(Config.get("Questions", [])) >= 5:
-            view.AddQuestion.disabled = True
+            view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
         await interaction.response.edit_message(
             embed=self.embed(Config), content=None, view=view
         )
@@ -1160,12 +1158,10 @@ class Question(discord.ui.Modal):
         view = TicketForms(self.author, self.panel, self.embed)
         if await IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
-            view.AddQuestion.label = f"Add {(Config.get('Questions', []))}/5)"
+            view.AddQuestion.label = f"Add ({len(Config.get('Questions', []))}/5)"
         
         else:
-         view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
-        if len(Config.get("Questions", [])) >= 5:
-            view.AddQuestion.disabled = True
+            view.AddQuestion.label = f"({len(Config.get('Questions', []))}/5)"
         await interaction.response.edit_message(
             content=None, view=view, embed=self.embed(Config)
         )
