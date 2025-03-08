@@ -665,93 +665,34 @@ class TicketsPublic(commands.Cog):
                 content=f"<a:Loading:1167074303905386587> Ticket closing... (Saving transcript this may take a second.)"
             )
             async for message in Channel.history(limit=None):
-                DataUse = message
-                message = await self.client.http.get_message(Channel.id, message.id)
                 if not message:
                     continue
+
                 timestamp = datetime.datetime.fromisoformat(
-                    message.get("timestamp").replace("Z", "+00:00")
+                    message.created_at.isoformat().replace("Z", "+00:00")
                 )
                 messages.append(
-                    f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {message.get('author').get('username')}: {message.get('content')}"
+                    f"[{timestamp.strftime('%Y-%m-%d %H:%M:%S')}] {message.author.name}: {message.content}"
                 )
 
-                msgcontent = message.get("content")
-
-                forwadedmsg = None
-                if message.get("message_snapshots"):
-                    forwadedmsg = (
-                        message.get("message_snapshots")[0]
-                        .get("message")
-                        .get("content")
-                    )
-                msg = ""
-                if forwadedmsg:
-                    if forwadedmsg == "" and msgcontent == "":
-                        msg += f"💬 **__Forwarded Message__**"
-                    else:
-                        msg += f"💬 **Forwarded Message:** {forwadedmsg}\n"
-                        msg += f"👤 **User's Message:** {msgcontent if not msgcontent == '' else 'N/A'}\n"
-                else:
-                    msg = msgcontent
-
+            
                 compact.append(
                     {
-                        "author_id": message.get("author").get("id"),
-                        "content": msg,
-                        "author_name": message.get("author").get("username"),
-                        "message_id": message.get("id"),
-                        "author_avatar": str(
-                            f"https://cdn.discordapp.com/avatars/{message.get('author').get('id')}/{message.get('author').get('avatar')}.png"
-                            if message.get("author").get("avatar")
-                            else ""
-                        ),
-                        "attachments": (
-                            [
-                                await upload_file_to_r2(
-                                    (
-                                        await attachment.read()
-                                        if hasattr(attachment, "read")
-                                        else attachment["url"]
-                                    ),
-                                    attachment.filename,
-                                    DataUse,
-                                )
-                                for attachment in message.get("message_snapshots")[0]
-                                .get("message")
-                                .get("attachments", [])
-                            ]
-                            if message.get("message_snapshots")
-                            else [
-                                await upload_file_to_r2(
-                                    (
-                                        await attachment.read()
-                                        if hasattr(attachment, "read")
-                                        else attachment["url"]
-                                    ),
-                                    attachment.filename,
-                                    DataUse,
-                                )
-                                for attachment in DataUse.attachments
-                            ]
-                        ),
-                        "embeds": (
-                            [
-                                embed
-                                for embed in message.get("message_snapshots")[0]
-                                .get("message")
-                                .get("embeds", [])
-                            ]
-                            if message.get("message_snapshots")
-                            else [embed for embed in message.get("embeds", [])]
-                        ),
-                        "timestamp": (
-                            datetime.datetime.fromisoformat(
-                                message.get("timestamp")
-                            ).timestamp()
-                            if message.get("timestamp")
-                            else None
-                        ),
+                        "author_id": message.author.id,
+                        "content": message.content,
+                        "author_name": message.author.name,
+                        "message_id": message.id,
+                        "author_avatar": message.author.display_avatar.url if message.author.display_avatar else None,
+                        "attachments": [
+                            await upload_file_to_r2(
+                                await attachment.read(),
+                                attachment.filename,
+                                message,
+                            )
+                            for attachment in message.attachments
+                        ],
+                        "embeds": [embed.to_dict() for embed in message.embeds],
+                        "timestamp": message.created_at.timestamp() if message.created_at else None,
                     }
                 )
 
