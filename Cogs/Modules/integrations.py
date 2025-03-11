@@ -276,7 +276,7 @@ class Link(commands.Cog):
 
         c = await self.client.config.find_one({"_id": ctx.guild.id})
 
-        Roles = await GroupRoles(ctx)
+        Roles = await GroupRoles(ctx.interaction)
         if Roles == 0:
             from utils.HelpEmbeds import NotRobloxLinked
 
