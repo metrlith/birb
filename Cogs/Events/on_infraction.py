@@ -227,8 +227,14 @@ class on_infractions(commands.Cog):
             embed.set_footer(text=f"Infraction ID | {Infraction.random_string}")
 
         ch = await self.InfractionTypes(Actions, staff, manager, config=Settings)
-        if ch and isinstance(ch, discord.TextChannel):
-            channel = ch
+        if ch and ch.get("Channel"):
+            try:
+                N = await self.client.fetch_channel(int(ch.get("Channel")))
+            except (discord.Forbidden, discord.NotFound):
+                N = None
+            if N:
+                channel = N
+
         try:
             msg = await channel.send(
                 staff.mention,
@@ -241,13 +247,14 @@ class on_infractions(commands.Cog):
         if Type is None:
             await self.client.db["infractions"].update_one(
                 {"_id": objectid},
-                {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
+                {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id, "Updated": ch}},
             )
         else:
             await self.client.db["Suspensions"].update_one(
                 {"_id": objectid},
                 {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
             )
+        self.client.dispatch("infraction_log", objectid, "create", manager)
 
         consreult = await self.client.db["consent"].find_one({"user_id": staff.id})
         if Settings.get("Module Options", {}).get("Direct Message", True):
@@ -272,10 +279,16 @@ class on_infractions(commands.Cog):
                         "guild_id": guild.id,
                         "staff": staff.id,
                         "action": Infraction.action,
+                        "Upscaled": {"$exists": False},
                     }
                 )
                 if len(Threshold) + 1 < InfractionsWithType:
                     await asyncio.sleep(2)
+                    for Infractions in InfractionsWithType:
+                        await self.client.db["infractions"].update_one(
+                            {"_id": Infractions.get("_id")},
+                            {"$set": {"Upscaled": True}},
+                        )
                     FormedData = {
                         "guild_id": guild.id,
                         "staff": staff.id,
@@ -290,6 +303,8 @@ class on_infractions(commands.Cog):
                         "annonymous": Infraction.annonymous,
                         "timestamp": datetime.datetime.now(),
                     }
+                    if ch:
+                        FormedData["Updated"] = ch
                     EscResult = await self.client.db["infractions"].insert_one(
                         FormedData
                     )
@@ -305,6 +320,9 @@ class on_infractions(commands.Cog):
     ):
         if not data:
             return
+
+        Actions = {}
+
         try:
             channel = False
             if data.get("givenroles"):
@@ -321,6 +339,7 @@ class on_infractions(commands.Cog):
                     await staff.add_roles(*roles)
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+                Actions["AddedRoles"] = [role.id for role in roles]
             if data.get("changegrouprole") and data.get("grouprole"):
                 from utils.roblox import UpdateMembership
 
@@ -333,6 +352,7 @@ class on_infractions(commands.Cog):
                     )
                 except Exception as e:
                     traceback.format_exc(e)
+                Actions['ChangedGroupRole'] = True
 
             if data.get("removedroles"):
                 roles = data.get("removedroles")
@@ -348,6 +368,7 @@ class on_infractions(commands.Cog):
                     await staff.remove_roles(*roles)
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+                Actions["RemovedRoles"] = [role.id for role in roles]
             if data.get("voidshift"):
                 result = await self.client.db["integrations"].find_one(
                     {"server": staff.guild.id, "erm": {"$exists": True}}
@@ -358,21 +379,27 @@ class on_infractions(commands.Cog):
                     )
                     if not result:
                         pass
+                Actions['VoidedShift'] = True
 
             if data.get("dbremoval", False) is True:
+                OriginalData = await self.client.db["staff database"].find_one(
+                    {"staff_id": staff.id}
+                )
                 await self.client.db["staff database"].delete_one(
                     {"staff_id": staff.id}
                 )
+                Actions["DbRemoval"] = OriginalData
             if data.get("channel"):
                 channel = await staff.guild.fetch_channel(data.get("channel"))
                 if not channel:
                     pass
-            if not channel:
-                return
-            client = await staff.guild.fetch_member(self.client.user.id)
-            if channel.permissions_for(client).send_messages is False:
-                return
-            return channel
+                Actions["Channel"] = data.get("channel")
+            if channel:
+                client = await staff.guild.fetch_member(self.client.user.id)
+                if channel.permissions_for(client).send_messages is False:
+                    return
+
+            return Actions
         except:
             pass
 

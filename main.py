@@ -212,6 +212,8 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_infraction_approval",
             "Cogs.Modules.tickets",
             "Cogs.Events.on_ticket",
+            "Cogs.Events.on_infraction_log",
+            "Cogs.Events.on_infraction_void",
         ]
 
     async def load_jishaku(self):
@@ -363,7 +365,7 @@ class Client(commands.AutoShardedBot):
         self.add_view(PTicketControl())
 
         self.loop.create_task(self.load_jishaku())
-        DoNotLoad = os.getenv('DoNotLoad', '').replace(' ', '').split(',')
+        DoNotLoad = os.getenv("DoNotLoad", "").replace(" ", "").split(",")
         self.cogslist = [cog for cog in self.cogslist if cog and cog not in DoNotLoad]
         for ext in ProgressBar(
             self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
@@ -482,7 +484,11 @@ class Client(commands.AutoShardedBot):
         print("[✅] Resumed connection to Discord Gateway!")
 
     async def is_owner(self, user: discord.User):
-        if user.id in [795743076520820776] if not os.getenv("OWNER") else os.getenv("OWNER").split(","):
+        if (
+            user.id in [795743076520820776]
+            if not os.getenv("OWNER")
+            else os.getenv("OWNER").split(",")
+        ):
             return True
         return await super().is_owner(user)
 
@@ -511,7 +517,6 @@ async def UpdateChannelName():
         await channel.edit(name=f"{len(client.guilds)} Guilds | {users} Users")
     except (discord.HTTPException, discord.Forbidden):
         print("[⚠️] Failed to update channel name.")
-
 
 
 async def GetUsers():

@@ -383,7 +383,6 @@ class Infractions(commands.Cog):
             )
             return
 
-
         if await IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
@@ -463,14 +462,16 @@ class Infractions(commands.Cog):
                     )
                 )
 
-        paginator = await PaginatorButtons(extra=[
+        paginator = await PaginatorButtons(
+            extra=[
                 discord.ui.Button(
                     label="View Online",
                     style=discord.ButtonStyle.link,
                     url=f"https://astrobirb.dev/panel/{ctx.guild.id}",
                 ),
-        ])
-      
+            ]
+        )
+
         await paginator.start(ctx, pages=embeds[:45], msg=msg)
 
     @infraction.command(description="View an infraction and manage it.")
@@ -691,6 +692,10 @@ class ManageInfraction(discord.ui.View):
             view=None,
             embed=None,
         )
+        interaction.client.dispatch("infraction_void", infraction["_id"])
+        interaction.client.dispatch(
+            "infraction_log", infraction["_id"], "delete", interaction.user
+        )
 
 
 class EditInfraction(discord.ui.Select):
@@ -717,18 +722,23 @@ class EditInfraction(discord.ui.Select):
 
         value = self.values[0]
         if value == "action":
-            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
             if config is None:
                 return await interaction.followup.send(
                     embed=BotNotConfigured(),
                 )
             Types = config.get("Infraction", {}).get("types", [])
+            options = None
             if not Types or len(Types) == 0:
                 Types = DefaultTypes()
 
             options = [
-                discord.SelectOption(label=name[:80], value=name[:80]) for name in Types
+                discord.SelectOption(label=name[:80], value=name[:80])
+                for name in set(Types)
             ]
+
             view = ImDone(self.author, self.infraction)
             view.done.label = "Cancel"
             view.done.style = discord.ButtonStyle.red
@@ -774,6 +784,7 @@ class UpdateInfraction(discord.ui.Modal):
             self.add_item(self.exp)
 
     async def on_submit(self, interaction: discord.Interaction):
+        Org = self.infraction.copy()
         if self.exp:
             expiration = self.exp.value
             if expiration and not re.match(r"^\d+[mhdws]$", expiration):
@@ -811,6 +822,13 @@ class UpdateInfraction(discord.ui.Modal):
         )
 
         interaction.client.dispatch("infraction_edit", self.infraction)
+        interaction.client.dispatch(
+            "infraction_log",
+            self.infraction.get("_id"),
+            "modify",
+            interaction.user,
+            Org,
+        )
 
 
 class ImDone(discord.ui.View):
