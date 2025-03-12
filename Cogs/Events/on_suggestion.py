@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from bson import ObjectId
+from utils.format import IsSeperateBot
 
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
@@ -11,13 +12,14 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+
 class On_suggestions(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
     @commands.Cog.listener()
     async def on_suggestion(self, objectID: ObjectId, settings: dict):
-        back = await self.client.db['suggestions'].find_one({"_id": objectID})
+        back = await self.client.db["suggestions"].find_one({"_id": objectID})
         if not back:
             return logging.critical("[on_suggestion] I can't find the feedback.")
 
@@ -45,7 +47,7 @@ class On_suggestions(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} the feedback channel can't be found. [2]"
             )
             return
-        custom = await self.client.db['Customisation'].find_one(
+        custom = await self.client.db["Customisation"].find_one(
             {"guild_id": guild.id, "type": "Suggestion"}
         )
         if not custom:
@@ -89,8 +91,10 @@ class On_suggestions(commands.Cog):
             }
             embed = await DisplayEmbed(custom, author, replacements=replacements)
         view = Voting()
+        if await IsSeperateBot():
+            view.settings.label = "Settings"
         msg = await channel.send(embed=embed, view=view)
-        await self.client.db['suggestions'].update_one(
+        await self.client.db["suggestions"].update_one(
             {"_id": objectID}, {"$set": {"message_id": msg.id}}
         )
 
@@ -106,25 +110,29 @@ class Voting(discord.ui.View):
         emoji="<:UpVote:1223062893096996934>",
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
-        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
+        settings = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+        result = await interaction.client.db["suggestions"].find_one(
+            {"message_id": interaction.message.id}
+        )
         if not result:
             return logging.critical(
                 f"[upvoting] in {interaction.guild.name} I couldn't find the suggestion data to update it."
             )
 
         if interaction.user.id in result.get("upvoters"):
-            await interaction.client.db['suggestions'].update_one(
+            await interaction.client.db["suggestions"].update_one(
                 {"message_id": interaction.message.id},
                 {"$pull": {"upvoters": interaction.user.id}},
             )
         else:
-            await interaction.client.db['suggestions'].update_one(
+            await interaction.client.db["suggestions"].update_one(
                 {"message_id": interaction.message.id},
                 {"$push": {"upvoters": interaction.user.id}},
             )
             if interaction.user.id in result.get("downvoters"):
-                await interaction.client.db['suggestions'].update_one(
+                await interaction.client.db["suggestions"].update_one(
                     {"message_id": interaction.message.id},
                     {"$pull": {"downvoters": interaction.user.id}},
                 )
@@ -143,25 +151,29 @@ class Voting(discord.ui.View):
     async def downvote(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
+        settings = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+        result = await interaction.client.db["suggestions"].find_one(
+            {"message_id": interaction.message.id}
+        )
         if not result:
             return logging.critical(
                 f"[downvoting] in {interaction.guild.name} I couldn't find the suggestion data to update it."
             )
 
         if interaction.user.id in result.get("downvoters"):
-            await interaction.client.db['suggestions'].update_one(
+            await interaction.client.db["suggestions"].update_one(
                 {"message_id": interaction.message.id},
                 {"$pull": {"downvoters": interaction.user.id}},
             )
         else:
-            await interaction.client.db['suggestions'].update_one(
+            await interaction.client.db["suggestions"].update_one(
                 {"message_id": interaction.message.id},
                 {"$push": {"downvoters": interaction.user.id}},
             )
             if interaction.user.id in result.get("upvoters"):
-                await interaction.client.db['suggestions'].update_one(
+                await interaction.client.db["suggestions"].update_one(
                     {"message_id": interaction.message.id},
                     {"$pull": {"upvoters": interaction.user.id}},
                 )
@@ -171,12 +183,13 @@ class Voting(discord.ui.View):
         )
         await interaction.response.edit_message(content="")
 
-
     @discord.ui.button(
         label="Voters", style=discord.ButtonStyle.gray, custom_id="VOTING;RESADADJ"
     )
     async def voters(self, interaction: discord.Interaction, button: discord.ui.Button):
-        result = await interaction.client.db['suggestions'].find_one({"message_id": interaction.message.id})
+        result = await interaction.client.db["suggestions"].find_one(
+            {"message_id": interaction.message.id}
+        )
         if not result:
             return logging.critical(
                 f"[voters] in {interaction.guild.name} I couldn't find the suggestion data to display voters."
@@ -209,7 +222,9 @@ class Voting(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @discord.ui.button(
-        label="", emoji="<:Setting:1223062944187813918>", custom_id="settingsbuttonforsuggestions"
+        label="",
+        emoji="<:Setting:1223062944187813918>",
+        custom_id="settingsbuttonforsuggestions",
     )
     async def settings(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -222,7 +237,7 @@ class Voting(discord.ui.View):
                 return
 
             await interaction.response.defer(ephemeral=True)
-            suggestion_data = await interaction.client.db['suggestions'].find_one(
+            suggestion_data = await interaction.client.db["suggestions"].find_one(
                 {"message_id": interaction.message.id}
             )
             if not suggestion_data:
@@ -252,10 +267,14 @@ class ManageSuggestion(discord.ui.Select):
     def __init__(self, msg):
         options = [
             discord.SelectOption(
-                label="Approve", description="Approve the suggestion", emoji="<:whitecheck:1223062421212631211>"
+                label="Approve",
+                description="Approve the suggestion",
+                emoji="<:whitecheck:1223062421212631211>",
             ),
             discord.SelectOption(
-                label="Reject", description="Reject the suggestion", emoji="<:whitex:1190819175447408681>"
+                label="Reject",
+                description="Reject the suggestion",
+                emoji="<:whitex:1190819175447408681>",
             ),
         ]
         super().__init__(
@@ -268,8 +287,12 @@ class ManageSuggestion(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         selected_option = self.values[0]
-        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        result = await interaction.client.db['suggestions'].find_one({"message_id": self.msg.id})
+        settings = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+        result = await interaction.client.db["suggestions"].find_one(
+            {"message_id": self.msg.id}
+        )
         if not result:
             return logging.critical(
                 f"[ManageSuggestion] in {interaction.guild.name} I couldn't find the suggestion data to manage it."
@@ -281,7 +304,7 @@ class ManageSuggestion(discord.ui.Select):
             )
             await interaction.response.edit_message(
                 content=f"{tick} **{interaction.user.display_name}**, it has been marked as accepted.",
-                view=None
+                view=None,
             )
 
         elif selected_option == "Reject":
@@ -296,14 +319,18 @@ class DenialReason(discord.ui.Modal, title="Denial Reason"):
         self.msg = msg
 
     async def on_submit(self, interaction: discord.Interaction):
-        settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        result = await interaction.client.db['suggestions'].find_one({"message_id": self.msg.id})
+        settings = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+        result = await interaction.client.db["suggestions"].find_one(
+            {"message_id": self.msg.id}
+        )
         if not result:
             return logging.critical(
                 f"[DenialReason] in {interaction.guild.name} I couldn't find the suggestion data to manage it."
             )
 
-        await interaction.client.db['suggestions'].update_one(
+        await interaction.client.db["suggestions"].update_one(
             {"message_id": self.msg.id},
             {"$set": {"reason": self.reason.value}},
         )
@@ -312,7 +339,7 @@ class DenialReason(discord.ui.Modal, title="Denial Reason"):
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** suggestion marked as denied.",
-            view=None
+            view=None,
         )
 
 

@@ -5,6 +5,7 @@ from bson import ObjectId
 
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
+from utils.format import IsSeperateBot
 from utils.emojis import *
 from Cogs.Events.on_suggestion import Voting
 from dotenv import load_dotenv
@@ -59,6 +60,8 @@ class On_suggestions_edit(commands.Cog):
             {"guild_id": guild.id, "type": action}
         )
         view = Voting()
+        if await IsSeperateBot():
+            view.settings.label = "Settings"
         if not custom:
 
             embed = discord.Embed(

@@ -1,14 +1,11 @@
 import discord
 import discord.http
 from utils.emojis import *
+from utils.format import IsSeperateBot
 
 from dotenv import load_dotenv
 
 load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# forumsconfig = DB["Forum Configuration"]
 
 
 class ForumsOptions(discord.ui.Select):
@@ -53,6 +50,10 @@ class ForumsOptions(discord.ui.Select):
                 embed.description == "> There are no custom commands!"
 
             view = ForumManagent(self.author)
+            if await IsSeperateBot:
+                view.add.label = "Add"
+                view.edit.label = "Edit"
+                view.remove.label = "Delete"
             await interaction.followup.send(view=view, embed=embed)
 
 

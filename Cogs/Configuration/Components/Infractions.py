@@ -5,6 +5,7 @@ import traceback
 from utils.emojis import *
 
 from dotenv import load_dotenv
+from utils.format import IsSeperateBot
 from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 
@@ -144,6 +145,10 @@ class InfractionOption(discord.ui.Select):
                     embed=NoPremium(), view=Support()
                 )
             view = ManageReasons(author=self.author, message=interaction.message)
+            if await IsSeperateBot():
+                view.RemoveReason.label = "Remove"
+                view.AddReason.label = "Add"
+                
         elif selection == "Customise Embed":
             try:
                 custom = await interaction.client.db['Customisation'].find_one(
