@@ -57,7 +57,6 @@ async def Reply(
 
 
 async def Close(interaction: discord.Interaction, reason=None):
-    link = None
     Text = None
     TranscriptMSG = None
     msg = await interaction.followup.send(
@@ -99,12 +98,6 @@ async def Close(interaction: discord.Interaction, reason=None):
     # // Commit Modmail Extermination
     await interaction.client.db["modmail"].delete_one({"user_id": interaction.user.id})
     if channel and ModmailType == "channel":
-        transcript = await chat_exporter.export(channel)
-        TranscriptFile = discord.File(
-            io.BytesIO(transcript.encode()),
-            filename=f"transcript-{channel.name}.html",
-        )
-
         Text = ""
         async for message in channel.history(limit=None, oldest_first=True):
 
@@ -130,16 +123,6 @@ async def Close(interaction: discord.Interaction, reason=None):
                     content=f"{no} **{interaction.user.display_name},** I can't delete this channel please contact the server admins.",
                 )
                 return
-
-        Test = interaction.client.get_channel(1202756318897774632)
-        message = await Test.send(
-            "<:infractionssearch:1234997448641085520> **HTML Transcript**",
-            file=TranscriptFile,
-        )
-        try:
-            link = await chat_exporter.link(message)
-        except Exception as e:
-            print("[🤷] ModmaiL Transcript Error (Python 2.4.0a bug)")
     user = await interaction.client.fetch_user(Modmail.get("user_id"))
     if reason is None:
         reason = "No reason provided."
@@ -211,15 +194,6 @@ async def Close(interaction: discord.Interaction, reason=None):
                         content=f"{no} **{interaction.user.display_name},** you have setup the transcript channel but it can't be found.",
                     )
                 view = Links()
-                view.add_item(
-                    discord.ui.Button(
-                        label="Online Transcript (Expires)",
-                        url=link,
-                        emoji="<:Website:1132252914082127882>",
-                        style=discord.ButtonStyle.blurple,
-                    )
-                )
-
                 try:
                     TranscriptMSG = await TranscriptChannel.send(embed=embed, view=view)
                 except:
@@ -234,15 +208,6 @@ async def Close(interaction: discord.Interaction, reason=None):
                         content=f"{no} **{interaction.user.display_name},** you have setup the transcript channel but it can't be found.",
                     )
                 view = Links()
-                view.add_item(
-                    discord.ui.Button(
-                        label="Online Transcript (Expires)",
-                        url=link,
-                        emoji="<:Website:1132252914082127882>",
-                        style=discord.ButtonStyle.blurple,
-                    )
-                )
-
                 try:
                     TranscriptMSG = await TranscriptChannel.send(embed=embed, view=view)
                 except:
@@ -256,7 +221,6 @@ async def Close(interaction: discord.Interaction, reason=None):
             "reason": reason,
             "author": user.id,
             "timestamp": datetime.now(),
-            "transcriptlink": link if link else None,
             "transcript": TranscriptMSG.id if TranscriptMSG else None,
             "text": Text if Text else "Nothin",
         }
@@ -414,7 +378,6 @@ class Select(discord.ui.Select):
                     embed=None,
                     view=None,
                 )
-            print("here 2")
             await OpenModmail(
                 interaction, Guild, Config, Member, Category, self.message
             )
