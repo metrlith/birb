@@ -21,7 +21,7 @@ async def Reply(
         Channel = await Guild.fetch_channel(int(ModmailData.get("channel_id", 0)))
     except (discord.NotFound, discord.HTTPException):
         traceback.format_exc(e)
-        return await self.db["Modmail"].delete_one({"user_id": message.author.id})
+        return await self.db["modmail"].delete_one({"user_id": message.author.id})
     if not Channel:
         return await message.add_reaction("⚠️")
 
@@ -65,11 +65,11 @@ async def Close(interaction: discord.Interaction, reason=None):
     )
     # // Commit Modmail Discovery QWEo0p9;aSJDOPAHJSOp'd
     if isinstance(interaction.channel, discord.DMChannel):
-        Modmail = await interaction.client.db["Modmail"].find_one(
+        Modmail = await interaction.client.db["modmail"].find_one(
             {"user_id": interaction.user.id}
         )
     else:
-        Modmail = await interaction.client.db["Modmail"].find_one(
+        Modmail = await interaction.client.db["modmail"].find_one(
             {"channel_id": interaction.channel.id}
         )
     if not Modmail:
@@ -97,7 +97,7 @@ async def Close(interaction: discord.Interaction, reason=None):
     TranscriptID = random.randint(100, 50000)
 
     # // Commit Modmail Extermination
-    await interaction.client.db["Modmail"].delete_one({"user_id": interaction.user.id})
+    await interaction.client.db["modmail"].delete_one({"user_id": interaction.user.id})
     if channel and ModmailType == "channel":
         transcript = await chat_exporter.export(channel)
         TranscriptFile = discord.File(
@@ -349,7 +349,7 @@ class Select(discord.ui.Select):
                 ephemeral=True,
             )
 
-        Modmail = await interaction.client.db["Modmail"].find_one(
+        Modmail = await interaction.client.db["modmail"].find_one(
             {"user_id": interaction.user.id}
         )
         if Modmail:
@@ -565,7 +565,7 @@ async def OpenModmail(
     }
     if Categoriesed:
         ModmailData["Category"] = Categoriesed
-    await interaction.client.db["Modmail"].insert_one(ModmailData)
+    await interaction.client.db["modmail"].insert_one(ModmailData)
     await Reply(
         interaction.client,
         message=message,
@@ -606,10 +606,10 @@ class ModmailEvent(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel: discord.TextChannel):
-        Modmail = await self.client.db["Modmail"].find_one({"channel_id": channel.id})
+        Modmail = await self.client.db["modmail"].find_one({"channel_id": channel.id})
         if not Modmail:
             return
-        await self.client.db["Modmail"].delete_one({"channel_id": channel.id})
+        await self.client.db["modmail"].delete_one({"channel_id": channel.id})
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -620,7 +620,7 @@ class ModmailEvent(commands.Cog):
             {"user_id": message.author.id}
         ):
             return
-        Modmail = await self.client.db["Modmail"].find_one(
+        Modmail = await self.client.db["modmail"].find_one(
             {"user_id": message.author.id}
         )
         if isinstance(message.channel, discord.DMChannel):
@@ -707,7 +707,7 @@ class ModmailEvent(commands.Cog):
                     Guild=Guild,
                 )
         if isinstance(message.channel, discord.TextChannel):
-            Modmail = await self.client.db["Modmail"].find_one(
+            Modmail = await self.client.db["modmail"].find_one(
                 {"channel_id": message.channel.id}
             )
             if not Modmail:
