@@ -36,7 +36,7 @@ class on_infraction_log(commands.Cog):
             LogsChannel = await guild.fetch_channel(
                 int(config.get("Infraction", {}).get("LogChannel", None))
             )
-        except (discord.Forbidden, discord.NotFound):
+        except (discord.Forbidden, discord.NotFound, TypeError):
             return
         if not LogsChannel:
             return
