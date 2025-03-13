@@ -1038,22 +1038,22 @@ class quota(commands.Cog):
                     )
                 )
             )
-
             if (
                 staff.get("message_count") is not None
                 and staff.get("ClaimedTickets") is not None
             ):
-                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets"
+                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
             elif staff.get("message_count") is not None:
-                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages"
+                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
             elif staff.get("ClaimedTickets") is not None:
-                Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets"
+                Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
 
             if (
                 Config.get("Message Quota", {}).get("quota", 0) != 0
                 or Config.get("Tickets", {}).get("quota", 0) != 0
             ):
-                Description += f"\n {replybottom} **Status:** {emoji}\n\n"
+                Description += f"{replybottom} **Status:** {emoji}\n\n"
+
 
             if i % 9 == 0:
                 embed = discord.Embed(
