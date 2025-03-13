@@ -256,7 +256,7 @@ class SingelPanelCustomisation(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         view = discord.ui.View()
         view.add_item(EmbedSelection(interaction.user, "Panel", self.name))
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(view=view)
 
     @discord.ui.button(label="Customise Button", emoji="<:Button:1223063359184830494>")
     async def CustomiseButton(
@@ -645,7 +645,7 @@ class MultiPanelCustomisation(discord.ui.View):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         view = discord.ui.View()
         view.add_item(EmbedSelection(interaction.user, "Multi", self.name))
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.response.send_message(view=view)
 
     @discord.ui.button(label="Manage Panels", emoji="<:MultiPanel:1340741183579885690>")
     async def ManagePanels(
@@ -836,12 +836,17 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
     await interaction.client.db["Panels"].update_one(
         {"guild": interaction.guild.id, "name": d.get("name")}, Update, upsert=True
     )
+    
 
-    await interaction.response.edit_message(
+    await interaction.response.send_message(
         content=f"{tick} **{interaction.user.display_name}**, succesfully updated `{d.get('option')}` embed.",
         embed=None,
-        view=None,
+        ephemeral=True
     )
+    try:
+        await interaction.message.delete()
+    except (discord.NotFound, discord.Forbidden):
+        return
 
 
 class EmbedSelection(discord.ui.Select):
