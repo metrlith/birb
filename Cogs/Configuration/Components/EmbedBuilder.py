@@ -4,6 +4,7 @@ from utils.emojis import *
 
 from dotenv import load_dotenv
 from utils.format import Replace
+from utils.format import IsSeperateBot
 
 import discord
 

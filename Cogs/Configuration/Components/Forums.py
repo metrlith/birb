@@ -50,7 +50,7 @@ class ForumsOptions(discord.ui.Select):
                 embed.description == "> There are no custom commands!"
 
             view = ForumManagent(self.author)
-            if await IsSeperateBot:
+            if IsSeperateBot():
                 view.add.label = "Add"
                 view.edit.label = "Edit"
                 view.remove.label = "Delete"

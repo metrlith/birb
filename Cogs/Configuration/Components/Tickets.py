@@ -495,7 +495,7 @@ class SingelPanelCustomisation(discord.ui.View):
         )
 
         view = TicketForms(interaction.user, self.name, self.FormEmbed)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
             view.AddQuestion.label = f"Add ({len(custom.get('Questions', []))}/5)"
         
@@ -1058,7 +1058,7 @@ class DeleteQuestionSelect(discord.ui.Select):
             {"$set": Config},
         )
         view = TicketForms(self.author, self.name, self.embed)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
             view.AddQuestion.label = f"Add ({len(Config.get('Questions', []))}/5)"
         
@@ -1156,7 +1156,7 @@ class Question(discord.ui.Modal):
             {"$set": Config},
         )
         view = TicketForms(self.author, self.panel, self.embed)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.DeleteQuestion.label = "Delete"
             view.AddQuestion.label = f"Add ({len(Config.get('Questions', []))}/5)"
         

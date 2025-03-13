@@ -14,11 +14,11 @@ def DefaultTypes():
     ]
 
 
-async def IsSeperateBot():
+def IsSeperateBot():
     return any([os.getenv("CUSTOM_GUILD"), os.getenv("DEFAULT_ALLOWED_SERVERS"), os.getenv("REMOVE_EMOJIS")])
 
 async def PaginatorButtons(extra: list = None):
-    Sep = await IsSeperateBot()
+    Sep = IsSeperateBot()
     emojis = {
         "first": "<:chevronsleft:1220806428726661130>",
         "previous": "<:chevronleft:1220806425140531321>",

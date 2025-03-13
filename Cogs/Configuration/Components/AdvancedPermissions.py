@@ -11,7 +11,7 @@ class PermissionsDropdown(discord.ui.Select):
                 discord.SelectOption(
                     label="Manage Permissions",
                     value="Manage Permissions",
-                    emoji="<:Permissions:1207365901956026368>",
+                    emoji="<:Permissions:1207365901956026368>" if IsSeperateBot() else None,
                 )
             ],
         )
@@ -25,7 +25,7 @@ class PermissionsDropdown(discord.ui.Select):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         view = ManagePermissions(interaction.user)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.Add.label = "Add"
             view.Remove.label = "Remove"
         await interaction.response.send_message(

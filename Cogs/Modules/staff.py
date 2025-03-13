@@ -400,7 +400,7 @@ class quota(commands.Cog):
 
         await ctx.defer()
 
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
@@ -542,7 +542,7 @@ class quota(commands.Cog):
             return
         await ctx.defer()
 
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
@@ -704,13 +704,13 @@ class quota(commands.Cog):
                 else (
                     (
                         "Met"
-                        if await IsSeperateBot()
+                        if IsSeperateBot()
                         else "<:status_green:1227365520857104405>"
                     )
                     if MessageData.get("message_count") >= Quota
                     else (
                         "Not Met"
-                        if await IsSeperateBot()
+                        if IsSeperateBot()
                         else "<:status_red:1227365495376711700>"
                     )
                 )
@@ -882,7 +882,7 @@ class quota(commands.Cog):
             return
 
         await ctx.defer()
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()

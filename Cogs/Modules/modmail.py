@@ -253,7 +253,7 @@ class Modmail(commands.Cog):
             return
         result = await result.to_list(length=750)
 
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()

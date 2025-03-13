@@ -458,7 +458,7 @@ class NetWorkPage(discord.ui.View):
         embed.set_author(name=server_name, icon_url=server_icon)
         embed.set_thumbnail(url=server_icon)
         view = ShardsPage(self.client, self.author)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.left.label = "◀"
             view.Right.label = "▶"
         await interaction.response.edit_message(
@@ -511,7 +511,7 @@ class ShardsPage(discord.ui.View):
         embed.set_author(name=server_name, icon_url=server_icon)
         embed.set_thumbnail(url=server_icon)
         view = NetWorkPage(self.client, interaction.user)
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.left.label = "◀"
             view.Right.label = "▶"
         await interaction.response.edit_message(

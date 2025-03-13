@@ -159,7 +159,7 @@ class InfractionOption(discord.ui.Select):
                     embed=NoPremium(), view=Support()
                 )
             view = ManageReasons(author=self.author, message=interaction.message)
-            if await IsSeperateBot():
+            if IsSeperateBot():
                 view.RemoveReason.label = "Remove"
                 view.AddReason.label = "Add"
 

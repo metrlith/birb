@@ -91,7 +91,7 @@ class On_suggestions(commands.Cog):
             }
             embed = await DisplayEmbed(custom, author, replacements=replacements)
         view = Voting()
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.settings.label = "Settings"
         msg = await channel.send(embed=embed, view=view)
         await self.client.db["suggestions"].update_one(

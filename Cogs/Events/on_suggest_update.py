@@ -60,7 +60,7 @@ class On_suggestions_edit(commands.Cog):
             {"guild_id": guild.id, "type": action}
         )
         view = Voting()
-        if await IsSeperateBot():
+        if IsSeperateBot():
             view.settings.label = "Settings"
         if not custom:
 

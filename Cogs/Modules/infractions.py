@@ -383,7 +383,7 @@ class Infractions(commands.Cog):
             )
             return
 
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()

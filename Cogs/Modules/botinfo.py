@@ -12,7 +12,7 @@ class botinfo(commands.Cog):
         await ctx.defer()
 
 
-        if await IsSeperateBot():
+        if IsSeperateBot():
             msg = await ctx.send(
                 embed=discord.Embed(
                     description="Loading...", color=discord.Color.dark_embed()
