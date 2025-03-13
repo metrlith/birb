@@ -51,7 +51,7 @@ class SuspensionOptions(discord.ui.Select):
             )
         elif self.values[0] == "Customise Embed":
             try:
-                custom = await interaction.client.db['Customisation'].find_one(
+                custom = await interaction.client.db["Customisation"].find_one(
                     {"guild_id": interaction.guild.id, "type": "Suspension"}
                 )
                 embed = None
@@ -190,7 +190,7 @@ async def FinalFunction2(interaction: discord.Interaction, d=None):
             },
         }
 
-    await interaction.client.db['Customisation'].update_one(
+    await interaction.client.db["Customisation"].update_one(
         {"guild_id": interaction.guild.id, "type": "Suspension"},
         {"$set": data},
         upsert=True,
@@ -242,8 +242,12 @@ class SuspensionChannel(discord.ui.ChannelSelect):
             config["Suspension"] = {}
 
         config["Suspension"]["channel"] = self.values[0].id if self.values else None
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
 
         await interaction.response.edit_message(content=None)
         try:

@@ -654,6 +654,7 @@ class APIRoutes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
+
         if time:
             Time: datetime = await strtotime(time, back=True)
             if not Time:
@@ -661,21 +662,22 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuota = (
-            await self.client.db["Tickets"]
-            .find(
-                {
-                    "GuildID": server,
-                    "claimed.claimer": discord_id,
-                    "opened": {"$gte": Time.timestamp() if time else 0},
-                }
+            TicketQuota = (
+                await self.client.db["Tickets"]
+                .find(
+                    {
+                        "GuildID": server,
+                        "claimed.claimer": discord_id,
+                        "opened": {"$gte": Time.timestamp()},
+                    }
+                )
+                .to_list(length=None)
             )
-            .to_list(length=None)
-        )
-        if not TicketQuota:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="No tickets found"
+        else:
+            TicketQuotaVar = await self.client.db["Ticket Quota"].find_one(
+                {"GuildID": server, "UserID": discord_id}
             )
+            TicketQuota = TicketQuotaVar if TicketQuotaVar else {}
 
         guild = self.client.get_guild(server)
         if not guild:
@@ -698,17 +700,10 @@ class APIRoutes:
                 detail="User does not have the required permissions",
             )
 
-        for ticket in TicketQuota:
-            ticket["_id"] = str(ticket["_id"])
+        ClaimedTickets = (
+            len(TicketQuota) if time else TicketQuota.get("ClaimedTickets", 0)
+        )
 
-        ClaimedTickets = len(TicketQuota)
-        if not time:
-            TicketQuotaVar = await self.client.db["Ticket Quota"].find_one(
-                {"GuildID": server, "UserID": discord_id}
-            )
-            ClaimedTickets = (
-                TicketQuotaVar.get("ClaimedTickets") if TicketQuotaVar else 0
-            )
         return {
             "status": "success",
             "ClaimedTickets": ClaimedTickets,
@@ -764,8 +759,10 @@ class APIRoutes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
             )
+
         if not self.HandleRatelimits(auth):
             return
+
         if time:
             Time: datetime = await strtotime(time, back=True)
             if not Time:
@@ -773,13 +770,17 @@ class APIRoutes:
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid timeframe"
                 )
 
-        TicketQuotas = (
-            await self.client.db["Tickets"]
-            .find(
-                {"GuildID": server, "opened": {"$gte": Time.timestamp() if time else 0}}
+            TicketQuotas = (
+                await self.client.db["Tickets"]
+                .find({"GuildID": server, "opened": {"$gte": Time.timestamp()}})
+                .to_list(length=None)
             )
-            .to_list(length=None)
-        )
+        else:
+            TicketQuotas = (
+                await self.client.db["Ticket Quota"]
+                .find({"GuildID": server})
+                .to_list(length=None)
+            )
 
         if not TicketQuotas:
             raise HTTPException(
@@ -795,26 +796,34 @@ class APIRoutes:
         leaderboard_data = {}
 
         for ticket in TicketQuotas:
-            claimer_id = ticket.get("claimed", {}).get("claimer")
+            if time:
+                claimer_id = ticket.get("claimed", {}).get("claimer")
+            else:
+                claimer_id = ticket.get("UserID")
+
             if not claimer_id:
                 continue
 
             if claimer_id not in leaderboard_data:
                 leaderboard_data[claimer_id] = 0
-            leaderboard_data[claimer_id] += 1
+
+            leaderboard_data[claimer_id] += (
+                ticket.get("ClaimedTickets", 1) if not time else 1
+            )
 
         leaderboard = []
 
         for user_id, claimed_count in leaderboard_data.items():
-            member = guild.get_member(user_id)
+            member = guild.get_member(int(user_id))
             if not member:
                 try:
-                    member = await guild.fetch_member(user_id)
+                    member = await guild.fetch_member(int(user_id))
                 except (discord.Forbidden, discord.NotFound):
                     continue
 
             if not await check_admin_and_staff(guild, member):
                 continue
+
             leaderboard.append(
                 {
                     "username": member.name,
