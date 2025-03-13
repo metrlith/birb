@@ -10,9 +10,6 @@ import discord
 
 
 load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Customisation = DB["Customisation"]
 
 
 async def HandleButton(data: dict):
@@ -182,9 +179,10 @@ async def DisplayEmbed(data: dict, user: discord.User = None, replacements: dict
     except (ValueError, TypeError) as e:
         embed.color = discord.Color.dark_embed()
 
-    if (embed.title is None or embed.title == "") and (embed.description is None or embed.description == ""):
+    if (embed.title is None or embed.title == "") and (
+        embed.description is None or embed.description == ""
+    ):
         embed.description = "You need a Title & Description"
-
 
     return embed
 
@@ -252,7 +250,7 @@ class NoEmbed(discord.ui.View):
     @discord.ui.button(
         label="Button",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Button:1223063359184830494>",
+        emoji="<:Button:1223063359184830494>" if not IsSeperateBot else None,
     )
     async def Buttons(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -306,7 +304,7 @@ class NoEmbed(discord.ui.View):
     @discord.ui.button(
         label="Content",
         style=discord.ButtonStyle.gray,
-        emoji="<:MEssage:1297957000440844382>",
+        emoji="<:MEssage:1297957000440844382>" if not IsSeperateBot else None,
     )
     async def Content(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -322,7 +320,7 @@ class NoEmbed(discord.ui.View):
     @discord.ui.button(
         label="Permissions",
         style=discord.ButtonStyle.grey,
-        emoji="<:Permissions:1207365901956026368>",
+        emoji="<:Permissions:1207365901956026368>" if not IsSeperateBot else None,
     )
     async def Permissions(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -340,7 +338,7 @@ class NoEmbed(discord.ui.View):
     @discord.ui.button(
         label="Reset",
         style=discord.ButtonStyle.red,
-        emoji="<:Reset:1297957894624510093>",
+        emoji="<:Reset:1297957894624510093>" if not IsSeperateBot else None,
     )
     async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
@@ -414,7 +412,7 @@ class NoEmbed(discord.ui.View):
     @discord.ui.button(
         label="Finish",
         style=discord.ButtonStyle.green,
-        emoji="<:Save:1223293419678470245>",
+        emoji="<:Save:1223293419678470245>" if not IsSeperateBot else None,
     )
     async def Finished(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -458,7 +456,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Remove Embed",
         style=discord.ButtonStyle.red,
-        emoji="<:Subtract:1229040262161109003>",
+        emoji="<:Subtract:1229040262161109003>" if not IsSeperateBot else None,
         row=0,
     )
     async def RemoveEmbed(
@@ -494,7 +492,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Content",
         style=discord.ButtonStyle.gray,
-        emoji="<:MEssage:1297957000440844382>",
+        emoji="<:MEssage:1297957000440844382>" if not IsSeperateBot else None,
         row=0,
     )
     async def Content(
@@ -511,7 +509,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Button",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Button:1223063359184830494>",
+        emoji="<:Button:1223063359184830494>" if not IsSeperateBot else None,
     )
     async def Buttons(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -570,7 +568,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Title",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Application:1224722901328986183> ",
+        emoji="<:Application:1224722901328986183>" if not IsSeperateBot else None,
         row=0,
     )
     async def Title(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -591,7 +589,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Description",
         style=discord.ButtonStyle.blurple,
-        emoji="<:description:1223062677572812920> ",
+        emoji="<:description:1223062677572812920>" if not IsSeperateBot else None,
         row=0,
     )
     async def Desc(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -612,7 +610,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Thumbnail",
         style=discord.ButtonStyle.blurple,
-        emoji="<:image:1223062544135094363>",
+        emoji="<:image:1223062544135094363>"  if not IsSeperateBot else None,
         row=1,
     )
     async def Thu(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -636,7 +634,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Image",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Image:1223063095417765938> ",
+        emoji="<:Image:1223063095417765938>" if not IsSeperateBot else None,
         row=1,
     )
     async def Im(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -660,7 +658,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Author",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Author:1297956338738925722>",
+        emoji="<:Author:1297956338738925722>" if not IsSeperateBot else None,
         row=1,
     )
     async def Au(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -689,7 +687,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Color",
         style=discord.ButtonStyle.blurple,
-        emoji="<:tag:1234998802948034721>",
+        emoji="<:tag:1234998802948034721>" if not IsSeperateBot else None,
         row=1,
     )
     async def Colo(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -722,7 +720,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Ping",
         style=discord.ButtonStyle.blurple,
-        emoji="<:Ping:1298301862906298378>",
+        emoji="<:Ping:1298301862906298378>" if not IsSeperateBot else None,
         row=2,
     )
     async def Ping(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -739,7 +737,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Forums Channel",
         style=discord.ButtonStyle.blurple,
-        emoji="<:tag:1234998802948034721>",
+        emoji="<:tag:1234998802948034721>" if not IsSeperateBot else None,
         row=2,
     )
     async def ForumsChannel(
@@ -759,7 +757,7 @@ class Embed(discord.ui.View):
         label="Permissions",
         style=discord.ButtonStyle.grey,
         row=2,
-        emoji="<:Permissions:1207365901956026368>",
+        emoji="<:Permissions:1207365901956026368>" if not IsSeperateBot else None,
     )
     async def Permissions(
         self, interaction: discord.Interaction, button: discord.ui.Button
@@ -777,7 +775,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Reset",
         style=discord.ButtonStyle.red,
-        emoji="<:Reset:1297957894624510093>",
+        emoji="<:Reset:1297957894624510093>" if not IsSeperateBot else None,
         row=2,
     )
     async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -927,7 +925,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Finish",
         style=discord.ButtonStyle.green,
-        emoji="<:Save:1223293419678470245>",
+        emoji="<:Save:1223293419678470245>" if not IsSeperateBot else None,
         row=3,
     )
     async def Finished(

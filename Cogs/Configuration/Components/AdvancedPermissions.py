@@ -29,7 +29,7 @@ class PermissionsDropdown(discord.ui.Select):
             view.Add.label = "Add"
             view.Remove.label = "Remove"
         await interaction.response.send_message(
-            view=ManagePermissions(interaction.user), ephemeral=True
+            view=view, ephemeral=True
         )
 
 
