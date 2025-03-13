@@ -386,7 +386,7 @@ class APIRoutes:
                     for role in guild.roles
                 ],
                 "isAdmin": member.guild_permissions.administrator,
-                "isManager": await isStaff(guild, member),
+                "isManager": guild.owner_id == member.id or await isStaff(guild, member) or member.guild_permissions.administrator,
             }
 
         tasks = [Process(GuilID) for GuilID in guilds]
