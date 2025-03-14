@@ -60,7 +60,7 @@ class on_infraction_log(commands.Cog):
 
         if action == "create":
             E.title = "Infraction Created"
-            E.description = f"> **ID:** `{inf.get('random_string')}`\n**Action:** {inf.get('action')}\n> **Reason:** {inf.get('reason')}\n> **Notes:** {inf.get('notes', 'N/A')}"
+            E.description = f"> **ID:** `{inf.get('random_string')}`\n> **Action:** {inf.get('action')}\n> **Reason:** {inf.get('reason')}\n> **Notes:** {inf.get('notes', 'N/A')}"
             if inf.get("Updated"):
                 UP = inf.get("Updated", {})
                 if UP.get("AddedRoles"):
