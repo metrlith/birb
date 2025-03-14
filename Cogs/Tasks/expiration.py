@@ -37,7 +37,6 @@ class expiration(commands.Cog):
             await self.client.db["infractions"].find(filter).to_list(length=None)
         )
 
-        print(infractions)
         if not infractions:
             return
         for infraction in infractions:
