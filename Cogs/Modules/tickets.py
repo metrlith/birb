@@ -175,9 +175,9 @@ class Button(discord.ui.Button):
                 "pticket_open", t.inserted_id, TPanel.get("name")
             )
             TMSG: discord.Message = await interaction.followup.send(
-                content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
+                content=f"<a:Loading:1167074303905386587> **{interaction.user.display_name}**, hold on while I open the ticket.",
                 ephemeral=True,
-            )
+            )            
         else:
             await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, no matching panel found for the given custom ID.",
@@ -187,7 +187,7 @@ class Button(discord.ui.Button):
         await TicketError(interaction, t, TMSG)
 
 
-async def TicketError(interaction: discord.Interaction, t: dict, TMSG: discord.Message):
+async def TicketError(interaction: discord.Interaction, t: dict, tmsg: discord.Message):
     attempts = 10
     while True:
         attempts -= 1
@@ -202,7 +202,8 @@ async def TicketError(interaction: discord.Interaction, t: dict, TMSG: discord.M
                 color=discord.Color.red(),
             )
             try:
-                await interaction.edit_original_response(
+                await interaction.followup.edit_message(
+                    tmsg.id,
                     content=None,
                     embed=embed,
                     view=Support(),
@@ -214,8 +215,27 @@ async def TicketError(interaction: discord.Interaction, t: dict, TMSG: discord.M
             except discord.NotFound:
 
                 pass
-
-        if attempts > 10:
+        if result.get("ChannelID", None):
+            try:
+                url = f"https://discord.com/channels/{interaction.guild.id}/{result.get('ChannelID')}"
+                await interaction.followup.edit_message(
+                    tmsg.id,
+                    content=f"{tick} **{interaction.user.display_name}**, your ticket has been successfully opened!",
+                    view=discord.ui.View().add_item(
+                        discord.ui.Button(
+                            label="Jump To", style=discord.ButtonStyle.link, url=url
+                        )
+                    ),
+                )
+                break
+            except discord.NotFound:
+                pass
+        if attempts > 20:
+            await interaction.followup.edit_message(
+                tmsg.id,
+                content=f"{crisis} **{interaction.user.display_name}**, the ticket didn't open.",
+                view=Support(),
+            )
             break
 
 
