@@ -20,20 +20,30 @@ class expiration(commands.Cog):
 
     @tasks.loop(minutes=30, reconnect=True)
     async def CheckInfractions(self):
-        if not self.client.infractions_maintenance:
+        if self.client.infractions_maintenance:
             return
-        filter = {}
+
+        filter = {
+            "expiration": {"$lte": datetime.utcnow()},
+            "expired": {"$exists": False},
+        }
         if environment == "custom":
-            filter = {"guild_id": int(guildid)}
+            filter = {
+                "guild_id": int(guildid),
+                "expiration": {"$lte": datetime.utcnow()},
+                "expired": {"$exists": False},
+            }
         infractions = (
-            await self.client.db["Infractions"].find(filter).to_list(length=None)
+            await self.client.db["infractions"].find(filter).to_list(length=None)
         )
+
+        print(infractions)
         if not infractions:
             return
         for infraction in infractions:
-            if not infraction.get("expires_at"):
+            if not infraction.get("expiration"):
                 continue
-            if infraction.get("expires_at") <= datetime.utcnow():
+            if infraction.get("expiration") <= datetime.utcnow():
                 ActionType = await self.client.db["infractiontypeactions"].find_one(
                     {
                         "name": infraction.get("type"),
@@ -43,8 +53,17 @@ class expiration(commands.Cog):
                 if ActionType and ActionType.get("channel"):
                     Channel = self.client.get_channel(ActionType.get("channel"))
                 else:
+                    Config = await self.client.config.find_one(
+                        {"_id": infraction.get("guild_id")}
+                    )
+                    if not Config:
+                        return
+                    if not Config.get("Infraction", {}).get("channel", None):
+                        return
 
-                    Channel = self.client.get_channel(infraction.get("channel_id"))
+                    Channel = self.client.get_channel(
+                        int(Config.get("Infraction", {}).get("channel"))
+                    )
                 if not Channel:
                     continue
                 try:
@@ -61,6 +80,16 @@ class expiration(commands.Cog):
                     await message.edit(
                         embeds=[embed, exp],
                     )
+                    staff = self.client.get_user(int(infraction.get("staff")))
+                    if staff:
+                        exp.timestamp = discord.utils.utcnow()
+                        exp.add_field(
+                            name="Details",
+                            value=f"> **Action:** {infraction.get('action')}\n> **Reason:** {infraction.get('reason')}",
+                        )
+                        exp.set_footer(text=f"ID: {infraction.get('random_string')}")
+                        await staff.send(embed=exp)
+
                 except (discord.HTTPException, discord.NotFound):
                     pass
                 await self.client.db["Infractions"].update_one(
