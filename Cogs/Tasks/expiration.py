@@ -43,6 +43,9 @@ class expiration(commands.Cog):
             if not infraction.get("expiration"):
                 continue
             if infraction.get("expiration") <= datetime.utcnow():
+                await self.client.db["infractions"].update_one(
+                    {"_id": infraction.get("_id")}, {"$set": {"expired": True}}
+                )                
                 ActionType = await self.client.db["infractiontypeactions"].find_one(
                     {
                         "name": infraction.get("type"),
@@ -91,9 +94,7 @@ class expiration(commands.Cog):
 
                 except (discord.HTTPException, discord.NotFound):
                     pass
-                await self.client.db["Infractions"].update_one(
-                    {"_id": infraction.get("_id")}, {"$set": {"expired": True}}
-                )
+
 
                 del infraction
         del infractions
