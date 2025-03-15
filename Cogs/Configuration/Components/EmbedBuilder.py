@@ -786,7 +786,7 @@ class Embed(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            await interaction.client.config.delete_one(
+            await interaction.client.db['Customisation'].delete_one(
                 {"guild_id": interaction.guild.id, "type": self.typed}
             )
             if self.typed == "Promotions":
