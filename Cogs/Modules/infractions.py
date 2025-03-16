@@ -60,7 +60,7 @@ async def InfractionEmbed(self: commands.Bot, infraction: dict):
             f"> **Staff:** <@{infraction.get('staff')}>\n"
             f"> **Action:** {infraction.get('action')}\n"
             f"> **Reason:** {infraction.get('reason')}\n"
-        )[:2048],
+        )[:1024],
     )
     embed.set_author(name=f"Infraction | {infraction['random_string']} {voided}")
 
