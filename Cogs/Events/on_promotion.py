@@ -378,10 +378,13 @@ class on_promotion(commands.Cog):
         else:
             embed = DefaultEmbed(PromotionData, staff, manager)
         try:
-            await channel.send(embed=embed, view=view, content=staff.mention)
+            msg = await channel.send(embed=embed, view=view, content=staff.mention)
         except (discord.Forbidden, discord.HTTPException, discord.NotFound):
             return
-
+        await self.client.db["promotions"].update_one(
+                {"_id": objectid},
+                {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
+            )
         consreult = await self.client.db["consent"].find_one({"user_id": staff.id})
         if not consreult or consreult.get("promotionalert") is not False:
             try:
