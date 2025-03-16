@@ -221,7 +221,7 @@ class APIRoutes:
             )
 
         perms = await isAdmin(guild, member)
-        return {"status": "success", "isAdmin": perms}
+        return {"status": "success", "isAdmin": perms, "IsDashboardUser": member.guild_permissions.administrator}
 
     async def DELETE_delinfraction(self, auth: str, server: int, id: str):
         if not await RestrictedValidation(auth):
@@ -384,6 +384,13 @@ class APIRoutes:
                         "name": role.name,
                     }
                     for role in guild.roles
+                ],
+                "channels": [
+                    {
+                        "id": str(channel.id),
+                        "name": channel.name,
+                    }
+                    for channel in guild.channels                    
                 ],
                 "isAdmin": member.guild_permissions.administrator,
                 "isManager": guild.owner_id == member.id or await isStaff(guild, member) or member.guild_permissions.administrator,
