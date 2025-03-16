@@ -58,21 +58,17 @@ async def InfractionEmbed(self: commands.Bot, infraction: dict):
         f"> **Action:** {infraction.get('action')}\n"
         f"> **Reason:** {infraction.get('reason')}\n"
     )
-    if len(value) > 1021:
+
+    if len(value) > 1024:
         value = value[:1021] + "..."
-        
-    embed.add_field(
-        name=f"Case Information",
-        value=value[:1024]
 
-    )
+    embed.add_field(name="Case Information", value=value)
+
     embed.set_author(name=f"Infraction | {infraction['random_string']} {voided}")
-
-    embed.add_field(
-        name="Additional Information",
-        value=f"> **Notes:** {infraction.get('notes')}{expiration}{jump_url}",
-        inline=False,
-    )
+    value = f"> **Notes:** {infraction.get('notes')}{expiration}{jump_url}"
+    if len(value) > 1024:
+        value = value[:1021] + "..."
+    embed.add_field(name="Additional Information", inline=False, value=value)
     if Staff and Admin:
         embed.set_footer(
             text=f"Created by @{Admin.display_name}", icon_url=Admin.display_avatar
