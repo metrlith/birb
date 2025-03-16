@@ -221,7 +221,11 @@ class APIRoutes:
             )
 
         perms = await isAdmin(guild, member)
-        return {"status": "success", "isAdmin": perms, "IsDashboardUser": member.guild_permissions.administrator}
+        return {
+            "status": "success",
+            "isAdmin": perms,
+            "IsDashboardUser": member.guild_permissions.administrator,
+        }
 
     async def DELETE_delinfraction(self, auth: str, server: int, id: str):
         if not await RestrictedValidation(auth):
@@ -390,10 +394,12 @@ class APIRoutes:
                         "id": str(channel.id),
                         "name": channel.name,
                     }
-                    for channel in guild.channels                    
+                    for channel in guild.channels
                 ],
                 "isAdmin": member.guild_permissions.administrator,
-                "isManager": guild.owner_id == member.id or await isStaff(guild, member) or member.guild_permissions.administrator,
+                "isManager": guild.owner_id == member.id
+                or await isStaff(guild, member)
+                or member.guild_permissions.administrator,
             }
 
         tasks = [Process(GuilID) for GuilID in guilds]
@@ -416,11 +422,26 @@ class APIRoutes:
             )
 
         if stringify:
-            for key in Config:
-                if isinstance(Config[key], list):
-                    Config[key] = [str(element) for element in Config[key]]
-                elif isinstance(Config[key], int):
-                    Config[key] = str(Config[key])
+
+            def stringify_dict(d):
+                if isinstance(d, dict):
+                    for key, value in d.items():
+                        if isinstance(value, dict):
+                            stringify_dict(value)
+                        elif isinstance(value, list):
+                            d[key] = [
+                                (
+                                    str(element)
+                                    if not isinstance(element, dict)
+                                    else stringify_dict(element)
+                                )
+                                for element in value
+                            ]
+                        else:
+                            d[key] = str(value)
+                return d
+
+            Config = stringify_dict(Config)
 
         return {"status": "success", "config": Config}
 
@@ -448,16 +469,40 @@ class APIRoutes:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Server not found"
             )
         if unstringify:
-            for key in body:
-                if isinstance(body[key], str):
-                    if body[key].isdigit():
-                        body[key] = int(body[key])
-                    else:
-                        try:
 
-                            body[key] = ast.literal_eval(body[key])
-                        except (ValueError, SyntaxError):
-                            pass
+            def unstringify_dict(d):
+                if isinstance(d, dict):
+                    for key, value in d.items():
+                        if isinstance(value, str):
+                            if value.isdigit():
+                                d[key] = int(value)
+                            else:
+                                try:
+                                    d[key] = ast.literal_eval(value)
+                                except (ValueError, SyntaxError):
+                                    pass
+                        elif isinstance(value, list):
+                            d[key] = [
+                                (
+                                    unstringify_dict(item)
+                                    if isinstance(item, dict)
+                                    else (
+                                        int(item)
+                                        if isinstance(item, str) and item.isdigit()
+                                        else (
+                                            ast.literal_eval(item)
+                                            if isinstance(item, str)
+                                            else item
+                                        )
+                                    )
+                                )
+                                for item in value
+                            ]
+                        elif isinstance(value, dict):
+                            unstringify_dict(value)
+                return d
+
+            config = unstringify_dict(body)
         await config.update_one({"_id": server}, {"$set": body}, upsert=True)
         return {"status": "success"}
 
