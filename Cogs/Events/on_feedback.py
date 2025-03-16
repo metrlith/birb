@@ -44,7 +44,7 @@ class OnFEEDABCKS(commands.Cog):
                 f"[🏠 on_feedback] @{guild.name} the feedback channel can't be found. [2]"
             )
             return
-        custom = await self.client.db['feedback'].find_one(
+        custom = await self.client.db['Customisation'].find_one(
             {"guild_id": guild.id, "type": "Feedback"}
         )
         if not custom:
