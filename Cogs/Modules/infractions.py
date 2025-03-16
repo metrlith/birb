@@ -52,15 +52,19 @@ async def InfractionEmbed(self: commands.Bot, infraction: dict):
     except (discord.NotFound, discord.HTTPException):
         Staff = None
         Admin = None
-
+    value = (
+        f"> **Manager:** <@{infraction.get('management')}>\n"
+        f"> **Staff:** <@{infraction.get('staff')}>\n"
+        f"> **Action:** {infraction.get('action')}\n"
+        f"> **Reason:** {infraction.get('reason')}\n"
+    )
+    if len(value) > 1021:
+        value = value[:1021] + "..."
+        
     embed.add_field(
         name=f"Case Information",
-        value=(
-            f"> **Manager:** <@{infraction.get('management')}>\n"
-            f"> **Staff:** <@{infraction.get('staff')}>\n"
-            f"> **Action:** {infraction.get('action')}\n"
-            f"> **Reason:** {infraction.get('reason')}\n"
-        )[:1024],
+        value=value[:1024]
+
     )
     embed.set_author(name=f"Infraction | {infraction['random_string']} {voided}")
 
