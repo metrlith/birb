@@ -331,6 +331,8 @@ class Depl(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        if not before.guild.id == 1092976553752789054:
+            return
         if isinstance(before, discord.Member) and isinstance(after, discord.Member):
             role_name = "Custom Branding"
 
