@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from utils.emojis import *
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 
+import pymongo
+
 import typing
 from Cogs.Events.on_ticket import TicketPermissions
 from discord import app_commands
@@ -14,6 +16,8 @@ import asyncio
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotConfigured
 from utils.autocompletes import CloseReason
+from utils.permissions import check_admin_and_staff
+from utils.format import ordinal, PaginatorButtons
 
 
 async def AccessControl(interaction: discord.Interaction, Panel: dict):
@@ -177,7 +181,7 @@ class Button(discord.ui.Button):
             TMSG: discord.Message = await interaction.followup.send(
                 content=f"<a:Loading:1167074303905386587> **{interaction.user.display_name}**, hold on while I open the ticket.",
                 ephemeral=True,
-            )            
+            )
         else:
             await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, no matching panel found for the given custom ID.",
@@ -279,7 +283,7 @@ class TicketsPub(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    tickets = app_commands.Group(name="tickets", description="Ticket Commands")
+    tickets = app_commands.Group(name="ticket", description="Ticket Commands")
 
     async def PanelAutoComplete(
         ctx: commands.Context, interaction: discord.Interaction, current: str
@@ -371,6 +375,9 @@ class TicketsPub(commands.Cog):
                 if not sub:
                     continue
                 sub = sub.get("Button")
+                if not sub:
+                    continue
+
                 buttons.append(
                     {
                         "label": sub.get("label"),
@@ -525,6 +532,124 @@ class TicketsPub(commands.Cog):
             {"user": user.id, "guild": interaction.guild.id}
         )
 
+
+    @tickets.command(description="View the claimed tickets leaderboard.")
+    async def leaderboard(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        
+        if not await TicketPermissions(interaction):
+            return await interaction.followup.send(
+                content=f"{no} You don't have permission to use this command."
+            )
+        
+        if not await ModuleCheck(interaction.guild.id, "Tickets"):
+            return await interaction.followup.send(
+                embed=ModuleNotEnabled(),
+                view=Support(),
+                ephemeral=True,
+            )
+        
+        msg = await interaction.followup.send(
+            embed=discord.Embed(
+                description="<a:astroloading:1245681595546079285>",
+                color=discord.Color.dark_embed(),
+            )
+        )
+        
+        ticket_users = (
+            await interaction.client.db["Tickets Quota"]
+            .find({"GuildID": interaction.guild.id})
+            .sort("ClaimedTickets", pymongo.DESCENDING)
+            .to_list(length=750)
+        )
+        
+        if not ticket_users:
+            return await msg.edit(
+                content=f"{no} **{interaction.user.display_name},** there haven't been any tickets claimed yet.",
+                embed=None,
+            )
+        
+        Config = await self.client.config.find_one({"_id": interaction.guild.id})
+        if not Config or not Config.get("Ticket Quota"):
+            return await msg.edit(embed=BotNotConfigured(), view=Support())
+        
+        quota = int(Config.get("Ticket Quota", {}).get("quota", 0))
+        YouProgress = next((user for user in ticket_users if user.get("UserID") == interaction.user.id), {})
+        YourPlace = self.GetPlace(ticket_users, interaction.user)
+        YourTickets = YouProgress.get("ClaimedTickets", 0)
+        YourLOA = any(role.id == Config.get("LOA", {}).get("role") for role in interaction.user.roles)
+        YourEmoji = (
+            "`LOA`" if YourLOA else (
+                "Met" if YourTickets >= quota else "Not Met"
+            )
+        )
+        
+        Description = ""
+        pages = []
+        i = 1
+        
+        for staff in ticket_users:
+            member = interaction.guild.get_member(staff.get("UserID"))
+            if not member:
+                try:
+                    member = await interaction.guild.fetch_member(staff.get("UserID"))
+                except (discord.HTTPException, discord.NotFound):
+                    continue
+            
+            if not await check_admin_and_staff(interaction.guild, member):
+                continue
+            
+            OnLOA = any(role.id == Config.get("LOA", {}).get("role") for role in member.roles)
+            emoji = "`LOA`" if OnLOA else ("Met" if staff.get("ClaimedTickets", 0) >= quota else "Not Met")
+            
+            Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
+            if quota != 0:
+                Description += f"{replybottom} **Status:** {emoji}\n\n"
+            
+            if i % 9 == 0:
+                embed = discord.Embed(
+                    title="Ticket Leaderboard",
+                    description=Description,
+                    color=discord.Color.dark_embed(),
+                )
+                embed.set_thumbnail(url=interaction.guild.icon)
+                embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon)
+                pages.append(embed)
+                Description = ""
+            
+            i += 1
+        
+        if Description.strip():
+            embed = discord.Embed(
+                title="Ticket Leaderboard",
+                description=Description,
+                color=discord.Color.dark_embed(),
+            )
+            embed.set_thumbnail(url=interaction.guild.icon)
+            embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon)
+            pages.append(embed)
+        
+        if YouProgress:
+            for embed in pages:
+                embed.add_field(
+                    name="<:tablerprogressbolt:1330500442551091210> Your Progress",
+                    value=(
+                        f"> **Tickets:** {YourTickets} tickets\n"
+                        f"> **Met:** {YourEmoji if YourEmoji else 'N/A'}\n"
+                        f"> **Place:** {ordinal(YourPlace) if YourPlace else 'N/A'}"
+                    ),
+                )
+        
+        paginator = await PaginatorButtons()
+        if pages:
+            await paginator.start(interaction, pages=pages[:45], msg=msg)
+        else:
+            await msg.edit(
+                content=f"{no} **{interaction.user.display_name},** there are no pages to display.",
+                embed=None,
+            )
+
+
     @tickets.command(description="Request to close a ticket.")
     @app_commands.autocomplete(reason=CloseReason)
     async def closerequest(self, interaction: discord.Interaction, reason: str = None):
@@ -574,6 +699,7 @@ class TicketsPub(commands.Cog):
                 "{time.relative}": f"<t:{int(datetime.utcnow().timestamp())}:R>",
                 "{time.absolute}": f"<t:{int(datetime.utcnow().timestamp())}:F>",
                 "{ticket.id}": str(Result.get("_id")),
+                "{reason}": reason,
             }
             embed = await DisplayEmbed(
                 p.get("Close Request", {}), replacements=replacements
@@ -581,7 +707,7 @@ class TicketsPub(commands.Cog):
         if not embed:
             embed = discord.Embed(
                 title="Close Confirmation",
-                description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.",
+                description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.\n\```{reason}```",
                 color=discord.Color.green(),
             )
 

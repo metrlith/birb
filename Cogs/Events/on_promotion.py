@@ -295,7 +295,9 @@ class on_promotion(commands.Cog):
         self.client = client
 
     @commands.Cog.listener()
-    async def on_promotion(self, objectid: ObjectId, Settings: dict):
+    async def on_promotion(
+        self, objectid: ObjectId, Settings: dict, edit: bool = False
+    ):
         PromotionData = await self.client.db["promotions"].find_one({"_id": objectid})
         Infraction = Promotion(PromotionData)
         guild = await self.client.fetch_guild(Infraction.guild_id)
@@ -377,16 +379,26 @@ class on_promotion(commands.Cog):
             )
         else:
             embed = DefaultEmbed(PromotionData, staff, manager)
-        try:
-            msg = await channel.send(embed=embed, view=view, content=staff.mention)
-        except (discord.Forbidden, discord.HTTPException, discord.NotFound):
-            return
+        if not edit:
+            try:
+                msg = await channel.send(embed=embed, view=view, content=staff.mention)
+            except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+                return
+        else:
+            try:
+                msg = await channel.fetch_message(PromotionData.get("msg_id"))
+
+                if not msg:
+                    return
+                await msg.edit(embed=embed, view=view)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                return
         await self.client.db["promotions"].update_one(
-                {"_id": objectid},
-                {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
-            )
+            {"_id": objectid},
+            {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
+        )
         consreult = await self.client.db["consent"].find_one({"user_id": staff.id})
-        if not consreult or consreult.get("promotionalert") is not False:
+        if not consreult or consreult.get("promotionalert") is not False and not edit:
             try:
                 await staff.send(
                     content=f"<:SmallArrow:1140288951861649418>From **@{guild.name}**",

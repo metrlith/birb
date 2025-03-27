@@ -29,34 +29,37 @@ from utils.HelpEmbeds import BotNotConfigured, ModuleNotEnabled, Support, Module
 
 
 class SetMessages(discord.ui.Modal, title="Set Message Count"):
-    def __init__(self, user_id):
+    def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
 
     message_count = discord.ui.TextInput(
         label="Message Count",
-        placeholder="Set the message count for this user",
+        placeholder="Enter the new message count",
+        style=discord.TextStyle.short,
+        required=True,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
             message_count_value = int(self.message_count.value)
-        except ValueError:
+            if message_count_value < 0:
+                raise ValueError("Message count cannot be negative.")
+        except ValueError as e:
             await interaction.response.send_message(
-                f"{no} Invalid input. Please enter a valid number for the message count.",
+                f"{no} Invalid input: {str(e)}. Please enter a valid non-negative integer.",
                 ephemeral=True,
             )
             return
 
-        guild_id = interaction.guild.id
-
-        filter = {"guild_id": guild_id, "user_id": self.user_id}
-        update_data = {"$set": {"message_count": message_count_value}}
         await interaction.client.qdb["messages"].update_one(
-            filter, update_data, upsert=True
+            {"guild_id": interaction.guild.id, "user_id": self.user_id},
+            {"$set": {"message_count": message_count_value}},
+            upsert=True,
         )
+
         await interaction.response.edit_message(
-            content=f"{tick} **{interaction.user.display_name}**, I've set the users messages as `{message_count_value}`.",
+            content=f"{tick} **{interaction.user.display_name}**, the user's message count has been updated to `{message_count_value}`.",
             embed=None,
             view=None,
         )
@@ -69,69 +72,83 @@ class AddMessage(discord.ui.Modal, title="Add Messages"):
 
     message_count = discord.ui.TextInput(
         label="Added Message Count",
-        placeholder="Will add onto their current message count",
+        placeholder="Enter the number of messages to add",
+        style=discord.TextStyle.short,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await interaction.client.qdb["messages"].find_one(
-            {"guild_id": interaction.guild.id, "user_id": self.user_id}
+        try:
+            message_count_value = int(self.message_count.value)
+            if message_count_value <= 0:
+                raise ValueError("Message count must be a positive integer.")
+        except ValueError:
+            await interaction.response.send_message(
+                f"{no} Invalid input. Please enter a valid positive number for the message count.",
+                ephemeral=True,
+            )
+            return
+        result = await interaction.client.qdb["messages"].update_one(
+            {"guild_id": interaction.guild.id, "user_id": self.user_id},
+            {"$inc": {"message_count": message_count_value}},
+            upsert=True,
         )
-        message_count_value = int(self.message_count.value)
-        guild_id = interaction.guild.id
-        if result:
-            message_count = int(result["message_count"]) + message_count_value
-            filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await interaction.client.qdb["messages"].update_one(
-                filter, {"$set": {"message_count": message_count}}
-            )
-            await interaction.response.edit_message(
-                content=f"{tick} **{interaction.user.display_name}**, I have added `{message_count_value}` messages to the staff member.",
-                embed=None,
-                view=None,
-            )
+        if result.upserted_id:
+            action_message = "added to a new record"
         else:
-            message_count = message_count_value
-            await interaction.client.qdb["messages"].insert_one(
-                {
-                    "guild_id": guild_id,
-                    "user_id": self.user_id,
-                    "message_count": message_count,
-                }
-            )
+            action_message = "added to the existing record"
+
+        await interaction.response.edit_message(
+            content=f"{tick} **{interaction.user.display_name}**, `{message_count_value}` messages have been successfully {action_message}.",
+            embed=None,
+            view=None,
+        )
 
 
 class RemovedMessage(discord.ui.Modal, title="Remove Messages"):
-    def __init__(self, user_id):
+    def __init__(self, user_id: int):
         super().__init__()
         self.user_id = user_id
 
-    message_count = discord.ui.TextInput(
+    MSGCount = discord.ui.TextInput(
         label="Removed Message Count",
-        placeholder="Will remove from their current message count",
+        placeholder="Enter the number of messages to remove",
+        style=discord.TextStyle.short,
+        required=True,
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        result = await interaction.client.qdb["messages"].find_one(
-            {"guild_id": interaction.guild.id, "user_id": self.user_id}
-        )
-        message_count_value = int(self.message_count.value)
+        try:
+            MSGCount = int(self.MSGCount.value)
+            if MSGCount <= 0:
+                raise ValueError("Message count must be a positive integer.")
+        except ValueError as e:
+            await interaction.response.send_message(
+                f"{no} **{interaction.user.display_name},** Please enter a valid positive integer.",
+                ephemeral=True,
+            )
+            return
+
         guild_id = interaction.guild.id
-        if result:
-            message_count = int(result["message_count"]) - message_count_value
-            filter = {"guild_id": guild_id, "user_id": self.user_id}
-            await interaction.client.qdb["messages"].update_one(
-                filter, {"$set": {"message_count": message_count}}
+        result = await interaction.client.qdb["messages"].find_one(
+            {"guild_id": guild_id, "user_id": self.user_id}
+        )
+        if not result:
+            await interaction.response.send_message(
+                f"{no} **{interaction.user.display_name}**,  No existing record found for this user. Unable to remove messages.",
+                ephemeral=True,
             )
-            await interaction.response.edit_message(
-                content=f"{tick} **{interaction.user.display_name}**, I have added `{message_count_value}` messages to the staff member.",
-                embed=None,
-                view=None,
-            )
-        else:
-            message_count = message_count_value
-            await interaction.client.qdb["messages"].insert_one(
-                {"guild_id": guild_id, "user_id": self.user_id, "message_count": 0}
-            )
+            return
+
+        NewMessageCount = max(0, int(result["message_count"]) - MSGCount)
+        await interaction.client.qdb["messages"].update_one(
+            {"guild_id": guild_id, "user_id": self.user_id},
+            {"$set": {"message_count": NewMessageCount}},
+        )
+        await interaction.response.edit_message(
+            content=f"{tick} **{interaction.user.display_name}**, `{MSGCount}` messages have been removed. The new message count is `{NewMessageCount}`.",
+            embed=None,
+            view=None,
+        )
 
 
 class StaffManage(discord.ui.View):
@@ -372,9 +389,7 @@ class quota(commands.Cog):
 
     @activity.command(name="wave", description="Punish people failing the quota.")
     async def wave(self, ctx: commands.Context):
-        if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
-            ctx.guild.id, "Tickets"
-        ):
+        if not await ModuleCheck(ctx.guild.id, "Quota"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
         if not await ModuleCheck(ctx.guild.id, "infractions"):
@@ -392,7 +407,7 @@ class quota(commands.Cog):
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
 
-        if not Config.get("Message Quota") and not Config.get("Tickets"):
+        if not Config.get("Message Quota"):
             await ctx.send(embed=ModuleNotSetup(), view=Support())
             return
         if Config.get("Infraction", None) is None:
@@ -415,7 +430,6 @@ class quota(commands.Cog):
                 )
             )
         message_users = []
-        ticket_users = []
         if Config.get("Message Quota"):
             message_users = (
                 await self.client.qdb["messages"]
@@ -423,62 +437,43 @@ class quota(commands.Cog):
                 .sort("message_count", pymongo.DESCENDING)
                 .to_list(length=750)
             )
-        if Config.get("Tickets"):
-            ticket_users = (
-                await self.client.db["Ticket Quota"]
-                .find({"GuildID": ctx.guild.id})
-                .sort("ClaimedTickets", pymongo.DESCENDING)
-                .to_list(length=750)
-            )
         Users = {}
-        for user in message_users + ticket_users:
-            user_id = user.get("user_id") or user.get("UserID")
+        for user in message_users:
+            user_id = user.get("user_id")
             if user_id not in Users:
                 Users[user_id] = user
             else:
                 Users[user_id]["message_count"] = int(
                     Users[user_id].get("message_count", 0)
                 ) + int(user.get("message_count", 0))
-                Users[user_id]["ClaimedTickets"] = int(
-                    Users[user_id].get("ClaimedTickets", 0)
-                ) + int(user.get("ClaimedTickets", 0))
 
         Users = sorted(
             Users.values(),
-            key=lambda x: (
-                int(x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))
-            ),
+            key=lambda x: int(x.get("message_count", 0)),
             reverse=True,
         )
 
         quota = int(Config.get("Message Quota", {}).get("quota", 0))
-        TicketQuota = int(Config.get("Tickets", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
         for user in Users:
-            member = ctx.guild.get_member(user.get("user_id") or user.get("UserID"))
+            member = ctx.guild.get_member(user.get("user_id"))
             if not member:
                 try:
-                    member = await ctx.guild.fetch_member(
-                        user.get("user_id") or user.get("UserID")
-                    )
+                    member = await ctx.guild.fetch_member(user.get("user_id"))
                 except (discord.HTTPException, discord.NotFound):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
 
             MessageCount = user.get("message_count", 0)
-            TicketCount = user.get("ClaimedTickets", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
-            Tickets = f"• `{TicketCount}` tickets" if TicketCount else ""
 
-            entry = f"> **{member.name}** {Messages} {Tickets}".strip()
+            entry = f"> **{member.name}** {Messages}".strip()
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
-            elif (TicketCount >= TicketQuota if TicketQuota else True) and (
-                MessageCount >= quota if quota else True
-            ):
+            elif MessageCount >= quota:
                 passed.append(entry)
             else:
                 failed.append(entry)
@@ -522,9 +517,7 @@ class quota(commands.Cog):
 
     @activity.command(name="view", description="View the activity results.")
     async def view(self, ctx: commands.Context):
-        if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
-            ctx.guild.id, "Tickets"
-        ):
+        if not await ModuleCheck(ctx.guild.id, "Quota"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
 
@@ -537,7 +530,7 @@ class quota(commands.Cog):
             await ctx.send(embed=BotNotConfigured(), view=Support())
             return
 
-        if not Config.get("Message Quota") and not Config.get("Tickets"):
+        if not Config.get("Message Quota"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
         await ctx.defer()
@@ -557,7 +550,6 @@ class quota(commands.Cog):
                 )
             )
         message_users = []
-        ticket_users = []
         if Config.get("Message Quota"):
             message_users = (
                 await self.client.qdb["messages"]
@@ -565,62 +557,43 @@ class quota(commands.Cog):
                 .sort("message_count", pymongo.DESCENDING)
                 .to_list(length=750)
             )
-        if Config.get("Tickets"):
-            ticket_users = (
-                await self.client.db["Ticket Quota"]
-                .find({"GuildID": ctx.guild.id})
-                .sort("ClaimedTickets", pymongo.DESCENDING)
-                .to_list(length=750)
-            )
         Users = {}
-        for user in message_users + ticket_users:
-            user_id = user.get("user_id") or user.get("UserID")
+        for user in message_users:
+            user_id = user.get("user_id")
             if user_id not in Users:
                 Users[user_id] = user
             else:
                 Users[user_id]["message_count"] = Users[user_id].get(
                     "message_count", 0
                 ) + user.get("message_count", 0)
-                Users[user_id]["ClaimedTickets"] = Users[user_id].get(
-                    "ClaimedTickets", 0
-                ) + user.get("ClaimedTickets", 0)
 
         Users = sorted(
             Users.values(),
-            key=lambda x: int(
-                (x.get("message_count", 0)) + int(x.get("ClaimedTickets", 0))
-            ),
+            key=lambda x: int(x.get("message_count", 0)),
             reverse=True,
         )
 
         quota = int(Config.get("Message Quota", {}).get("quota", 0))
-        TicketQuota = int(Config.get("Tickets", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
         for user in Users:
-            member = ctx.guild.get_member(user.get("user_id") or user.get("UserID"))
+            member = ctx.guild.get_member(user.get("user_id"))
             if not member:
                 try:
-                    member = await ctx.guild.fetch_member(
-                        user.get("user_id") or user.get("UserID")
-                    )
+                    member = await ctx.guild.fetch_member(user.get("user_id"))
                 except (discord.HTTPException, discord.NotFound):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
 
             MessageCount = user.get("message_count", 0)
-            TicketCount = user.get("ClaimedTickets", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
-            Tickets = f"• `{TicketCount}` tickets" if TicketCount else ""
 
-            entry = f"> **{member.name}** {Messages} {Tickets}".strip()
+            entry = f"> **{member.name}** {Messages}".strip()
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
-            elif (TicketCount >= TicketQuota if TicketQuota else True) and (
-                MessageCount >= quota if quota else True
-            ):
+            elif MessageCount >= quota:
                 passed.append(entry)
             else:
                 failed.append(entry)
@@ -872,9 +845,7 @@ class quota(commands.Cog):
         description="View the staff message leaderboard to see if anyone has passed their quota"
     )
     async def leaderboard(self, ctx: commands.Context):
-        if not await ModuleCheck(ctx.guild.id, "Quota") and not await ModuleCheck(
-            ctx.guild.id, "Tickets"
-        ):
+        if not await ModuleCheck(ctx.guild.id, "Quota"):
             await ctx.send(
                 embed=ModuleNotEnabled(),
                 view=Support(),
@@ -902,67 +873,32 @@ class quota(commands.Cog):
         Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await msg.edit(embed=BotNotConfigured(), view=Support())
-        if not Config.get("Message Quota") and not Config.get("Tickets"):
+        if not Config.get("Message Quota"):
             return await msg.edit(
                 embed=ModuleNotEnabled(),
                 view=Support(),
             )
-        message_users = []
-        ticket_users = []
-        if Config.get("Message Quota"):
-            message_users = (
-                await self.client.qdb["messages"]
-                .find({"guild_id": ctx.guild.id})
-                .sort("message_count", pymongo.DESCENDING)
-                .to_list(length=750)
-            )
-        if Config.get("Tickets"):
-            ticket_users = (
-                await self.client.db["Ticket Quota"]
-                .find({"GuildID": ctx.guild.id})
-                .sort("ClaimedTickets", pymongo.DESCENDING)
-                .to_list(length=750)
-            )
-        Users = {}
-        for user in message_users + ticket_users:
-            user_id = user.get("user_id") or user.get("UserID")
-            if user_id not in Users:
-                Users[user_id] = user
-            else:
-                Users[user_id]["message_count"] = Users[user_id].get(
-                    "message_count", 0
-                ) + user.get("message_count", 0)
-                Users[user_id]["ClaimedTickets"] = Users[user_id].get(
-                    "ClaimedTickets", 0
-                ) + user.get("ClaimedTickets", 0)
-
-        Users = sorted(
-            Users.values(),
-            key=lambda x: (x.get("message_count", 0) + x.get("ClaimedTickets", 0)),
-            reverse=True,
+        message_users = (
+            await self.client.qdb["messages"]
+            .find({"guild_id": ctx.guild.id})
+            .sort("message_count", pymongo.DESCENDING)
+            .to_list(length=750)
         )
 
-        if len(Users) == 0:
+        if len(message_users) == 0:
             return await msg.edit(
-                content=f"{no} **{ctx.author.display_name},** there hasn't been any {'messages' if message_users else 'tickets'} sent yet.",
+                content=f"{no} **{ctx.author.display_name},** there hasn't been any messages sent yet.",
                 embed=None,
             )
         YouProgress = next(
-            (
-                user
-                for user in Users
-                if user.get("user_id") == ctx.author.id
-                or user.get("UserID") == ctx.author.id
-            ),
+            (user for user in message_users if user.get("user_id") == ctx.author.id),
             {},
         )
-        YourPlace = self.GetPlace(Users, ctx.author)
+        YourPlace = self.GetPlace(message_users, ctx.author)
         YourMessages = YouProgress.get("message_count") if YouProgress else 0
         YourLOA = any(
             role.id == Config.get("LOA", {}).get("role") for role in ctx.author.roles
         )
-        YourMessages = YouProgress.get("message_count", 0) if YouProgress else 0
-        YourTickets = YouProgress.get("ClaimedTickets", 0) if YouProgress else 0
         YourEmoji = (
             "`LOA`"
             if YourLOA
@@ -973,10 +909,6 @@ class quota(commands.Cog):
                     else "<:status_green:1227365520857104405>"
                 )
                 if YourMessages >= int(Config.get("Message Quota", {}).get("quota", 0))
-                or (
-                    YourTickets >= int(Config.get("Tickets", {}).get("quota", 0))
-                    and int(Config.get("Tickets", {}).get("quota", 0)) != 0
-                )
                 else (
                     "Not Met"
                     if environment == "custom"
@@ -985,7 +917,7 @@ class quota(commands.Cog):
             )
         )
 
-        if Users is None:
+        if message_users is None:
             return await msg.edit(
                 content=f"{no} **{ctx.author.display_name},** there has been no messages sent yet."
             )
@@ -993,14 +925,12 @@ class quota(commands.Cog):
         i = 1
         pages = []
 
-        for staff in Users:
+        for staff in message_users:
             OnLOA = False
-            member = ctx.guild.get_member(staff.get("user_id") or staff.get("UserID"))
+            member = ctx.guild.get_member(staff.get("user_id"))
             if not member:
                 try:
-                    member = await ctx.guild.fetch_member(
-                        staff.get("user_id") or staff.get("UserID")
-                    )
+                    member = await ctx.guild.fetch_member(staff.get("user_id"))
                 except (discord.HTTPException, discord.NotFound):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
@@ -1021,16 +951,8 @@ class quota(commands.Cog):
                         if environment == "custom"
                         else "<:status_green:1227365520857104405>"
                     )
-                    if (
-                        int(staff.get("message_count", 0))
-                        >= int(Config.get("Message Quota", {}).get("quota", 0))
-                        and Config.get("Message Quota", {}).get("quota", 0) != 0
-                    )
-                    or (
-                        int(staff.get("ClaimedTickets", 0))
-                        >= int(Config.get("Tickets", {}).get("quota", 0))
-                        and Config.get("Tickets", {}).get("quota", 0) != 0
-                    )
+                    if int(staff.get("message_count", 0))
+                    >= int(Config.get("Message Quota", {}).get("quota", 0))
                     else (
                         "Not Met"
                         if environment == "custom"
@@ -1038,22 +960,9 @@ class quota(commands.Cog):
                     )
                 )
             )
-            if (
-                staff.get("message_count") is not None
-                and staff.get("ClaimedTickets") is not None
-            ):
-                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages • {staff.get('ClaimedTickets', 0)} tickets\n"
-            elif staff.get("message_count") is not None:
-                Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
-            elif staff.get("ClaimedTickets") is not None:
-                Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
-
-            if (
-                Config.get("Message Quota", {}).get("quota", 0) != 0
-                or Config.get("Tickets", {}).get("quota", 0) != 0
-            ):
+            Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
+            if Config.get("Message Quota", {}).get("quota", 0) != 0:
                 Description += f"{replybottom} **Status:** {emoji}\n\n"
-
 
             if i % 9 == 0:
                 embed = discord.Embed(
@@ -1083,13 +992,6 @@ class quota(commands.Cog):
                     name="<:tablerprogressbolt:1330500442551091210> Your Progress",
                     value=(
                         f"> **Messages:** {YouProgress.get('message_count')} messages\n"
-                        if YouProgress.get("message_count")
-                        else ""
-                    )
-                    + (
-                        f"> **Tickets:** {YouProgress.get('ClaimedTickets')} tickets\n"
-                        if YouProgress.get("ClaimedTickets")
-                        else ""
                     )
                     + (
                         f"> **Met:** {YourEmoji if YourEmoji else 'N/A'}\n"
@@ -1107,7 +1009,7 @@ class quota(commands.Cog):
 
     @quota.command(name="reset", description="Reset the message quota leaderboard")
     async def ResetQuota(
-        self, ctx: commands.Context, quota: Literal["Messages", "Tickets"]
+        self, ctx: commands.Context, quota: Literal["Messages", "Tickets", "Both"]
     ):
         await ctx.defer()
         if not await ModuleCheck(ctx.guild.id, "Quota"):
@@ -1122,7 +1024,7 @@ class quota(commands.Cog):
         view = ArmFire(ctx.author, quota)
         embed = (
             discord.Embed(
-                description=f"By performing this action, you will reset all staff {quota} counts.\n This is **IRREVERSIBLE** and will cause all counts to become 0.",
+                description=f"By performing this action, you will reset all staff {quota.lower()} counts.\n This is **IRREVERSIBLE** and will cause all counts to become 0.",
                 color=discord.Color.brand_red(),
             )
             .set_author(
@@ -1657,7 +1559,16 @@ class ArmFire(discord.ui.View):
                 {"guild_id": interaction.guild.id},
                 {"$set": {"message_count": 0}},
             )
-        else:
+        elif self.action == "Tickets":
+            await interaction.client.db["Ticket Quota"].update_many(
+                {"GuildID": interaction.guild.id},
+                {"$set": {"ClaimedTickets": 0}},
+            )
+        elif self.action == "Both":
+            await interaction.client.qdb["messages"].update_many(
+                {"guild_id": interaction.guild.id},
+                {"$set": {"message_count": 0}},
+            )
             await interaction.client.db["Ticket Quota"].update_many(
                 {"GuildID": interaction.guild.id},
                 {"$set": {"ClaimedTickets": 0}},

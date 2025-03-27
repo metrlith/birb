@@ -30,6 +30,11 @@ class PSelect(discord.ui.Select):
                 description="Choose which promotions system you want to use.",
                 emoji="<:system:1341493634733703300>",
             ),
+                discord.SelectOption(
+                    label="Promotion Audit Log",
+                    emoji="<:Log:1349431938926252115>",
+                    description="Logs for creation/void/modify.",
+                ),            
             discord.SelectOption(
                 label="Customise Embed", emoji="<:Customisation:1223063306131210322>"
             ),
@@ -89,6 +94,22 @@ class PSelect(discord.ui.Select):
                 view=view,
                 ephemeral=True,
             )
+        if Selected == "Promotion Audit Log":
+            view = discord.ui.View()
+
+            view.add_item(
+                LogChannel(
+                    interaction.user,
+                    interaction.guild.get_channel(
+                        Config.get("Promo", {}).get("LogChannel"),
+                    ),
+                    interaction.message,
+                )
+            )       
+            return await interaction.followup.send(
+                view=view,
+                ephemeral=True,
+            )             
         elif Selected == "Preferences":
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(
@@ -361,7 +382,59 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
         view=view,
     )
 
+class LogChannel(discord.ui.ChannelSelect):
+    def __init__(
+        self,
+        author: discord.Member,
+        channel: discord.TextChannel = None,
+        message: discord.Message = None,
+    ):
+        super().__init__(
+            placeholder="Audit Log Channel",
+            min_values=0,
+            max_values=1,
+            default_values=[channel] if channel else [],
+            channel_types=[discord.ChannelType.text, discord.ChannelType.news],
+        )
+        self.author = author
+        self.channel = channel
+        self.message = message
 
+    async def callback(self, interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if config is None:
+            config = {"_id": interaction.guild.id, "Promo": {}}
+        elif "Promo" not in config:
+            config["Promo"] = {}
+        elif "LogChannel" not in config.get("Promo", {}):
+            config["Promo"]["LogChannel"] = None
+
+        config["Promo"]["LogChannel"] = self.values[0].id if self.values else None
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+
+        await interaction.response.edit_message(content=None)
+        try:
+            await self.message.edit(
+                embed=await PromotionEmbed(
+                    interaction,
+                    Updated,
+                    discord.Embed(color=discord.Color.dark_embed()),
+                ),
+            )
+        except:
+            pass
 class Preferences(discord.ui.View):
     def __init__(self, author: discord.Member):
         super().__init__()

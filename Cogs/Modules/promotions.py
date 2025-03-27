@@ -10,9 +10,7 @@ import string
 from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
-
-
-
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -508,8 +506,6 @@ async def SyncCommands(self: commands.Bot):
 
     C = await self.config.find(filter).to_list(length=None)
     for CO in C:
-        if CO.get("_id") == 1092976553752789054:
-            continue
         if not CO:
             continue
         if not CO.get("Promo", None):
@@ -602,43 +598,115 @@ async def SyncCommands(self: commands.Bot):
     del TheOG
 
 
+async def PromotionEmbed(self: commands.Bot, promotion: dict):
+    jump_url = (
+        f"\n> **[Jump to Promotion]({promotion.get('jump_url', '')})**"
+        if promotion.get("jump_url")
+        else ""
+    )
+    embed = discord.Embed(
+        color=discord.Color.dark_embed(),
+        timestamp=promotion.get("timestamp"),
+    )
+    try:
+        Staff = await self.fetch_user(promotion.get("staff"))
+        Manager = await self.fetch_user(promotion.get("management"))
+        Role = self.get_guild(promotion.get("guild_id")).get_role(promotion.get("new"))
+    except (discord.NotFound, discord.HTTPException, AttributeError):
+        Staff = None
+        Manager = None
+        Role = None
+
+    value = (
+        f"> **Manager:** <@{promotion.get('management')}>\n"
+        f"> **Staff:** <@{promotion.get('staff')}>\n"
+        f"> **Updated Rank:** {Role.mention if Role else 'Unknown'}\n"
+        f"> **Reason:** {promotion.get('reason')}\n"
+    )
+
+    if len(value) > 1024:
+        value = value[:1021] + "..."
+
+    embed.add_field(name="Promotion Information", value=value)
+
+    if jump_url:
+        embed.add_field(name="Additional Information", inline=False, value=jump_url)
+
+    if Staff and Manager:
+        embed.set_footer(
+            text=f"Created by @{Manager.display_name}", icon_url=Manager.display_avatar
+        )
+        embed.set_thumbnail(url=Staff.display_avatar)
+
+    return embed
+
+
 class promo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @commands.command()
-    async def pdebug(self, ctx: commands.Context):
-        await ctx.send(f"{SyncedAmount}/{TotalNeedingSynced}")
+    @commands.hybrid_group(description="Promotion commands")
+    async def promotion(self, ctx: commands.Context):
+        pass
 
-    @commands.hybrid_command(description="View a staff member's promotions")
-    @app_commands.describe(staff="The staff member to view promotion for")
-    async def promotions(self, ctx: commands.Context, staff: discord.User):
+    @promotion.command(description="View information about a promotion.")
+    @app_commands.describe(id="The id of the promotion.")
+    async def view(self, ctx: commands.Context, id: str):
         await ctx.defer()
+
         if self.client.promotions_maintenance:
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the promotions module is currently under maintenance. Please try again later.",
+                f"{no} **{ctx.author.display_name}**, the promotions module is currently under maintenance. Please try again later."
             )
             return
 
         if not await ModuleCheck(ctx.guild.id, "promotions"):
-            await ctx.send(
-                embed=ModuleNotEnabled(),
-                view=Support(),
-            )
+            await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
 
         if not await has_staff_role(ctx, "Promotion Permissions"):
             return
 
-        embeds = []
-        filter = {
-            "guild_id": ctx.guild.id,
-            "staff": staff.id,
-        }
-        Promotions = await self.client.db["promotions"].find(filter).to_list(750)
-        if not len(Promotions) > 0:
+        promotion = await self.client.db["promotions"].find_one(
+            {"guild_id": ctx.guild.id, "random_string": id}
+        )
+
+        if not promotion:
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, this staff member doesn't have any promotions.",
+                f"{no} **{ctx.author.display_name}**, this promotion could not be found."
+            )
+            return
+        view = ManagePromotion(promotion, ctx.author)
+        if promotion.get("voided"):
+            view.void.label = "Delete"
+            view.void.style = discord.ButtonStyle.red
+        embed = await PromotionEmbed(self.client, promotion)
+        await ctx.send(embed=embed, view=view)
+
+    @commands.hybrid_command(description="View a staff member's promotions")
+    @app_commands.describe(staff="The staff member to view promotions for")
+    async def promotions(self, ctx: commands.Context, staff: discord.User):
+        await ctx.defer()
+
+        if self.client.promotions_maintenance:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, the promotions module is currently under maintenance. Please try again later."
+            )
+            return
+
+        if not await ModuleCheck(ctx.guild.id, "promotions"):
+            await ctx.send(embed=ModuleNotEnabled(), view=Support())
+            return
+
+        if not await has_staff_role(ctx, "Promotion Permissions"):
+            return
+
+        filter = {"guild_id": ctx.guild.id, "staff": staff.id}
+        promotions = await self.client.db["promotions"].find(filter).to_list(750)
+
+        if not promotions:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, this staff member doesn't have any promotions."
             )
             return
 
@@ -649,51 +717,217 @@ class promo(commands.Cog):
             )
         )
 
-        embed = discord.Embed(
-            color=discord.Color.dark_embed(),
-        )
+        embeds = []
+        embed = discord.Embed(color=discord.Color.dark_embed())
         embed.set_thumbnail(url=staff.display_avatar)
         embed.set_author(icon_url=staff.display_avatar, name=staff.display_name)
 
-        for i, promotion in enumerate(Promotions):
+        for i, promotion in enumerate(promotions):
             jump_url = promotion.get("jump_url", "")
-            if jump_url:
-                jump_url = f"\n> **[Jump to Promotion]({jump_url})**"
+            jump_url_text = (
+                f"\n> **[Jump to Promotion]({jump_url})**" if jump_url else ""
+            )
 
-            value = f"> **Promoted By:** <@{promotion['management']}>\n> **New:** <@&{promotion.get('new', 'Unknown')}>\n> **Reason:** {promotion.get('reason')}{jump_url}"
+            value = (
+                f"> **Promoted By:** <@{promotion['management']}>\n"
+                f"> **New:** <@&{promotion.get('new', 'Unknown')}>\n"
+                f"> **Reason:** {promotion.get('reason')}{jump_url_text}"
+            )
+
             if len(value) > 1024:
                 value = value[:1021] + "..."
+
             embed.add_field(
                 name=f"<:Document:1223063264322125844> Promotion | {promotion['random_string']}",
                 value=value,
                 inline=False,
             )
 
-            if (i + 1) % 9 == 0 or i == len(Promotions) - 1:
+            if (i + 1) % 9 == 0 or i == len(promotions) - 1:
                 embeds.append(embed)
-                embed = discord.Embed(
-                    title=f"{staff.name}'s Promotions",
-                    description=f"* **User:** {staff.mention}\n* **User ID:** {staff.id}",
-                    color=discord.Color.dark_embed(),
-                )
+                embed = discord.Embed(color=discord.Color.dark_embed())
                 embed.set_thumbnail(url=staff.display_avatar)
                 embed.set_author(icon_url=staff.display_avatar, name=staff.display_name)
+
         paginator = await PaginatorButtons()
         await paginator.start(ctx, pages=embeds, msg=msg)
 
 
-class PromotionIssuer(discord.ui.View):
-    def __init__(self):
+class ImDone(discord.ui.View):
+    def __init__(self, author, infraction):
         super().__init__()
+        self.author = author
+        self.infraction = infraction
 
     @discord.ui.button(
-        label=f"",
-        style=discord.ButtonStyle.grey,
-        disabled=True,
-        emoji="<:flag:1223062579346145402>",
+        label="I'm Done",
+        style=discord.ButtonStyle.green,
+        row=2,
     )
-    async def issuer(self, interaction: discord.Interaction, button: discord.ui.Button):
-        pass
+    async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        view = ManagePromotion(self.infraction, self.author)
+        if self.infraction.get("voided"):
+            view.void.label = "Delete"
+            view.void.style = discord.ButtonStyle.red
+        await interaction.response.edit_message(
+            content="",
+            view=view,
+        )
+
+
+class ManagePromotion(discord.ui.View):
+    def __init__(self, promotion: dict, author: discord.Member):
+        super().__init__()
+        self.promotion = promotion
+        self.author = author
+
+    @discord.ui.button(
+        label="Edit",
+        style=discord.ButtonStyle.blurple,
+        emoji="<:edit:1333861885778333798>",
+    )
+    async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        view = ImDone(interaction.user, self.promotion)
+        view.add_item(EditPromotion(self.promotion, self.author))
+        await interaction.response.edit_message(
+            view=view,
+        )
+
+    @discord.ui.button(
+        label="Void",
+        style=discord.ButtonStyle.danger,
+        emoji="<:Destroy:1333862072143974421>",
+    )
+    async def void(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        promotion = self.promotion
+        if promotion.get("voided", False):
+            await interaction.client.db["promotions"].delete_one(
+                {"_id": promotion["_id"]}
+            )
+            return await interaction.response.edit_message(
+                content=f"{tick} **{interaction.user.display_name}**, I've deleted the infraction permanently.",
+                view=None,
+                embed=None,
+            )
+
+        await interaction.client.db["promotions"].update_one(
+            {"_id": promotion["_id"]},
+            {"$set": {"voided": True}, "$unset": {"expiration": ""}},
+            upsert=False,
+        )
+        await interaction.response.edit_message(
+            content=f"{tick} **{interaction.user.display_name}**, I've voided the infraction.",
+            view=None,
+            embed=None,
+        )
+        interaction.client.dispatch("promotion_void", promotion["_id"])
+        interaction.client.dispatch(
+            "promotion_log", promotion["_id"], "delete", interaction.user
+        )
+
+
+class EditPromotion(discord.ui.Select):
+    def __init__(self, infraction: dict, author: discord.Member):
+        super().__init__(
+            placeholder="What do you want to edit?",
+            options=[
+                discord.SelectOption(label="Reason", value="reason"),
+                discord.SelectOption(label="Notes", value="notes"),
+            ],
+        )
+        self.infraction = infraction
+        self.author = author
+
+    async def callback(self, interaction: discord.Interaction):
+
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        if self.values[0] == "reason":
+            view = UpdatePromotion(self.infraction, self.author, "reason")
+            await interaction.response.send_modal(view)
+        elif self.values[0] == "notes":
+            view = UpdatePromotion(self.infraction, self.author, "notes")
+            await interaction.response.send_modal(view)
+
+
+class UpdatePromotion(discord.ui.Modal):
+    def __init__(self, infraction: dict, author: discord.Member, type: str):
+        super().__init__(timeout=360, title="Update Promotion")
+        self.infraction = infraction
+        self.author = author
+        self.exp = None
+        self.reason = None
+        self.notes = None
+        if type == "reason":
+            self.reason = discord.ui.TextInput(
+                default=infraction.get("reason"),
+                label="Reason",
+                placeholder="The reason for the action",
+            )
+            self.add_item(self.reason)
+        elif type == "notes":
+            self.notes = discord.ui.TextInput(
+                default=infraction.get("notes"),
+                label="Notes",
+                placeholder="Additional notes",
+            )
+            self.add_item(self.notes)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        Org = self.infraction.copy()
+        if self.reason:
+            self.infraction["reason"] = self.reason.value
+            await interaction.client.db["promotions"].update_one(
+                {"_id": self.infraction["_id"]},
+                {"$set": {"reason": self.reason.value}},
+            )
+        elif self.notes:
+            self.infraction["notes"] = self.notes.value
+            await interaction.client.db["promotions"].update_one(
+                {"_id": self.infraction["_id"]},
+                {"$set": {"notes": self.notes.value}},
+            )
+        view = ManagePromotion(self.infraction, self.author)
+        if self.infraction.get("voided"):
+            view.void.label = "Delete"
+            view.void.style = discord.ButtonStyle.red
+        await interaction.response.edit_message(
+            embed=await PromotionEmbed(interaction.client, self.infraction),
+            view=view,
+        )
+
+        interaction.client.dispatch("promotion", self.infraction, True)
+        interaction.client.dispatch(
+            "promotion_log",
+            self.infraction.get("_id"),
+            "modify",
+            interaction.user,
+            Org,
+        )
 
 
 async def setup(client: commands.Bot) -> None:

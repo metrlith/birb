@@ -214,6 +214,8 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_ticket",
             "Cogs.Events.on_infraction_log",
             "Cogs.Events.on_infraction_void",
+            "Cogs.Events.on_promotion_log",
+            "Cogs.Events.on_promotion_void",
         ]
 
     async def load_jishaku(self):
