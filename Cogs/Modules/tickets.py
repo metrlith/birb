@@ -531,6 +531,16 @@ class TicketsPub(commands.Cog):
             {"user": user.id, "guild": interaction.guild.id}
         )
 
+    def GetPlace(self, data, user):
+        data = sorted(
+            data,
+            key=lambda x: int(x.get("ClaimedTickets", 0)),
+            reverse=True,
+        )
+        for i, user_data in enumerate(data):
+            if user_data.get("UserID") == user.id:
+                return i + 1
+        return None
 
     @tickets.command(description="View the claimed tickets leaderboard.")
     async def leaderboard(self, interaction: discord.Interaction):
