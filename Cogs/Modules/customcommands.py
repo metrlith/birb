@@ -264,9 +264,9 @@ class CustomCommands(commands.Cog):
                 tree = await self.client.tree.sync(guild=discord.Object(id=guild_id))
                 for command in Commands:
                     for synced_command in tree:
-                        if command["name"] == synced_command.name:
+                        if command.get('name') == synced_command.name:
                             await self.client.customcommands.update_one(
-                                {"name": command["raw"], "guild_id": guild_id},
+                                {"name": command.get('name'), "guild_id": guild_id},
                                 {
                                     "$set": {
                                         "id": synced_command.id,
