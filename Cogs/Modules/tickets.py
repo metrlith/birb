@@ -11,12 +11,11 @@ from Cogs.Events.on_ticket import TicketPermissions
 from discord import app_commands
 import string
 import random
-from utils.permissions import has_admin_role
+from utils.permissions import has_admin_role, check_admin_and_staff, has_staff_role
 import asyncio
 from utils.Module import ModuleCheck
 from utils.HelpEmbeds import ModuleNotEnabled, Support, ModuleNotSetup, BotNotConfigured
 from utils.autocompletes import CloseReason
-from utils.permissions import check_admin_and_staff
 from utils.format import ordinal, PaginatorButtons
 
 
@@ -537,11 +536,8 @@ class TicketsPub(commands.Cog):
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
         
-        if not await TicketPermissions(interaction):
-            return await interaction.followup.send(
-                content=f"{no} You don't have permission to use this command."
-            )
-        
+        if not await has_staff_role(interaction):
+            return
         if not await ModuleCheck(interaction.guild.id, "Tickets"):
             return await interaction.followup.send(
                 embed=ModuleNotEnabled(),
