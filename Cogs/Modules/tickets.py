@@ -713,7 +713,7 @@ class TicketsPub(commands.Cog):
         if not embed:
             embed = discord.Embed(
                 title="Close Confirmation",
-                description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.\n\```{reason}```",
+                description=f"This ticket has been requested to be closed by **{interaction.user.display_name}**. If you have no further questions, please click the button below to close the ticket.\n```\n{reason}\n```",
                 color=discord.Color.green(),
             )
 
