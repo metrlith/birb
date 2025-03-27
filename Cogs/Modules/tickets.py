@@ -553,7 +553,7 @@ class TicketsPub(commands.Cog):
         )
         
         ticket_users = (
-            await interaction.client.db["Tickets Quota"]
+            await interaction.client.db["Ticket Quota"]
             .find({"GuildID": interaction.guild.id})
             .sort("ClaimedTickets", pymongo.DESCENDING)
             .to_list(length=750)
@@ -566,10 +566,10 @@ class TicketsPub(commands.Cog):
             )
         
         Config = await self.client.config.find_one({"_id": interaction.guild.id})
-        if not Config or not Config.get("Ticket Quota"):
+        if not Config or not Config.get("Tickets"):
             return await msg.edit(embed=BotNotConfigured(), view=Support())
         
-        quota = int(Config.get("Ticket Quota", {}).get("quota", 0))
+        quota = int(Config.get("Tickets", {}).get("quota", 0))
         YouProgress = next((user for user in ticket_users if user.get("UserID") == interaction.user.id), {})
         YourPlace = self.GetPlace(ticket_users, interaction.user)
         YourTickets = YouProgress.get("ClaimedTickets", 0)
