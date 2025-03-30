@@ -141,7 +141,8 @@ async def run(
 async def SyncCommand(self: commands.Bot, name: str, guild: int):
     Stripped = name.strip().lower()
     Stripped = Stripped.lstrip("/")
-    Stripped = re.sub(r"[^a-z0-9\-_]", "", name.replace(" ", "_"))
+    Stripped = Stripped.replace(" ", "_")
+    Stripped = re.sub(r"[^a-z0-9\-_]", "", Stripped)
     if not (1 <= len(Stripped) <= 32):
         return
 
@@ -152,19 +153,29 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
         Command = app_commands.Command(
             name=Stripped, description="[Custom CMD]", callback=command_callback
         )
-        await self.customcommands.update_one(
-            {"name": name, "guild_id": guild},
-            {
-                "$set": {
-                    "Command": Stripped,
-                }
-            },
-        )
+        
+        if self.customcommands:
+            result = await self.customcommands.update_one(
+                {"name": name, "guild_id": guild},
+                {
+                    "$set": {
+                        "Command": Stripped,
+                    }
+                },
+            )
+            if result.matched_count == 0:
+                print(f"No matching document found for name '{name}' and guild '{guild}'.")
+        else:
+            print("Error: 'self.customcommands' collection is not initialized.")
+        
         self.tree.add_command(Command, guild=discord.Object(id=guild))
         await self.tree.sync(guild=discord.Object(id=guild))
+
     except discord.app_commands.errors.CommandAlreadyRegistered:
         return
-    return
+    except Exception as e:
+        print(f"Error syncing command '{name}' in guild {guild}: {e}")
+
 
 
 async def Unsync(self: commands.Bot, name: str, guild: int):
