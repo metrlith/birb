@@ -236,8 +236,8 @@ class CustomCommands(commands.Cog):
             if not guild_id:
                 continue
 
-            Command = Raw.lstrip("/")
-            Command = re.sub(r"[^a-z0-9\-_]", "", Command.replace(" ", "_"))
+            Command = Raw.strip().lower().replace(" ", "_")
+            Command = re.sub(r"[^a-z0-9\-_]", "", Command)
             if not (1 <= len(Command) <= 32):
                 continue
             Commands.append({"name": Command, "guild_id": guild_id, "raw": ActualRaw})
@@ -264,9 +264,9 @@ class CustomCommands(commands.Cog):
                 tree = await self.client.tree.sync(guild=discord.Object(id=guild_id))
                 for command in Commands:
                     for synced_command in tree:
-                        if command.get('name') == synced_command.name:
+                        if command.get("name").lower() == synced_command.name.lower():
                             await self.client.customcommands.update_one(
-                                {"name": command.get('name'), "guild_id": guild_id},
+                                {"name": command.get("raw"), "guild_id": guild_id}, 
                                 {
                                     "$set": {
                                         "id": synced_command.id,
@@ -287,7 +287,6 @@ class CustomCommands(commands.Cog):
             SyncedServers += 1
             await asyncio.sleep(3)
 
-        print(f"Synced {SyncedServers} servers with custom commands")
 
     @staticmethod
     async def replace_variables(message, replacements):
