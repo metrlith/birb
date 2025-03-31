@@ -158,19 +158,16 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
             name=Stripped, description="[Custom CMD]", callback=command_callback
         )
 
-        if self.customcommands:
-            result = await self.customcommands.update_one(
-                {"name": name, "guild_id": guild},
-                {
-                    "$set": {
-                        "Command": Stripped,
-                    }
-                },
-            )
-            if result.matched_count == 0:
-                print(
-                    f"No matching document found for name '{name}' and guild '{guild}'."
-                )
+        result = await self.db["Custom Commands"].update_one(
+            {"name": name, "guild_id": guild},
+            {
+                "$set": {
+                    "Command": Command.qualified_name,
+                }
+            },
+        )
+        if result.matched_count == 0:
+            print(f"No matching document found for name '{name}' and guild '{guild}'.")
         else:
             print("Error: 'self.customcommands' collection is not initialized.")
 
@@ -238,17 +235,13 @@ class CustomCommands(commands.Cog):
         customcommands = (
             await self.client.db["Custom Commands"].find(filter).to_list(length=None)
         )
-
-        Commands = []
         GuildsToSync = set()
         SyncedServers = 0
 
         for command in customcommands:
-            ActualRaw = None
             Raw = None
             guild_id = None
             try:
-                ActualRaw = command.get("name")
                 Raw = command.get("name", "").strip().lower()
                 guild_id = command.get("guild_id")
             except (KeyError, AttributeError):
