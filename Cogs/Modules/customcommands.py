@@ -275,7 +275,7 @@ class CustomCommands(commands.Cog):
             except discord.app_commands.errors.CommandAlreadyRegistered:
                 continue
 
-            if Command.name:
+            if Command and Command.name:
                 await self.client.db["Custom Commands"].update_one(
                     {"name": command.get("name"), "guild_id": guild_id},
                     {
