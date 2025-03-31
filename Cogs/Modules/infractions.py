@@ -250,7 +250,7 @@ class Infractions(commands.Cog):
                 InfractionsWithType = await self.client.db[
                     "infractions"
                 ].count_documents(
-                    {"guild_id": ctx.guild.id, "staff": staff.id, "action": action}
+                    {"guild_id": ctx.guild.id, "staff": staff.id, "action": action, "Upscaled": {'$exists': False}}
                 )
                 if len(Threshold) + 1 < InfractionsWithType:
                     isEscalated = True
@@ -318,7 +318,7 @@ class Infractions(commands.Cog):
                 "infraction_approval", InfractionResult.inserted_id, Config
             )
             return await msg.edit(
-                content=f"{tick} **{ctx.author.display_name},** I've succesfully sent the infraction to approval. ",
+                content=f"{tick} **{ctx.author.display_name},** I've succesfully sent the infraction to approval.",
                 embed=None,
                 view=None,
             )

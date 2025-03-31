@@ -1065,7 +1065,8 @@ class Escalate(discord.ui.Modal, title="Escalate"):
         if "_id" in Result:
             del Result["_id"]
         await interaction.client.db["infractiontypeactions"].update_one(
-            {"guild_id": interaction.guild.id, "name": self.type}, {"$set": Result}
+            {"guild_id": interaction.guild.id, "name": self.type}, {"$set": Result},
+            upsert=True,
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
