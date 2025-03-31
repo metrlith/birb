@@ -229,7 +229,9 @@ class CustomCommands(commands.Cog):
         filter = {}
         if os.getenv('CUSTOM_GUILD'):
             filter["guild_id"] = int(os.getenv('CUSTOM_GUILD'))
-        customcommands = await self.client.customcommands.find(filter).to_list(length=None)
+        
+        customcommands = await self.client.db['Custom Commands'].find(filter).to_list(length=None)
+        
         Commands = []
         GuildsToSync = set()
         SyncedServers = 0
@@ -264,7 +266,6 @@ class CustomCommands(commands.Cog):
                 command = self.client.tree.add_command(
                     Command, guild=discord.Object(id=guild_id)
                 )
-
             except discord.app_commands.errors.CommandAlreadyRegistered:
                 continue
 
@@ -276,7 +277,7 @@ class CustomCommands(commands.Cog):
                 for command in Commands:
                     for synced_command in tree:
                         if command.get("name").lower() == synced_command.name.lower():
-                            await self.client.customcommands.update_one(
+                            await self.client.db['Custom Commands'].update_one(
                                 {"name": command.get("raw"), "guild_id": guild_id}, 
                                 {
                                     "$set": {
@@ -297,6 +298,7 @@ class CustomCommands(commands.Cog):
                 continue
             SyncedServers += 1
             await asyncio.sleep(3)
+        print('[💻] Finished Syncing Custom Commands')
 
 
     @staticmethod
