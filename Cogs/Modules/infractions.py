@@ -529,7 +529,6 @@ class Infractions(commands.Cog):
 
 class InfractionMultiple(discord.ui.UserSelect):
     def __init__(self, action, reason, notes, expiration, anonymous):
-
         super().__init__(placeholder="Members", max_values=10, min_values=1)
         self.action = action
         self.reason = reason
@@ -547,7 +546,7 @@ class InfractionMultiple(discord.ui.UserSelect):
         TypeActions = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
-        Config = await self.client.config.find_one({"_id": interaction.guild.id})
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             return await interaction.followup.send(
                 embed=BotNotConfigured(),

@@ -282,9 +282,16 @@ class on_infractions(commands.Cog):
                         "Upscaled": {"$exists": False},
                     }
                 )
-                if len(Threshold) + 1 < InfractionsWithType:
+                if InfractionsWithType >= len(Threshold) + 1:
                     await asyncio.sleep(2)
-                    for Infractions in InfractionsWithType:
+                    async for Infractions in self.client.db["infractions"].find(
+                        {
+                            "guild_id": guild.id,
+                            "staff": staff.id,
+                            "action": Infraction.action,
+                            "Upscaled": {"$exists": False},
+                        }
+                    ):
                         await self.client.db["infractions"].update_one(
                             {"_id": Infractions.get("_id")},
                             {"$set": {"Upscaled": True}},
@@ -352,7 +359,7 @@ class on_infractions(commands.Cog):
                     )
                 except Exception as e:
                     traceback.format_exc(e)
-                Actions['ChangedGroupRole'] = True
+                Actions["ChangedGroupRole"] = True
 
             if data.get("removedroles"):
                 roles = data.get("removedroles")
@@ -379,7 +386,7 @@ class on_infractions(commands.Cog):
                     )
                     if not result:
                         pass
-                Actions['VoidedShift'] = True
+                Actions["VoidedShift"] = True
 
             if data.get("dbremoval", False) is True:
                 OriginalData = await self.client.db["staff database"].find_one(
