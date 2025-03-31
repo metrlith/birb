@@ -12,7 +12,9 @@ import asyncio
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed, HandleButton
 from utils.format import Replace
 from dotenv import load_dotenv
+
 load_dotenv()
+
 
 async def run(
     ctx: discord.Interaction,
@@ -37,7 +39,7 @@ async def run(
         )
         return
     if not data:
-        command_data = await client.db['Custom Commands'].find_one(
+        command_data = await client.db["Custom Commands"].find_one(
             {
                 "Command" if not cmd else "name": (
                     cmd if not ctx.command else ctx.command.name
@@ -118,7 +120,9 @@ async def run(
         )
         return
 
-    loggingdata = await client.db['Commands Logging'].find_one({"guild_id": ctx.guild.id})
+    loggingdata = await client.db["Commands Logging"].find_one(
+        {"guild_id": ctx.guild.id}
+    )
     if loggingdata:
         loggingchannel = client.get_channel(loggingdata["channel_id"])
         if loggingchannel:
@@ -153,7 +157,7 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
         Command = app_commands.Command(
             name=Stripped, description="[Custom CMD]", callback=command_callback
         )
-        
+
         if self.customcommands:
             result = await self.customcommands.update_one(
                 {"name": name, "guild_id": guild},
@@ -164,10 +168,12 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
                 },
             )
             if result.matched_count == 0:
-                print(f"No matching document found for name '{name}' and guild '{guild}'.")
+                print(
+                    f"No matching document found for name '{name}' and guild '{guild}'."
+                )
         else:
             print("Error: 'self.customcommands' collection is not initialized.")
-        
+
         self.tree.add_command(Command, guild=discord.Object(id=guild))
         await self.tree.sync(guild=discord.Object(id=guild))
 
@@ -175,7 +181,6 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
         return
     except Exception as e:
         print(f"Error syncing command '{name}' in guild {guild}: {e}")
-
 
 
 async def Unsync(self: commands.Bot, name: str, guild: int):
@@ -197,7 +202,7 @@ class CustomCommands(commands.Cog):
 
     @commands.command()
     async def prefix(self, ctx: commands.Context, prefix: str = None):
-        result = await self.client.db['prefixes'].find_one({"guild_id": ctx.guild.id})
+        result = await self.client.db["prefixes"].find_one({"guild_id": ctx.guild.id})
         if result:
 
             currentprefix = result.get("prefix", "!!")
@@ -212,7 +217,7 @@ class CustomCommands(commands.Cog):
         else:
             if ctx.author.guild_permissions.manage_guild:
 
-                await self.client.db['prefixes'].update_one(
+                await self.client.db["prefixes"].update_one(
                     {"guild_id": ctx.guild.id},
                     {"$set": {"prefix": prefix}},
                     upsert=True,
@@ -227,11 +232,13 @@ class CustomCommands(commands.Cog):
 
     async def RegisterCustomCommands(self):
         filter = {}
-        if os.getenv('CUSTOM_GUILD'):
-            filter["guild_id"] = int(os.getenv('CUSTOM_GUILD'))
-        
-        customcommands = await self.client.db['Custom Commands'].find(filter).to_list(length=None)
-        
+        if os.getenv("CUSTOM_GUILD"):
+            filter["guild_id"] = int(os.getenv("CUSTOM_GUILD"))
+
+        customcommands = (
+            await self.client.db["Custom Commands"].find(filter).to_list(length=None)
+        )
+
         Commands = []
         GuildsToSync = set()
         SyncedServers = 0
@@ -253,7 +260,6 @@ class CustomCommands(commands.Cog):
             Command = re.sub(r"[^a-z0-9\-_]", "", Command)
             if not (1 <= len(Command) <= 32):
                 continue
-            Commands.append({"name": Command, "guild_id": guild_id, "raw": ActualRaw})
 
             async def command_callback(interaction: discord.Interaction):
                 await run(interaction)
@@ -269,23 +275,21 @@ class CustomCommands(commands.Cog):
             except discord.app_commands.errors.CommandAlreadyRegistered:
                 continue
 
+            if Command.name:
+                await self.client.db["Custom Commands"].update_one(
+                    {"name": command.get("name"), "guild_id": guild_id},
+                    {
+                        "$set": {
+                            "Command": Command.name,
+                        }
+                    },
+                )
             GuildsToSync.add(guild_id)
 
         for guild_id in GuildsToSync:
             try:
-                tree = await self.client.tree.sync(guild=discord.Object(id=guild_id))
-                for command in Commands:
-                    for synced_command in tree:
-                        if command.get("name").lower() == synced_command.name.lower():
-                            await self.client.db['Custom Commands'].update_one(
-                                {"name": command.get("raw"), "guild_id": guild_id}, 
-                                {
-                                    "$set": {
-                                        "id": synced_command.id,
-                                        "Command": synced_command.name,
-                                    }
-                                },
-                            )
+                await self.client.tree.sync(guild=discord.Object(id=guild_id))
+
             except Exception as e:
                 continue
 
@@ -298,8 +302,7 @@ class CustomCommands(commands.Cog):
                 continue
             SyncedServers += 1
             await asyncio.sleep(3)
-        print('[💻] Finished Syncing Custom Commands')
-
+        print("[💻] Finished Syncing Custom Commands")
 
     @staticmethod
     async def replace_variables(message, replacements):
@@ -316,18 +319,23 @@ class Voting(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(
-        label="0", style=discord.ButtonStyle.green, emoji="<:whitecheck:1223062421212631211>", custom_id="vote"
+        label="0",
+        style=discord.ButtonStyle.green,
+        emoji="<:whitecheck:1223062421212631211>",
+        custom_id="vote",
     )
     async def upvote(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
         message_id = interaction.message.id
 
-        voting = await interaction.client.db['Commands Voting'].find_one({"message_id": message_id}) or {
+        voting = await interaction.client.db["Commands Voting"].find_one(
+            {"message_id": message_id}
+        ) or {
             "votes": 0,
             "Voters": [],
         }
         if interaction.user.id in voting["Voters"]:
-            await interaction.client.db['Commands Voting'].update_one(
+            await interaction.client.db["Commands Voting"].update_one(
                 {"message_id": message_id},
                 {
                     "$inc": {"votes": -1},
@@ -341,7 +349,7 @@ class Voting(discord.ui.View):
                 ephemeral=True,
             )
         else:
-            await interaction.client.db['Commands Voting'].update_one(
+            await interaction.client.db["Commands Voting"].update_one(
                 {"message_id": message_id},
                 {
                     "$inc": {"votes": 1},
@@ -363,7 +371,9 @@ class Voting(discord.ui.View):
         custom_id="viewlist",
     )
     async def list(self, interaction: discord.Interaction, button: discord.ui.Button):
-        voting = await interaction.client.db['Commands Voting'].find_one({"message_id": interaction.message.id})
+        voting = await interaction.client.db["Commands Voting"].find_one(
+            {"message_id": interaction.message.id}
+        )
         voters = voting.get("Voters", [])
         if not voters:
             voters_str = f"**{interaction.user.display_name},** there are no voters!"
@@ -379,9 +389,6 @@ class Voting(discord.ui.View):
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-
-
-
 async def has_customcommandrole(ctx, command):
     if isinstance(ctx, discord.Interaction):
         author = ctx.user
@@ -393,7 +400,7 @@ async def has_customcommandrole(ctx, command):
         client = ctx.client
 
     filter = {"guild_id": ctx.guild.id, "name": command}
-    role_data = await client.db['Custom Commands'].find_one(filter)
+    role_data = await client.db["Custom Commands"].find_one(filter)
 
     if role_data and "permissionroles" in role_data:
         role_ids = role_data["permissionroles"]
@@ -410,10 +417,6 @@ async def has_customcommandrole(ctx, command):
     else:
 
         return await has_admin_role(ctx)
-
-
-
-
 
 
 async def setup(client: commands.Bot) -> None:
