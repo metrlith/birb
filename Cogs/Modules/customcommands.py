@@ -242,6 +242,7 @@ class CustomCommands(commands.Cog):
             Raw = None
             guild_id = None
             try:
+                ActualRaw = command.get('name')
                 Raw = command.get("name", "").strip().lower()
                 guild_id = command.get("guild_id")
             except (KeyError, AttributeError):
@@ -270,7 +271,7 @@ class CustomCommands(commands.Cog):
 
             if Command and Command.name:
                 await self.client.db["Custom Commands"].update_one(
-                    {"name": command.get("name"), "guild_id": guild_id},
+                    {"name": ActualRaw, "guild_id": guild_id},
                     {
                         "$set": {
                             "Command": Command.name,
