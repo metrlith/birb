@@ -128,27 +128,26 @@ async def check_admin_and_staff(guild: discord.Guild, user: discord.User):
     return False
 
 
-async def has_admin_role(toy, permissions=None):
+async def has_admin_role(toy, permissions=None, msg=None):
     if isinstance(toy, commands.Context):
         author = toy.author
         guild = toy.guild
         send = toy.send
-        s = "context"
     else:
         author = toy.user
         guild = toy.guild
         send = toy.followup.send
-        s = "interaction"
+
+    if msg:
+        send = msg.edit
 
     blacklists = await blacklist.find_one({"user": author.id})
     if blacklists:
         await send(
-            f"{no} **{author.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?",
-            ephemeral=True,
+            f"{no} **{author.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?"
         )
         return False
 
-    filter = {"guild_id": guild.id}
     Config = await Configuration.find_one({"_id": guild.id})
     if not Config:
         await send(embed=BotNotConfigured(), view=Support())
@@ -169,31 +168,21 @@ async def has_admin_role(toy, permissions=None):
                     return True
                 else:
                     await send(
-                        f"{no} **{author.display_name}**, you don't have permission to use this command.\n-# Advanced Permission",
-                        ephemeral=True,
+                        f"{no} **{author.display_name}**, you don't have permission to use this command.\n-# Advanced Permission"
                     )
                     return False
 
     if not Config.get("Permissions"):
         await send(
-            f"{no} **{author.display_name}**, the permissions haven't been setup yet please run `/config`",
-            ephemeral=True if s == "interaction" else False,
+            f"{no} **{author.display_name}**, the permissions haven't been setup yet please run `/config`"
         )
         return False
 
     if not Config.get("Permissions").get("adminrole"):
         await send(
-            f"{no} **{author.display_name}**, the admin role hasn't been setup yet please run `/config`",
-            ephemeral=True if s == "interaction" else False,
+            f"{no} **{author.display_name}**, the admin role hasn't been setup yet please run `/config`"
         )
         return False
-
-    # advancedresult = await advancedpermissions.find(filter).to_list(length=None)
-    # if advancedresult:
-    #     for advanced in advancedresult:
-    #         if permissions in advanced.get("permissions", []):
-    #             if any(role.id == advanced.get("role") for role in author.roles):
-    #                 return True
 
     if Config.get("Permissions").get("adminrole"):
         Ids = Config.get("Permissions").get("adminrole")
@@ -207,19 +196,16 @@ async def has_admin_role(toy, permissions=None):
             await send(
                 f"{no} **{author.display_name}**, the admin role isn't set please run </config:1140463441136586784>",
                 view=PermissionsButtons(),
-                ephemeral=True if s == "interaction" else False,
             )
         else:
             await send(
                 f"{no} **{author.display_name}**, the admin role is not setup please tell an admin to run </config:1140463441136586784> to fix it.",
                 view=PermissionsButtons(),
-                ephemeral=True if s == "interaction" else False,
             )
         return False
 
     await send(
-        f"{no} **{author.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`",
-        ephemeral=True if s == "interaction" else False,
+        f"{no} **{author.display_name}**, you don't have permission to use this command.\n<:Arrow:1115743130461933599>**Required:** `Admin Role`"
     )
     return False
 

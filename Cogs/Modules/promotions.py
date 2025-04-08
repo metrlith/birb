@@ -51,14 +51,14 @@ async def SingleHierarchy(
         f"<a:Loading:1167074303905386587> Promoting **@{user.display_name}**...",
     )
     if not await ModuleCheck(interaction.guild.id, "promotions"):
-        await interaction.followup.send(
+        await msg.edit(
             embed=ModuleNotEnabled(),
             view=Support(),
             ephemeral=True,
         )
         return
 
-    if not await has_admin_role(interaction, "Promotion Permissions"):
+    if not await has_admin_role(interaction, "Promotion Permissions", msg):
         return
 
     if user is None:
