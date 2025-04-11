@@ -2,69 +2,81 @@ import discord
 from discord.ext import commands
 from datetime import datetime
 from utils.emojis import *
+from discord import app_commands
 import string
 import random
 import traceback
-
 
 
 class On_error(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
 
-    @commands.Cog.listener()
-    async def on_app_command_error(self, interaction: discord.Interaction, error: Exception):
-            print('kk')
-            if isinstance(error, discord.app_commands.errors.CommandNotFound):
-                return await interaction.response.send_message(
-                    embed=discord.Embed(
-                        title="Command Not Found",
-                        description="The command may be syncing. Please wait.",
-                        color=discord.Color.red(),
-                    )
-                )
-            
-
-
-    @commands.Cog.listener()
-    async def on_command_error(
-        self, ctx: commands.Context, error: commands.CommandError
-    ):
-
-        # if environment == "development":
-        #     return
+    async def ErrorResponse(self, ctx_or_interaction, error: Exception):
         try:
+            if isinstance(ctx_or_interaction, commands.Context):
+                author = ctx_or_interaction.author
+                guild = ctx_or_interaction.guild
+                send = ctx_or_interaction.send
+                command = ctx_or_interaction.command
+            elif isinstance(ctx_or_interaction, discord.Interaction):
+                author = ctx_or_interaction.user
+                guild = ctx_or_interaction.guild
+                send = ctx_or_interaction.response.send_message
+                command = ctx_or_interaction.command
+            else:
+                return
+
             if isinstance(error, commands.NoPrivateMessage):
-                await ctx.send(
-                    f"{no} **{ctx.author.display_name},** I can't execute commands in DMs. Please use me in a server."
+                await send(
+                    f"{no} **{author.display_name},** I can't execute commands in DMs. Please use me in a server.",
+                    ephemeral=(
+                        True
+                        if isinstance(ctx_or_interaction, discord.Interaction)
+                        else False
+                    ),
                 )
                 return
             if isinstance(error, commands.CommandNotFound):
                 return
             if isinstance(error, commands.NotOwner):
                 return
-
             if isinstance(error, commands.BadLiteralArgument):
-                await ctx.send(
-                    f"{no} **{ctx.author.display_name}**, you have used an invalid argument."
+                await send(
+                    f"{no} **{author.display_name}**, you have used an invalid argument.",
+                    ephemeral=(
+                        True
+                        if isinstance(ctx_or_interaction, discord.Interaction)
+                        else False
+                    ),
                 )
                 return
             if isinstance(error, commands.MemberNotFound):
-                await ctx.send(
-                    f"{no} **{ctx.author.display_name}**, that member isn't in the server."
+                await send(
+                    f"{no} **{author.display_name}**, that member isn't in the server.",
+                    ephemeral=(
+                        True
+                        if isinstance(ctx_or_interaction, discord.Interaction)
+                        else False
+                    ),
                 )
                 return
             if isinstance(error, commands.MissingPermissions):
                 return
             if isinstance(error, commands.MissingRequiredArgument):
-                await ctx.send(
-                    f"{no} **{ctx.author.display_name}**, you are missing a requirement."
+                await send(
+                    f"{no} **{author.display_name}**, you are missing a requirement.",
+                    ephemeral=(
+                        True
+                        if isinstance(ctx_or_interaction, discord.Interaction)
+                        else False
+                    ),
                 )
                 return
             if isinstance(error, commands.BadArgument):
                 return
 
-            if ctx.guild is None:
+            if guild is None:
                 return
             error_id = "".join(random.choices(string.digits, k=24))
             error_id = f"error-{error_id}"
@@ -72,13 +84,13 @@ class On_error(commands.Cog):
                 traceback.format_exception(type(error), error, error.__traceback__)
             )
             ERROR = str(error)
-            await self.client.db['errors'].insert_one(
+            await self.client.db["errors"].insert_one(
                 {
                     "error_id": error_id,
                     "error": ERROR,
                     "traceback": TRACEBACK,
                     "timestamp": datetime.now(),
-                    "guild_id": ctx.guild.id,
+                    "guild_id": guild.id,
                 }
             )
             view = discord.ui.View()
@@ -95,7 +107,15 @@ class On_error(commands.Cog):
                 color=discord.Color.brand_red(),
             )
 
-            await ctx.send(embed=embed, view=view)
+            await send(
+                embed=embed,
+                view=view,
+                ephemeral=(
+                    True
+                    if isinstance(ctx_or_interaction, discord.Interaction)
+                    else False
+                ),
+            )
             Channel = self.client.get_channel(1333545239930994801)
             embed = discord.Embed(
                 title="",
@@ -104,12 +124,12 @@ class On_error(commands.Cog):
             )
             embed.add_field(
                 name="Extra Information",
-                value=f">>> **Guild:** {ctx.guild.name} (`{ctx.guild.id}`)\n**Command:** {ctx.command.qualified_name}\n**Timestamp:** <t:{int(datetime.now().timestamp())}>",
+                value=f">>> **Guild:** {guild.name} (`{guild.id}`)\n**Command:** {command.qualified_name if command else 'Unknown'}\n**Timestamp:** <t:{int(datetime.now().timestamp())}>",
                 inline=False,
             )
             embed.set_footer(text=f"Error ID: {error_id}")
             msg = await Channel.send(embed=embed)
-            await self.client.db['errors'].update_one(
+            await self.client.db["errors"].update_one(
                 {"error_id": error_id}, {"$set": {"MsgLink": msg.jump_url}}
             )
             return
@@ -119,6 +139,18 @@ class On_error(commands.Cog):
             return
         except discord.ClientException:
             return
+
+    @commands.Cog.listener()
+    async def on_command_error(
+        self, ctx: commands.Context, error: commands.CommandError
+    ):
+        await self.ErrorResponse(ctx, error)
+
+    @commands.Cog.listener()
+    async def on_application_command_error(
+        self, interaction: discord.Interaction, error: app_commands.AppCommandError
+    ):
+        await self.ErrorResponse(interaction, error)
 
 
 async def setup(client: commands.Bot) -> None:
