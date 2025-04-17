@@ -74,11 +74,13 @@ class TicketForm(discord.ui.Modal):
             "pticket_open", t.inserted_id, self.data.get("panel")
         )
 
-        TSMG = await interaction.response.send_message(
-            content=f"{tick} **{interaction.user.display_name}**, I've opened a ticket for you!",
-            ephemeral=True,
-        )
-        await TicketError(interaction, t, TSMG)
+        await interaction.response.defer()
+        TMSG: discord.Message = await interaction.followup.send(
+                content=f"<a:Loading:1167074303905386587> **{interaction.user.display_name}**, hold on while I open the ticket.",
+                ephemeral=True,
+            )
+
+        await TicketError(interaction, t, TMSG)
 
 
 class Button(discord.ui.Button):
