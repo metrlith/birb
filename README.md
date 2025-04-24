@@ -18,7 +18,6 @@ Birb is designed to simplify tasks related to managing staff, staff punishment, 
 > - Staff Panel 
 > - Custom Commands
 > - Connection Roles
-> - Ban Appeals
 > - Auto Response 
 
 ## `STAFF` Commands
