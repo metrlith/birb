@@ -237,19 +237,6 @@ class ConfigMenu(discord.ui.Select):
             embed = await SuspensionEmbed(interaction, Config, embed)
             view = discord.ui.View()
             view.add_item(SuspensionOptions(interaction.user))
-        elif selection == "Ban Appeal":
-            from Cogs.Configuration.Components.BanAppeal import (
-                BanAppealEmbed,
-                BanAppealOptions,
-            )
-
-            embed = await BanAppealEmbed(interaction, embed)
-            view = discord.ui.View()
-            view.add_item(
-                BanAppealOptions(
-                    interaction.user,
-                )
-            )
         elif selection == "QOTD":
             from Cogs.Configuration.Components.QOTD import (
                 QOTDEMbed,
@@ -471,12 +458,6 @@ def Options(Config: dict = None):
             emoji="<:qotd:1234994772796772432>",
             description="",
             value="QOTD",
-        ),
-        discord.SelectOption(
-            label="Ban Appeal",
-            description="",
-            emoji="<:reports:1224723845726998651>",
-            value="Ban Appeal",
         ),
         discord.SelectOption(
             label="Suggestions",

@@ -10,11 +10,10 @@ from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
 from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
-from Cogs.Modules.loa import Confirm
-from Cogs.Modules.customcommands import Voting
+from Cogs.Modules.leaves import Confirm
+from Cogs.Modules.commands import Voting
 from Cogs.Tasks.activityauto import ResetLeaderboard
 from Cogs.Modules.staff import Staffview
-from Cogs.Events.on_ban import AcceptOrDeny, AppealButton
 from Cogs.Events.on_infraction_approval import CaseApproval
 from Cogs.Events.on_ticket import PTicketControl
 from Cogs.Tasks.qotd import *
@@ -355,12 +354,9 @@ class Client(commands.AutoShardedBot):
 
     async def _load_cogs(self):
         self.add_view(Voting())
-        self.add_view(Confirm())
         self.add_view(Voti())
         self.add_view(Staffview())
         self.add_view(ResetLeaderboard())
-        self.add_view(AcceptOrDeny(client))
-        self.add_view(AppealButton(client))
         self.add_view(ModmailClosure())
         self.add_view(Links())
         self.add_view(CaseApproval())
