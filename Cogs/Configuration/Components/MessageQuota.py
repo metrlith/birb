@@ -293,7 +293,7 @@ class PostChannel(discord.ui.ChannelSelect):
             await interaction.edit_original_response(content=None)
         except Exception as e:
             return
-
+    
 
 class ActivityToggle(discord.ui.Select):
     def __init__(self, author):

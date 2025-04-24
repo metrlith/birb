@@ -397,6 +397,7 @@ class on_promotion(commands.Cog):
             {"_id": objectid},
             {"$set": {"jump_url": msg.jump_url, "msg_id": msg.id}},
         )
+        self.client.dispatch("promotion_log", objectid, "create", manager)
         consreult = await self.client.db["consent"].find_one({"user_id": staff.id})
         if not consreult or consreult.get("promotionalert") is not False and not edit:
             try:

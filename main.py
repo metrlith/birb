@@ -208,7 +208,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_suggestion",
             "Cogs.Events.on_suggest_update",
             "Cogs.Modules.integrations",
-            "Cogs.Tasks.loa_scheulded",
+            "Cogs.Tasks.loa_scheduled",
             "Cogs.Events.on_infraction_approval",
             "Cogs.Modules.tickets",
             "Cogs.Events.on_ticket",
@@ -514,6 +514,7 @@ async def UpdateChannelName():
     channel = client.get_channel(1131245978704420964)
     if not channel:
         return
+
     users = await GetUsers()
     try:
         await channel.edit(name=f"{len(client.guilds)} Guilds | {users} Users")

@@ -3,16 +3,12 @@ import discord
 from dotenv import load_dotenv
 from utils.emojis import *
 load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Customisation = DB["Customisation"]
-# prem = DB["premium"]
-# cfg = DB['Config']
 
 class PremiumButtons(discord.ui.View):
     def __init__(self, author: discord.Member):
         super().__init__()
         self.author = author
+
 
     @discord.ui.button(
         label="Upgrade Server",
@@ -44,6 +40,7 @@ class PremiumButtons(discord.ui.View):
             
         )
 
+
     @discord.ui.button(
         label="Deactive Server", style=discord.ButtonStyle.danger, disabled=True,
         row=0
@@ -64,6 +61,7 @@ class PremiumButtons(discord.ui.View):
         view.add_item(ConfigMenu(Options(Config=Config), interaction.user))
         view.enable.disabled = False
         view.disable.disabled = True
+
         await interaction.response.edit_message(
             embed=await SubscriptionsEmbed(interaction),
             view=view
