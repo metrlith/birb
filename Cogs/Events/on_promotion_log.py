@@ -60,20 +60,20 @@ class on_promotion_log(commands.Cog):
 
         if action == "create":
             E.title = "Promotion Created"
-            E.description = f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('role_id')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}"
+            E.description = f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('new')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}"
         elif action == "modify":
             E.title = "Promotion Modified"
             E.add_field(
                 name="Before",
-                value=f"> **ID:** `{unmodified.get('random_string')}`\n> **Role:** <@&{unmodified.get('role_id')}>\n> **Reason:** {unmodified.get('reason')}\n> **Notes:** {unmodified.get('notes', 'N/A')}",
+                value=f"> **ID:** `{unmodified.get('random_string')}`\n> **Role:** <@&{unmodified.get('new')}>\n> **Reason:** {unmodified.get('reason')}\n> **Notes:** {unmodified.get('notes', 'N/A')}",
             )
             E.add_field(
                 name="After",
-                value=f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('role_id')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}",
+                value=f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('new')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}",
             )
         elif action == "delete":
             E.title = "Promotion Voided"
-            E.description = f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('role_id')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}"
+            E.description = f"> **ID:** `{promotion.get('random_string')}`\n> **Role:** <@&{promotion.get('new')}>\n> **Reason:** {promotion.get('reason')}\n> **Notes:** {promotion.get('notes', 'N/A')}"
         try:
             await LogsChannel.send(embed=E, view=view)
         except (discord.Forbidden, discord.NotFound, discord.HTTPException):
