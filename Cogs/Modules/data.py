@@ -284,7 +284,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await infractions.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['infractions'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all infractions.", ephemeral=True
         )
@@ -299,7 +299,7 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await promotions.delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db['promotions'].delete_many({"guild_id": interaction.guild.id})
         await interaction.response.send_message(
             f"{tick} Successfully cleared all promotions.", ephemeral=True
         )
