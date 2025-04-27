@@ -12,18 +12,18 @@ class GuildJoins(commands.Cog):
         self.client = client
         self.GuildChannels = {
             "join": (
-                1118944466980581376
+                1366053350554206310
                 if not os.getenv("JoinChannel")
                 else int(os.getenv("JoinChannel"))
             ),
             "leave": (
-                1150816700489535508
+                1366053385564065842
                 if not os.getenv("LeaveChannel")
                 else int(os.getenv("LeaveChannel"))
             ),
-            "webhook": 1178362100737916988,
-            "notable-joins": 1341046059606085692,
-            "notable-leaves": 1341046182788726865,
+            "webhook": 1366053439036981370,
+            "notable-joins": 1366053372339421204,
+            "notable-leaves": 1366053406413815888,
         }
 
     async def LogJoin(self, guild: discord.Guild):
