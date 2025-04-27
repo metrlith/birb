@@ -4,10 +4,8 @@ import discord
 
 from datetime import datetime
 from discord.ext import tasks
-from dotenv import load_dotenv
 
 
-load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

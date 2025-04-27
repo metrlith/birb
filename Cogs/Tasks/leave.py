@@ -2,13 +2,11 @@ from discord.ext import commands, tasks
 import os
 
 import datetime
-from dotenv import load_dotenv
 from datetime import datetime
 from bson import ObjectId
 from utils.emojis import *
 import discord
 
-load_dotenv()
 
 
 

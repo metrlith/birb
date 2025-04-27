@@ -2,10 +2,8 @@ from discord import app_commands
 import discord
 from discord.ext import commands
 import os
-from dotenv import load_dotenv
 
 
-load_dotenv()
 from utils.Module import ModuleCheck
 from utils.emojis import *
 

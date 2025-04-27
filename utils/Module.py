@@ -1,10 +1,8 @@
 import os
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
 
 
-load_dotenv()
 Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
 DB = Mongos["astro"]
 Configuration = DB["Config"]

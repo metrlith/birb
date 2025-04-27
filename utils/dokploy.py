@@ -5,11 +5,9 @@ import os
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiohttp
-from dotenv import load_dotenv
 import re
 from datetime import datetime
 
-load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]

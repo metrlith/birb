@@ -1,17 +1,5 @@
 import discord
-import discord.http
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# infractiontypeactions = DB["infractiontypeactions"]
-# Customisation = DB["Customisation"]
-
 
 class LOAOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):

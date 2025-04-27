@@ -1,15 +1,5 @@
 import discord
-import discord.http
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-
 
 async def ModuleOptions(Config, data = None):
     if not Config:

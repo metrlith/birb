@@ -9,10 +9,6 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import datetime
 import asyncio
 from utils.r2 import upload_file_to_r2, ClearOldFiles
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 async def TicketPermissions(interaction: discord.Interaction):
     t = await interaction.client.db["Tickets"].find_one(

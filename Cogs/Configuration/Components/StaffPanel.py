@@ -1,19 +1,6 @@
 import discord
-import discord.http
 import traceback
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# infractiontypeactions = DB["infractiontypeactions"]
-# Customisation = DB["Customisation"]
-
-
 class StaffPanelOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):
         super().__init__(

@@ -2,11 +2,10 @@ import discord
 from discord.ext import commands, tasks
 import os
 from utils.emojis import *
-from dotenv import load_dotenv
 from datetime import datetime
 
 
-load_dotenv()
+
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

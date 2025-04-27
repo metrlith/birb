@@ -4,10 +4,6 @@ from utils.emojis import *
 import os
 from utils.ui import YesOrNo, BasicPaginator
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 AdminRoles = (
     [int(x) for x in os.getenv("STAFF").split(",")] if os.getenv("STAFF") else []
 )

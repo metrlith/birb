@@ -8,9 +8,8 @@ from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 from utils.format import IsSeperateBot
 from utils.emojis import *
 from Cogs.Events.on_suggestion import Voting
-from dotenv import load_dotenv
 
-load_dotenv()
+
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,6 @@
 import aioboto3
-import boto3
 from botocore.config import Config
-from dotenv import load_dotenv
+
 from PIL import Image
 from io import BytesIO
 import discord
@@ -10,7 +9,7 @@ import os
 from datetime import datetime, timezone, timedelta
 import asyncio
 
-load_dotenv()
+
 
 logger = logging.getLogger(__name__)
 

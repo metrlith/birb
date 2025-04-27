@@ -6,9 +6,6 @@ from utils.format import IsSeperateBot
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 from utils.emojis import *
-from dotenv import load_dotenv
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 

@@ -10,9 +10,7 @@ from discord import app_commands
 from utils.permissions import check_admin_and_staff
 
 from utils.Module import ModuleCheck
-from dotenv import load_dotenv
 
-load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
 ENVIRONMENT = os.getenv("ENVIRONMENT")

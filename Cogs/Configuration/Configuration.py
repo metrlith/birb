@@ -1,17 +1,12 @@
 import discord
 from discord.ext import commands
-import discord.http
 from utils.emojis import *
 
-from dotenv import load_dotenv
 from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 from utils.ui import PMButton
 
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
+
 
 
 class ConfigMenu(discord.ui.Select):

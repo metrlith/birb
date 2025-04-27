@@ -5,7 +5,6 @@ import re
 
 import discord
 from discord.ext import commands, tasks
-from dotenv import load_dotenv
 
 
 from utils.format import strtotime
@@ -15,7 +14,6 @@ from utils.permissions import *
 from datetime import timedelta, datetime
 
 
-load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

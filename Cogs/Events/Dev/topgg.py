@@ -1,20 +1,19 @@
 from discord.ext import commands, tasks
 from utils.emojis import *
 import topgg
-from dotenv import load_dotenv
+
 import os
 
-load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 dbl_token = os.getenv("DBL_TOKEN")
 
 
 class Topgg(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
 
-        self.client.topggpy = topgg.DBLClient(self.client, dbl_token)
+        self.topggpy = topgg.DBLClient(self.client, dbl_token)
         self.update_stats.start()
 
     @tasks.loop(minutes=30)
@@ -22,8 +21,8 @@ class Topgg(commands.Cog):
         if environment == "custom":
             return
         try:
-            await self.client.topggpy.post_guild_count()
-            print(f"[🔝] Posted server count ({self.client.topggpy.guild_count})")
+            await self.topggpy.post_guild_count()
+            print(f"[🔝] Posted server count ({self.topggpy.guild_count})")
         except Exception as e:
             print("[⬇️] Failed to post server count")
 
