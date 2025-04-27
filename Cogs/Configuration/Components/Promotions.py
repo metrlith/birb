@@ -312,8 +312,9 @@ class PSelect(discord.ui.Select):
                     department = department[0]
                 if isinstance(department, dict) and "ranks" in department:
                     roles = [
-                        interaction.guild.get_role(role_id).mention
+                        role.mention
                         for role_id in department["ranks"]
+                        if (role := interaction.guild.get_role(role_id)) is not None
                     ]
                     RolesStr = "> " + ", ".join(roles) if roles else "No roles assigned"
                     if len(RolesStr) > 1024:
