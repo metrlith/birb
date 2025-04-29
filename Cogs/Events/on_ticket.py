@@ -7,6 +7,7 @@ from utils.emojis import *
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 import datetime
+from utils.format import Replace
 import asyncio
 from utils.r2 import upload_file_to_r2, ClearOldFiles
 from dotenv import load_dotenv
@@ -101,6 +102,13 @@ class PTicketControl(discord.ui.View):
         Result = await interaction.client.db["Tickets"].find_one(
             {"MessageID": int(interaction.message.id)}
         )
+        Panel = await interaction.client.db["Panels"].find_one(
+            {
+                "name": Result.get("panel"),
+                "guild": interaction.guild.id,
+                "type": "single",
+            }
+        )
         if not Result:
             return await interaction.followup.send(
                 "This isn't a ticket channel.", ephemeral=True
@@ -134,9 +142,24 @@ class PTicketControl(discord.ui.View):
         view.claim.label = f"Claimed by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
+        name = f"claimed-{interaction.channel.name.split('-')[1]}"
+        if Panel.get("TicketNames").get("Claimed", None):
+            replacements = {
+                "{author.name}": interaction.user.name,
+                "{author.id}": str(interaction.user.id),
+                "{user.id}": str(Result.get("UserID")),
+            }
+            try:
+                name = Replace(
+                    Panel.get("TicketNames").get("Claimed"),
+                    replacements=replacements,
+                )
+            except Exception as e:
+                name = f"claimed-{interaction.channel.name.split('-')[1]}"
+
         try:
             await interaction.channel.edit(
-                name=f"claimed-{interaction.channel.name.split('-')[1]}"
+                name=name,
             )
         except discord.Forbidden:
             return logging.critical(
@@ -332,6 +355,10 @@ class TicketsPublic(commands.Cog):
         Result = await self.client.db["Tickets"].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
+
+        Panel = await self.client.db["Panels"].find_one(
+            {"name": Result.get("panel"), "guild": int(Result.get("GuildID"))}
+        )
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
         if not Channel:
             return logging.critical(
@@ -352,9 +379,25 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_pticket_claim] Bot does not have permission to edit the message {Message.id}"
             )
+        name = f"claimed-{Channel.name.split('-')[1]}"
+        if Panel.get("TicketNames").get("Claimed", None):
+            replacements = {
+                "{author.name}": member.name,
+                "{author.id}": str(member.id),
+                "{user.name}": member.name,
+                "{user.id}": str(member.id),
+            }
+            try:
+                name = Replace(
+                    Panel.get("TicketNames").get("Claimed"),
+                    replacements=replacements,
+                )
+            except Exception as e:
+                name = f"claimed-{Channel.name.split('-')[1]}"
+
         try:
             await Channel.edit(
-                name=f"claimed-{Channel.name.split('-')[1]}",
+                name=name,
             )
         except discord.Forbidden:
             return logging.critical(
