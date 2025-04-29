@@ -169,9 +169,6 @@ class Client(commands.AutoShardedBot):
 
     def _initialize_cogslist(self):
         return [
-            # Developer Modules
-            "Cogs.Modules.Developer.astro",
-            "Cogs.Modules.Developer.admin",
             # Modules
             "Cogs.Modules.suggestions",
             "Cogs.Modules.leaves",

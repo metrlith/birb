@@ -34,7 +34,7 @@ class BasicPaginator(discord.ui.View):
             self.next.disabled = self.current == len(self.embeds) - 1
             self.page.label = f"{self.current + 1}/{len(self.embeds)}"
 
-    @discord.ui.button(label="◀", style=discord.ButtonStyle.blurple, disabled=True)
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.blurple, disabled=True, row=4)
     async def prev(self, interaction: discord.Interaction, _button: discord.ui.Button):
         if self.current > 0:
             self.current -= 1
@@ -45,11 +45,11 @@ class BasicPaginator(discord.ui.View):
                 view=self
             )
 
-    @discord.ui.button(label="1/1", style=discord.ButtonStyle.grey, disabled=True)
+    @discord.ui.button(label="1/1", style=discord.ButtonStyle.grey, disabled=True, row=4)
     async def page(self, _interaction: discord.Interaction, _button: discord.ui.Button):
         pass
 
-    @discord.ui.button(label="▶", style=discord.ButtonStyle.blurple, disabled=False)
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.blurple, disabled=False, row=4)
     async def next(self, interaction: discord.Interaction, _button: discord.ui.Button):
         if self.messages and self.current < len(self.messages) - 1:
             self.current += 1

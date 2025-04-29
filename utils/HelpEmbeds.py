@@ -42,6 +42,11 @@ def ChannelNotFound():
         value="> 1. Head to </config:1140463441136586784> and make sure to go to the module and set the channel.\n> 2. Ensure I have permission to access that channel (`View Channel, Read Messages, Send Messages`).",
     )
 
+def CustomError(error: str):
+    return discord.Embed(
+        description=f"```\n{error}\n```",
+        color=discord.Color.brand_red()
+    )
 
 def NoPermissionChannel(channel: discord.TextChannel):
     return discord.Embed(
@@ -60,6 +65,12 @@ def NoPremium():
     ).add_field(
         name="<:Premium:1250160559203287080> Premium",
         value="> Run </premium:1233948295961772143> to see more information!",
+    )
+
+def NotYourPanel():
+    return discord.Embed(
+        description="```\nThis is not your panel.\n```",
+        color=discord.Color.brand_red(),
     )
 
 
