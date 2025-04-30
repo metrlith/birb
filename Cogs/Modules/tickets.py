@@ -76,9 +76,9 @@ class TicketForm(discord.ui.Modal):
 
         await interaction.response.defer()
         TMSG: discord.Message = await interaction.followup.send(
-                content=f"<a:Loading:1167074303905386587> **{interaction.user.display_name}**, hold on while I open the ticket.",
-                ephemeral=True,
-            )
+            content=f"<a:Loading:1167074303905386587> **{interaction.user.display_name}**, hold on while I open the ticket.",
+            ephemeral=True,
+        )
 
         await TicketError(interaction, t, TMSG)
 
@@ -547,7 +547,7 @@ class TicketsPub(commands.Cog):
     @tickets.command(description="View the claimed tickets leaderboard.")
     async def leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        
+
         if not await has_staff_role(interaction):
             return
         if not await ModuleCheck(interaction.guild.id, "Tickets"):
@@ -556,46 +556,54 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        
+
         msg = await interaction.followup.send(
             embed=discord.Embed(
                 description="<a:astroloading:1245681595546079285>",
                 color=discord.Color.dark_embed(),
             )
         )
-        
+
         ticket_users = (
             await interaction.client.db["Ticket Quota"]
             .find({"GuildID": interaction.guild.id})
             .sort("ClaimedTickets", pymongo.DESCENDING)
             .to_list(length=750)
         )
-        
+
         if not ticket_users:
             return await msg.edit(
                 content=f"{no} **{interaction.user.display_name},** there haven't been any tickets claimed yet.",
                 embed=None,
             )
-        
+
         Config = await self.client.config.find_one({"_id": interaction.guild.id})
         if not Config or not Config.get("Tickets"):
             return await msg.edit(embed=BotNotConfigured(), view=Support())
-        
+
         quota = int(Config.get("Tickets", {}).get("quota", 0))
-        YouProgress = next((user for user in ticket_users if user.get("UserID") == interaction.user.id), {})
+        YouProgress = next(
+            (
+                user
+                for user in ticket_users
+                if user.get("UserID") == interaction.user.id
+            ),
+            {},
+        )
         YourPlace = self.GetPlace(ticket_users, interaction.user)
         YourTickets = YouProgress.get("ClaimedTickets", 0)
-        YourLOA = any(role.id == Config.get("LOA", {}).get("role") for role in interaction.user.roles)
-        YourEmoji = (
-            "`LOA`" if YourLOA else (
-                "Met" if YourTickets >= quota else "Not Met"
-            )
+        YourLOA = any(
+            role.id == Config.get("LOA", {}).get("role")
+            for role in interaction.user.roles
         )
-        
+        YourEmoji = (
+            "`LOA`" if YourLOA else ("Met" if YourTickets >= quota else "Not Met")
+        )
+
         Description = ""
         pages = []
         i = 1
-        
+
         for staff in ticket_users:
             member = interaction.guild.get_member(staff.get("UserID"))
             if not member:
@@ -603,17 +611,23 @@ class TicketsPub(commands.Cog):
                     member = await interaction.guild.fetch_member(staff.get("UserID"))
                 except (discord.HTTPException, discord.NotFound):
                     continue
-            
+
             if not await check_admin_and_staff(interaction.guild, member):
                 continue
-            
-            OnLOA = any(role.id == Config.get("LOA", {}).get("role") for role in member.roles)
-            emoji = "`LOA`" if OnLOA else ("Met" if staff.get("ClaimedTickets", 0) >= quota else "Not Met")
-            
+
+            OnLOA = any(
+                role.id == Config.get("LOA", {}).get("role") for role in member.roles
+            )
+            emoji = (
+                "`LOA`"
+                if OnLOA
+                else ("Met" if staff.get("ClaimedTickets", 0) >= quota else "Not Met")
+            )
+
             Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
             if quota != 0:
                 Description += f"{replybottom} **Status:** {emoji}\n\n"
-            
+
             if i % 9 == 0:
                 embed = discord.Embed(
                     title="Ticket Leaderboard",
@@ -621,12 +635,14 @@ class TicketsPub(commands.Cog):
                     color=discord.Color.dark_embed(),
                 )
                 embed.set_thumbnail(url=interaction.guild.icon)
-                embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon)
+                embed.set_author(
+                    name=interaction.guild.name, icon_url=interaction.guild.icon
+                )
                 pages.append(embed)
                 Description = ""
-            
+
             i += 1
-        
+
         if Description.strip():
             embed = discord.Embed(
                 title="Ticket Leaderboard",
@@ -634,9 +650,11 @@ class TicketsPub(commands.Cog):
                 color=discord.Color.dark_embed(),
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            embed.set_author(name=interaction.guild.name, icon_url=interaction.guild.icon)
+            embed.set_author(
+                name=interaction.guild.name, icon_url=interaction.guild.icon
+            )
             pages.append(embed)
-        
+
         if YouProgress:
             for embed in pages:
                 embed.add_field(
@@ -647,7 +665,7 @@ class TicketsPub(commands.Cog):
                         f"> **Place:** {ordinal(YourPlace) if YourPlace else 'N/A'}"
                     ),
                 )
-        
+
         paginator = await PaginatorButtons()
         if pages:
             await paginator.start(interaction, pages=pages[:45], msg=msg)
@@ -656,7 +674,6 @@ class TicketsPub(commands.Cog):
                 content=f"{no} **{interaction.user.display_name},** there are no pages to display.",
                 embed=None,
             )
-
 
     @tickets.command(description="Request to close a ticket.")
     @app_commands.autocomplete(reason=CloseReason)
@@ -791,6 +808,7 @@ class TicketsPub(commands.Cog):
 
     @tickets.command(description="Claim a ticket.")
     async def claim(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if not await TicketPermissions(interaction):
             return await interaction.followup.send(
                 content=f"{no} You don't have permission to use this command."
@@ -830,6 +848,7 @@ class TicketsPub(commands.Cog):
 
     @tickets.command(description="Unclaim a ticket.")
     async def unclaim(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if not await TicketPermissions(interaction):
             return await interaction.followup.send(
                 content=f"{no} You don't have permission to use this command."
@@ -851,7 +870,7 @@ class TicketsPub(commands.Cog):
             return await interaction.followup.send(
                 content=f"{no} This ticket isn't claimed."
             )
-        await interaction.response.defer()
+
         await interaction.client.db["Tickets"].update_one(
             {"ChannelID": interaction.channel.id},
             {"$set": {"claimed": {"claimer": None, "claimedAt": None}}},
