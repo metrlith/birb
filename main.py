@@ -16,7 +16,7 @@ from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
 
 from Cogs.Modules.commands import Voting
-from Cogs.Tasks.ActivityAuto import ResetLeaderboard
+from Cogs.Tasks.activityauto import ResetLeaderboard
 from Cogs.Modules.staff import Staffview
 from Cogs.Events.on_infraction_approval import CaseApproval
 from Cogs.Events.on_ticket import PTicketControl
@@ -215,7 +215,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Tasks.leave",
             "Cogs.Tasks.staff-list",
             "Cogs.Tasks.suspension",
-            "Cogs.Tasks.ActivityAuto",
+            "Cogs.Tasks.activityauto",
             "Cogs.Tasks.UpdateChannel",
             "Cogs.Tasks.qotd",
         ]

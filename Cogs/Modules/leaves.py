@@ -128,7 +128,6 @@ class LOAModule(commands.Cog):
             chunk = LOA[i : i + 10]
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(name="Past LOAs")
-            embed.set_footer(text=f"Page {i // 10 + 1} of {len(LOA) // 10 + 1}")
             for loa in chunk:
                 if not loa.get("LoaID"):
                     continue
@@ -169,11 +168,11 @@ class LOAModule(commands.Cog):
             return
 
         pages = []
-        for i in range(0, len(LOA), 1):
-            chunk = LOA[i : i + 1]
+        for i in range(0, len(LOA), 10):
+            chunk = LOA[i : i + 10]
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(name="Active LOAs")
-            embed.set_footer(text=f"Page {i // 1 + 1} of {len(LOA) // 1 + 1}")
+
             for loa in chunk:
                 if not loa.get("LoaID"):
                     continue
@@ -186,7 +185,6 @@ class LOAModule(commands.Cog):
                     ),
                     inline=False,
                 )
-                embed.set_footer(text=loa.get("LoaID"))
             pages.append(embed)
 
         paginator = BasicPaginator(author=ctx.author, embeds=pages)
