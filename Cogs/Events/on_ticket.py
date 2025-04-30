@@ -128,8 +128,6 @@ class PTicketControl(discord.ui.View):
             name=interaction.user.display_name, icon_url=interaction.user.display_avatar
         )
         view = PTicketControl()
-        if not interaction.guild.id == 1092976553752789054:
-            view.remove_item(view.escalate)
         view.claim.disabled = True
         view.claim.label = f"Claimed by @{interaction.user.name}"
         await interaction.followup.send(embed=embed)
@@ -573,8 +571,6 @@ class TicketsPublic(commands.Cog):
                 if len(ResponseEmbed.fields) == 25:
                     break
         view = PTicketControl()
-        if not guild.id == 1092976553752789054:
-            view.remove_item(view.escalate)
         try:
             msg = await channel.send(
                 embeds=[Embed, ResponseEmbed] if ResponseEmbed else [Embed],
