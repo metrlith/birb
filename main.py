@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -210,6 +211,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_infraction_void",
             "Cogs.Events.on_promotion_log",
             "Cogs.Events.on_promotion_void",
+            "Cogs.Events.on_leave",
             # Tasks
             "Cogs.Tasks.expiration",
             "Cogs.Tasks.leave",

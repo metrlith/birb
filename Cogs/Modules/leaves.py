@@ -70,13 +70,13 @@ async def CurrentLOA(
     return embed
 
 
-async def Duration(loa: dict) -> str:
+async def Duration(loa: dict, IgnoreRequestExt: bool = False) -> str:
     if not loa:
         return "N/A"
 
     Added = 0
     if loa.get("AddedTime") is not None:
-        if loa["AddedTime"].get("RequestExt") is not None:
+        if not IgnoreRequestExt and loa["AddedTime"].get("RequestExt") is not None:
             if loa["AddedTime"]["RequestExt"].get("status", "Rejected") == "Accepted":
                 Added = int(loa["AddedTime"].get("Time", 0))
         else:
@@ -114,6 +114,7 @@ class LOAModule(commands.Cog):
                     "guild_id": ctx.guild.id,
                     "active": False,
                     "request": False,
+                    "Declined": {"$exists": False},
                 }
             )
             .to_list(length=1000)
@@ -247,15 +248,24 @@ class LOAModule(commands.Cog):
     ):
         if not await has_staff_role(ctx):
             return
+        await ctx.defer(ephemeral=True)
 
         Already = await self.client.db["loa"].find_one(
             {
                 "user": ctx.author.id,
                 "guild_id": ctx.guild.id,
                 "active": True,
+                "request": False,
             }
         )
-        if Already:
+        Also = await self.client.db["loa"].find_one(
+            {
+                "user": ctx.author.id,
+                "guild_id": ctx.guild.id,
+                "request": True,
+            }
+        )
+        if Already or Also:
             await ctx.send(
                 content=f"{no} **{ctx.author.display_name},** you already have an active LOA. Please end it before requesting a new one."
             )
@@ -311,7 +321,7 @@ class LOAModule(commands.Cog):
                 "AddedTime": {
                     "Time": 0,
                     "Reason": None,
-                    "RequestExt": None,
+                    # "RequestExt": None,
                     "Log": [],
                 },
                 "RemovedTime": {
@@ -327,7 +337,7 @@ class LOAModule(commands.Cog):
             )
             return
         self.client.dispatch(
-            "loa_request",
+            "leave_request",
             R.inserted_id,
         )
         try:
@@ -366,6 +376,7 @@ class LOAModule(commands.Cog):
                     "guild_id": ctx.guild.id,
                     "active": False,
                     "request": False,
+                    "Declined": {"$exists": False},
                 }
             )
             .to_list(length=750)
@@ -373,6 +384,10 @@ class LOAModule(commands.Cog):
 
         view = LOAManage(ctx.author, ctx.author, True)
         embed = discord.Embed(color=discord.Color.dark_embed())
+
+        view.remove_item(
+            view.RequestExt
+        )  # Temporarily removed until we can add a request extension feature
 
         view.PLOA.label = f"Past LOA's ({len(PastLOAs)})"
         if len(PastLOAs) > 0:
@@ -459,7 +474,7 @@ class LOAManage(discord.ui.View):
         self.target = target
         self.ExtRequest = ExtRequest
 
-    @discord.ui.button(label="Request Extension", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Add Time", style=discord.ButtonStyle.green)
     async def RequestExt(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -527,11 +542,12 @@ class LOAManage(discord.ui.View):
             )
             return
         interaction.client.dispatch(
-            "loa_end",
+            "leave_end",
             Already.get("_id"),
-            self.target.id,
         )
-        interaction.client.dispatch("loa_log", Already.get("_id"), "End")
+        interaction.client.dispatch(
+            "leave_log", Already.get("_id"), "End", interaction.user.id
+        )
 
         await interaction.edit_original_response(
             content=(
@@ -562,6 +578,7 @@ class LOAManage(discord.ui.View):
                     "guild_id": interaction.guild.id,
                     "active": False,
                     "request": False,
+                    "Declined": {"$exists": False},
                 }
             )
             .to_list(length=750)
@@ -674,16 +691,7 @@ class RemoveTime(discord.ui.Modal):
             ),
             ephemeral=True,
         )
-        interaction.client.dispatch(
-            "loa_log",
-            Already.get("_id"),
-            "RemoveTime",
-            {
-                "time": datetime.now(),
-                "duration": Duration,
-                "user": interaction.user.id,
-            },
-        )
+        interaction.client.dispatch("leave_log", Already.get("_id"), "modify", Already)
         await interaction.edit_original_response(
             embed=await CurrentLOA(ctx=interaction, loa=Already, user=self.target),
         )
@@ -706,14 +714,14 @@ class AddTime(discord.ui.Modal):
         )
         self.add_item(self.duration)
 
-        if RequestExt:
-            self.reason = discord.ui.TextInput(
-                label="Reason",
-                placeholder="Why are you requesting this extension?",
-                required=True,
-                max_length=200,
-            )
-            self.add_item(self.reason)
+        # if RequestExt:
+        #     self.reason = discord.ui.TextInput(
+        #         label="Reason",
+        #         placeholder="Why are you requesting this extension?",
+        #         required=True,
+        #         max_length=200,
+        #     )
+        #     self.add_item(self.reason)
 
     async def on_submit(self, interaction: discord.Interaction):
         if not interaction.user.id == self.author.id:
@@ -768,7 +776,7 @@ class AddTime(discord.ui.Modal):
                             "time": datetime.now(),
                             "duration": Duration,
                             "user": interaction.user.id,
-                            "ExtRequest": self.RequestExt,
+                            # "ExtRequest": self.RequestExt,
                             "reason": (
                                 self.reason.value if hasattr(self, "reason") else None
                             ),
@@ -784,8 +792,8 @@ class AddTime(discord.ui.Modal):
             return
 
         if self.RequestExt:
-            await interaction.client.dispatch(
-                "loa_request_ext",
+            interaction.client.dispatch(
+                "leave_request_ext",
                 Z.modified_id,
                 self.target.id,
             )
@@ -796,14 +804,7 @@ class AddTime(discord.ui.Modal):
             return
         else:
             interaction.client.dispatch(
-                "loa_log",
-                Already.get("_id"),
-                "AddTime",
-                {
-                    "time": datetime.now(),
-                    "duration": Duration,
-                    "user": interaction.user.id,
-                },
+                "leave_log", Already.get("_id"), "modify", Already
             )
             Already = await interaction.client.db["loa"].find_one(
                 {
@@ -877,8 +878,10 @@ class PendingActions(discord.ui.View):
             )
             return
         interaction.client.dispatch(
-            "loa_accept",
+            "leave_update",
             Already.get("_id"),
+            "Accepted",
+            interaction.user,
         )
         await interaction.followup.send(
             content=(
@@ -950,9 +953,11 @@ class PendingActions(discord.ui.View):
                 embed=HelpEmbeds.CustomError("Failed to decline LOA."), ephemeral=True
             )
             return
-        await interaction.client.dispatch(
-            "loa_decline",
+        interaction.client.dispatch(
+            "leave_update",
             Already.get("_id"),
+            "Declined",
+            interaction.user,
         )
         await interaction.followup.send(
             content=(
@@ -962,9 +967,6 @@ class PendingActions(discord.ui.View):
         )
 
         await interaction.edit_original_response(
-            embed=discord.Embed(
-                color=discord.Color.red(),
-            ),
             view=self.remove_item(self.Accept)
             .remove_item(self.Decline)
             .add_item(

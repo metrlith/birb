@@ -1,12 +1,18 @@
 import discord
 from utils.emojis import *
 
+
 class LOAOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):
         super().__init__(
             options=[
                 discord.SelectOption(
                     label="LOA Channel", emoji="<:tag:1234998802948034721>"
+                ),
+                discord.SelectOption(
+                    label="LOA Audit Log",
+                    emoji="<:Log:1349431938926252115>",
+                    description="Logs for modify/force end.",
                 ),
                 discord.SelectOption(
                     label="LOA Role", emoji="<:Ping:1298301862906298378>"
@@ -39,10 +45,65 @@ class LOAOptions(discord.ui.Select):
         if Selection == "LOA Channel":
             view.add_item(LOAChannel(self.author, message=interaction.message))
 
-        await interaction.followup.send(
-            view=view,
-            ephemeral=True
+        if Selection == "LOA Audit Log":
+            view.add_item(LogChannel(self.author, message=interaction.message))
+
+        await interaction.followup.send(view=view, ephemeral=True)
+
+
+class LogChannel(discord.ui.ChannelSelect):
+    def __init__(
+        self,
+        author: discord.Member,
+        channel: discord.TextChannel = None,
+        message: discord.Message = None,
+    ):
+        super().__init__(
+            placeholder="Audit Log Channel",
+            min_values=0,
+            max_values=1,
+            default_values=[channel] if channel else [],
+            channel_types=[discord.ChannelType.text, discord.ChannelType.news],
         )
+        self.author = author
+        self.channel = channel
+        self.message = message
+
+    async def callback(self, interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if config is None:
+            config = {"_id": interaction.guild.id, "LOA": {}}
+        elif "LOA" not in config:
+            config["LOA"] = {}
+        elif "LogChannel" not in config.get("Infraction", {}):
+            config["LOA"]["LogChannel"] = None
+
+        config["LOA"]["LogChannel"] = self.values[0].id
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+
+        await interaction.response.edit_message(content=None)
+        try:
+            await self.message.edit(
+                embed=await LOAEmbed(
+                    interaction,
+                    Updated,
+                    discord.Embed(color=discord.Color.dark_embed()),
+                ),
+            )
+        except:
+            pass
 
 
 class LOAChannel(discord.ui.ChannelSelect):
@@ -79,17 +140,25 @@ class LOAChannel(discord.ui.ChannelSelect):
             config["LOA"] = {}
 
         config["LOA"]["channel"] = self.values[0].id if self.values else None
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
-
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
 
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(
-                embed=await LOAEmbed(interaction, Updated, discord.Embed(color=discord.Color.dark_embed())),
+                embed=await LOAEmbed(
+                    interaction,
+                    Updated,
+                    discord.Embed(color=discord.Color.dark_embed()),
+                ),
             )
         except:
             pass
+
 
 class LOARole(discord.ui.RoleSelect):
     def __init__(
@@ -124,17 +193,25 @@ class LOARole(discord.ui.RoleSelect):
             config["LOA"] = {}
 
         config["LOA"]["role"] = self.values[0].id if self.values else None
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
-
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
 
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(
-                embed=await LOAEmbed(interaction, Updated, discord.Embed(color=discord.Color.dark_embed())),
+                embed=await LOAEmbed(
+                    interaction,
+                    Updated,
+                    discord.Embed(color=discord.Color.dark_embed()),
+                ),
             )
         except:
             pass
+
 
 async def LOAEmbed(
     interaction: discord.Interaction, config: dict, embed: discord.Embed
