@@ -133,7 +133,7 @@ class PTicketControl(discord.ui.View):
         await interaction.followup.send(embed=embed)
         await interaction.edit_original_response(view=view)
         name = f"claimed-{interaction.channel.name.split('-')[1]}"
-        if Panel.get("TicketNames").get("Claimed", None):
+        if Panel.get("TicketNames", {}).get("Claimed", None):
             replacements = {
                 "{author.name}": interaction.user.name,
                 "{author.id}": str(interaction.user.id),
@@ -317,7 +317,7 @@ class TicketsPublic(commands.Cog):
                 f"[on_pticket_claim] Bot does not have permission to edit the message {Message.id}"
             )
         name = f"claimed-{Channel.name.split('-')[1]}"
-        if Panel.get("TicketNames").get("Claimed", None):
+        if Panel.get("TicketNames", {}).get("Claimed", None):
             replacements = {
                 "{author.name}": member.name,
                 "{author.id}": str(member.id),
