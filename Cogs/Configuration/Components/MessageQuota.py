@@ -1,19 +1,6 @@
 import discord
-import discord.http
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# autoactivity = DB["auto activity"]
-
-# Configuration = DB["Config"]
-
-
 class QuotaOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):
         super().__init__(

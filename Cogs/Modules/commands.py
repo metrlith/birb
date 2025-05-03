@@ -11,9 +11,7 @@ from utils.Module import ModuleCheck
 import asyncio
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed, HandleButton
 from utils.format import Replace
-from dotenv import load_dotenv
 
-load_dotenv()
 
 
 async def run(

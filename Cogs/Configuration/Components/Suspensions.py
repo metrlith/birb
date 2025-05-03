@@ -1,16 +1,6 @@
 import discord
-import discord.http
 import traceback
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# Customisation = DB["Customisation"]
 
 
 class SuspensionOptions(discord.ui.Select):

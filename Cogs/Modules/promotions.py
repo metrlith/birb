@@ -11,9 +11,7 @@ from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
 import re
-from dotenv import load_dotenv
 
-load_dotenv()
 
 environment = os.getenv("ENVIRONMENT")
 

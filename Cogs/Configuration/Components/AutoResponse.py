@@ -1,17 +1,5 @@
 import discord
-import discord.http
 from utils.emojis import *
-
-from dotenv import load_dotenv
-
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Customisation = DB["Customisation"]
-# Configuration = DB["Config"]
-# interaction.client.db["Auto Responders"] = DB["Auto interaction.client.db["Auto Responders"]"]
-# premium = DB["Premium"]
-
 
 class AutoResponderOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):

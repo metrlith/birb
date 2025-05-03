@@ -10,9 +10,7 @@ from utils.autocompletes import Snippets
 from discord import app_commands
 from utils.Module import ModuleCheck
 from Cogs.Events.modmail import Close
-from dotenv import load_dotenv
 
-load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")

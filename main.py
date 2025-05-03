@@ -1,3 +1,8 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 import discord
 import platform
 import sys
@@ -5,16 +10,15 @@ import gc
 import os
 import time
 import logging
-from dotenv import load_dotenv
+
 from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
 from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
-from Cogs.Modules.loa import Confirm
-from Cogs.Modules.customcommands import Voting
+
+from Cogs.Modules.commands import Voting
 from Cogs.Tasks.activityauto import ResetLeaderboard
 from Cogs.Modules.staff import Staffview
-from Cogs.Events.on_ban import AcceptOrDeny, AppealButton
 from Cogs.Events.on_infraction_approval import CaseApproval
 from Cogs.Events.on_ticket import PTicketControl
 from Cogs.Tasks.qotd import *
@@ -34,15 +38,13 @@ logger = logging.getLogger(__name__)
 
 gc.enable()
 
-load_dotenv()
 
 PREFIX = os.getenv("PREFIX")
 TOKEN = os.getenv("TOKEN")
 STATUS = os.getenv("STATUS")
 MONGO_URL = os.getenv("MONGO_URL")
 SHARDS = os.getenv("SHARDS")
-guildid = os.getenv("CUSTOM_GUILD")
-environment = os.getenv("ENVIRONMENT")
+
 
 client = AsyncIOMotorClient(MONGO_URL)
 qdb = client["quotadb"]
@@ -168,21 +170,25 @@ class Client(commands.AutoShardedBot):
 
     def _initialize_cogslist(self):
         return [
-            "Cogs.Modules.Developer.astro",
+            # Modules
             "Cogs.Modules.suggestions",
-            "Cogs.Modules.loa",
+            "Cogs.Modules.leaves",
             "Cogs.Modules.utility",
-            "Cogs.Modules.botinfo",
+            "Cogs.Modules.info",
             "Cogs.Modules.suspension",
             "Cogs.Modules.feedback",
-            "Cogs.Modules.connectionroles",
+            "Cogs.Modules.connection-roles",
             "Cogs.Modules.staff",
             "Cogs.Modules.promotions",
             "Cogs.Modules.infractions",
             "Cogs.Modules.modmail",
-            "Cogs.Modules.consent",
-            "Cogs.Modules.customcommands",
+            "Cogs.Modules.commands",
+            "Cogs.Modules.data",
+            "Cogs.Modules.integrations",
+            "Cogs.Modules.tickets",
+            # Configuration
             "Cogs.Configuration.Configuration",
+            # Events
             "Cogs.Events.Dev.guilds",
             "Cogs.Events.Dev.welcome",
             "Cogs.Events.quota",
@@ -192,30 +198,28 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.Dev.analytics",
             "Cogs.Events.on_error",
             "Cogs.Events.autoresponse",
-            "Cogs.Events.on_ban",
             "Cogs.Events.on_infraction",
             "Cogs.Events.ConnectionRoles",
-            "Cogs.Modules.data",
-            "Cogs.Tasks.expiration",
             "Cogs.Events.on_promotion",
             "Cogs.Events.on_infraction_edit",
-            "Cogs.Tasks.loa",
-            "Cogs.Tasks.stafflist",
-            "Cogs.Tasks.suspension",
-            "Cogs.Tasks.activityauto",
-            "Cogs.Tasks.qotd",
             "Cogs.Events.on_feedback",
             "Cogs.Events.on_suggestion",
             "Cogs.Events.on_suggest_update",
-            "Cogs.Modules.integrations",
-            "Cogs.Tasks.loa_scheduled",
             "Cogs.Events.on_infraction_approval",
-            "Cogs.Modules.tickets",
             "Cogs.Events.on_ticket",
             "Cogs.Events.on_infraction_log",
             "Cogs.Events.on_infraction_void",
             "Cogs.Events.on_promotion_log",
             "Cogs.Events.on_promotion_void",
+            "Cogs.Events.on_leave",
+            # Tasks
+            "Cogs.Tasks.expiration",
+            "Cogs.Tasks.leave",
+            "Cogs.Tasks.staff-list",
+            "Cogs.Tasks.suspension",
+            "Cogs.Tasks.activityauto",
+            "Cogs.Tasks.UpdateChannel",
+            "Cogs.Tasks.qotd",
         ]
 
     async def load_jishaku(self):
@@ -237,8 +241,6 @@ class Client(commands.AutoShardedBot):
         return commands.when_mentioned_or(prefix)(self, message)
 
     async def setup_hook(self):
-        if not UpdateChannelName.is_running():
-            UpdateChannelName.start()
         await self._load_views()
         await self._load_cogs()
         await self.CacheCommands()
@@ -355,12 +357,9 @@ class Client(commands.AutoShardedBot):
 
     async def _load_cogs(self):
         self.add_view(Voting())
-        self.add_view(Confirm())
         self.add_view(Voti())
         self.add_view(Staffview())
         self.add_view(ResetLeaderboard())
-        self.add_view(AcceptOrDeny(client))
-        self.add_view(AppealButton(client))
         self.add_view(ModmailClosure())
         self.add_view(Links())
         self.add_view(CaseApproval())
@@ -505,26 +504,6 @@ class Client(commands.AutoShardedBot):
 
 
 client = Client()
-
-
-@tasks.loop(minutes=10, reconnect=True)
-async def UpdateChannelName():
-    if environment in ["development", "custom"]:
-        return
-    channel = client.get_channel(1131245978704420964)
-    if not channel:
-        return
-
-    users = await GetUsers()
-    try:
-        await channel.edit(name=f"{len(client.guilds)} Guilds | {users} Users")
-    except (discord.HTTPException, discord.Forbidden):
-        print("[⚠️] Failed to update channel name.")
-
-
-async def GetUsers():
-    total_members = sum(guild.member_count or 0 for guild in client.guilds)
-    return total_members
 
 
 if __name__ == "__main__":

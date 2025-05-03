@@ -3,9 +3,9 @@ import discord.http
 from utils.emojis import *
 from utils.format import IsSeperateBot
 
-from dotenv import load_dotenv
 
-load_dotenv()
+
+
 
 
 class ForumsOptions(discord.ui.Select):

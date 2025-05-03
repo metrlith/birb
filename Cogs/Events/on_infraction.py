@@ -266,12 +266,20 @@ class on_infractions(commands.Cog):
                     )
                 except:
                     pass
-        if Actions and Actions.get("Escalation", None):
-            Escalation = Actions.get("Escalation")
-            Threshold = Escalation.get("Threshold", None)
+        if Actions and Actions.get("Escalation"):
+            Escalation = Actions["Escalation"]
+            try:
+                Tresh = int(Escalation.get("Threshold", 0))
+            except (TypeError, ValueError):
+                Tresh = 0
+
             NextType = Escalation.get("Next Type")
             Reason = Escalation.get("Reason")
-            if Threshold and NextType:
+
+            if Tresh > 0 and NextType:
+                if Infraction.action == NextType:
+                    return
+
                 InfractionsWithType = await self.client.db[
                     "infractions"
                 ].count_documents(
@@ -282,9 +290,11 @@ class on_infractions(commands.Cog):
                         "Upscaled": {"$exists": False},
                     }
                 )
-                if InfractionsWithType >= len(Threshold) + 1:
+
+                if InfractionsWithType >= Tresh:
                     await asyncio.sleep(2)
-                    async for Infractions in self.client.db["infractions"].find(
+
+                    async for previous in self.client.db["infractions"].find(
                         {
                             "guild_id": guild.id,
                             "staff": staff.id,
@@ -293,9 +303,9 @@ class on_infractions(commands.Cog):
                         }
                     ):
                         await self.client.db["infractions"].update_one(
-                            {"_id": Infractions.get("_id")},
-                            {"$set": {"Upscaled": True}},
+                            {"_id": previous["_id"]}, {"$set": {"Upscaled": True}}
                         )
+
                     FormedData = {
                         "guild_id": guild.id,
                         "staff": staff.id,
@@ -309,15 +319,19 @@ class on_infractions(commands.Cog):
                         ),
                         "annonymous": Infraction.annonymous,
                         "timestamp": datetime.datetime.now(),
+                        "auto_escalated": True,
                     }
                     if ch:
                         FormedData["Updated"] = ch
+
                     EscResult = await self.client.db["infractions"].insert_one(
                         FormedData
                     )
+
                     TypeActions = await self.client.db[
                         "infractiontypeactions"
                     ].find_one({"guild_id": guild.id, "name": Infraction.action})
+
                     self.client.dispatch(
                         "infraction", EscResult.inserted_id, Settings, TypeActions
                     )

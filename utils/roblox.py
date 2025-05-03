@@ -3,10 +3,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import discord
 import os
 from discord.ext import commands
-from dotenv import load_dotenv
 import time
 
-load_dotenv()
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]

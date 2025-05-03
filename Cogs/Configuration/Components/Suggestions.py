@@ -1,15 +1,7 @@
 import discord
-import discord.http
 from utils.emojis import *
-
-from dotenv import load_dotenv
 import traceback
 
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Configuration = DB["Config"]
-# Customisation = DB["Customisation"]
 
 
 class Suggestions(discord.ui.Select):
@@ -37,7 +29,9 @@ class Suggestions(discord.ui.Select):
             return await interaction.followup.send(embed=embed, ephemeral=True)
         option = interaction.data["values"][0]
         if option == "Suggestions Channel":
-            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            Config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
             if not Config:
                 Config = {"Suggestions": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
@@ -94,8 +88,12 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
             config["Suggestions"] = {}
 
         config["Suggestions"]["channel"] = self.values[0].id if self.values else None
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
 
         await interaction.response.edit_message(content=None)
         try:
@@ -113,7 +111,7 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
 async def CustomiseEmbed(interaction: discord.Interaction, option):
     try:
         await interaction.response.defer()
-        custom = await interaction.client.db['Customisation'].find_one(
+        custom = await interaction.client.db["Customisation"].find_one(
             {"guild_id": interaction.guild.id, "type": option}
         )
         embed = None
@@ -178,26 +176,29 @@ async def CustomiseEmbed(interaction: discord.Interaction, option):
             FinalFunction,
             option,
             {
-            "thumb": (
-                interaction.user.display_avatar.url
-                if custom.get("embed", {}).get("thumbnail") == "{author.avatar}"
-                else (
-                    "{staff.avatar}"
-                    if custom.get("embed", {}).get("thumbnail") == "{staff.avatar}"
-                    else custom.get("embed", {}).get("thumbnail", "") 
-                )
-            ),
-
-            "author_url": (
-                interaction.user.display_avatar.url
-                if custom.get("embed", {}).get("author", {}).get("icon_url") == "{author.avatar}"
-                else (
-                    "{staff.avatar}"
-                    if custom.get("embed", {}).get("author", {}).get("icon_url") == "{staff.avatar}"
-                    else custom.get("embed", {}).get("author", {}).get("icon_url", "") 
-                )
-                            ),
-                "image": custom.get('image'),
+                "thumb": (
+                    interaction.user.display_avatar.url
+                    if custom.get("embed", {}).get("thumbnail") == "{author.avatar}"
+                    else (
+                        "{staff.avatar}"
+                        if custom.get("embed", {}).get("thumbnail") == "{staff.avatar}"
+                        else custom.get("embed", {}).get("thumbnail", "")
+                    )
+                ),
+                "author_url": (
+                    interaction.user.display_avatar.url
+                    if custom.get("embed", {}).get("author", {}).get("icon_url")
+                    == "{author.avatar}"
+                    else (
+                        "{staff.avatar}"
+                        if custom.get("embed", {}).get("author", {}).get("icon_url")
+                        == "{staff.avatar}"
+                        else custom.get("embed", {})
+                        .get("author", {})
+                        .get("icon_url", "")
+                    )
+                ),
+                "image": custom.get("image"),
                 "option": option,
             },
         )
@@ -245,7 +246,7 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 ],
             },
         }
-    await interaction.client.db['Customisation'].update_one(
+    await interaction.client.db["Customisation"].update_one(
         {"guild_id": interaction.guild.id, "type": d.get("option")},
         {"$set": data},
         upsert=True,

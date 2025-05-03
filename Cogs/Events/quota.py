@@ -1,11 +1,5 @@
 from discord.ext import commands
 import discord
-
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
 class messageevent(commands.Cog):
     def __init__(self, client):
         self.client = client

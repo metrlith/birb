@@ -4,9 +4,8 @@ from discord.ext import commands, tasks
 import datetime
 from utils.emojis import *
 import random
-from dotenv import load_dotenv
 
-load_dotenv()
+
 import asyncio
 import logging
 from utils.Module import ModuleCheck

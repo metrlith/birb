@@ -1,8 +1,6 @@
 import discord
-
-from dotenv import load_dotenv
 from utils.emojis import *
-load_dotenv()
+
 
 class PremiumButtons(discord.ui.View):
     def __init__(self, author: discord.Member):

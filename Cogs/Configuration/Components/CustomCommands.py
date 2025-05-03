@@ -3,14 +3,10 @@ import discord.http
 
 from utils.emojis import *
 
-from dotenv import load_dotenv
+
 from utils.permissions import premium
-from Cogs.Modules.customcommands import SyncCommand, Unsync
+from Cogs.Modules.commands import SyncCommand, Unsync
 from utils.HelpEmbeds import NoPremium, Support
-load_dotenv()
-# Mongos = AsyncIOMotorClient(os.getenv("MONGO_URL"))
-# DB = Mongos["astro"]
-# Commands = DB["Custom Commands"]
 
 
 class CustomCommands(discord.ui.Select):

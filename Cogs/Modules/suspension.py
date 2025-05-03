@@ -11,10 +11,6 @@ import os
 
 from datetime import datetime
 
-
-from dotenv import load_dotenv
-
-load_dotenv()
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

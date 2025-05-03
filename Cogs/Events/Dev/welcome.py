@@ -2,42 +2,43 @@ import discord
 from discord.ext import commands
 from utils.emojis import *
 import os
-from dotenv import load_dotenv
-load_dotenv()
+
 
 class welcome(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if os.getenv('ENVIRONMENT') == "development":
+        if os.getenv("ENVIRONMENT") == "development":
             return
-        
-        target_guild_id = 1092976553752789054
-        guild_on_join = self.client.get_guild(target_guild_id)
 
-        if guild_on_join and member.guild.id == target_guild_id:
-            channel_id = 1092976554541326372
-            channel = guild_on_join.get_channel(channel_id)
+        guild_id, channel_id = 1092976553752789054, 1092976554541326372
+        guild = self.client.get_guild(guild_id)
 
+        if guild and member.guild.id == guild_id:
+            channel = guild.get_channel(channel_id)
             if channel:
-                member_count = guild_on_join.member_count
-                message = f"Welcome {member.mention} to **Astro Birb**! 👋"
                 view = discord.ui.View()
-                view.add_item(discord.ui.Button(
-                    style=discord.ButtonStyle.gray,
-                    label=f"{member_count}",
-                    disabled=True,
-                ))
-                view.add_item(discord.ui.Button(
-                    label="Support",
-                    url="https://canary.discord.com/channels/1092976553752789054/1328460590120702094",
-                    style=discord.ButtonStyle.link,
-                    emoji="<:link:1206670134064717904>",
+                view.add_item(
+                    discord.ui.Button(
+                        style=discord.ButtonStyle.gray,
+                        label=f"{guild.member_count}",
+                        disabled=True,
+                    )
+                )
+                view.add_item(
+                    discord.ui.Button(
+                        label="Support",
+                        url="https://canary.discord.com/channels/1092976553752789054/1328460590120702094",
+                        style=discord.ButtonStyle.link,
+                        emoji="<:link:1206670134064717904>",
+                    )
+                )
+                await channel.send(
+                    f"Welcome {member.mention} to **Astro Birb**! 👋", view=view
+                )
 
-                ))
-                await channel.send(message, view=view)
 
 async def setup(client: commands.Bot) -> None:
     await client.add_cog(welcome(client))

@@ -4,12 +4,12 @@ import traceback
 
 from utils.emojis import *
 
-from dotenv import load_dotenv
+
 from utils.format import IsSeperateBot
 from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 
-load_dotenv()
+
 
 
 class InfractionOption(discord.ui.Select):

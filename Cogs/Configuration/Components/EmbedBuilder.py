@@ -9,7 +9,7 @@ from utils.format import IsSeperateBot
 import discord
 
 
-load_dotenv()
+
 
 
 async def HandleButton(data: dict):
@@ -38,7 +38,7 @@ async def HandleButton(data: dict):
             self.cmd = cmd
 
         async def callback(self, interaction: discord.Interaction):
-            from Cogs.Modules.customcommands import run
+            from Cogs.Modules.commands import run
 
             await run(interaction, self.cmd)
 
@@ -46,7 +46,7 @@ async def HandleButton(data: dict):
 
     for component in data.get("components", []):
         if component.get("type") == "voting":
-            from Cogs.Modules.customcommands import Voting
+            from Cogs.Modules.commands import Voting
 
             return Voting()
 

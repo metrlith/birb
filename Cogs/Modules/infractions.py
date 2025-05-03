@@ -7,7 +7,6 @@ import os
 import re
 from datetime import datetime
 from discord import app_commands
-from dotenv import load_dotenv
 from utils.format import PaginatorButtons, IsSeperateBot, strtotime, DefaultTypes
 from utils.permissions import has_admin_role, premium
 from utils.emojis import *
@@ -24,7 +23,7 @@ from utils.HelpEmbeds import (
     NoPremium,
 )
 
-load_dotenv()
+
 MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")

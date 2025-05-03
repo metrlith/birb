@@ -1,14 +1,10 @@
 import discord
-import discord.http
 import traceback
 from utils.format import IsSeperateBot
-
 from utils.emojis import *
-
-from dotenv import load_dotenv
 from typing import Literal
 
-load_dotenv()
+
 
 
 class Tickets(discord.ui.Select):

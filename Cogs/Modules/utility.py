@@ -9,9 +9,7 @@ import aiohttp
 from utils.emojis import *
 from typing import Literal
 from utils.format import IsSeperateBot
-from dotenv import load_dotenv
 
-load_dotenv()
 
 
 class Utility(commands.Cog):
