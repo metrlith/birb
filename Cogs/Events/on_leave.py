@@ -80,12 +80,6 @@ class on_leave(commands.Cog):
             return
         if not C.get("LOA", None):
             return
-        if not C.get("LOA", {}).get("channel", None):
-            return
-        try:
-            CH = await G.fetch_channel(int(C.get("LOA", {}).get("channel", 0)))
-        except (discord.NotFound, discord.HTTPException):
-            return
 
         Member = G.get_member(L.get("user"))
         if not Member:
