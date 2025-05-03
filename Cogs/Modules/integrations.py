@@ -9,6 +9,7 @@ from utils.permissions import has_admin_role
 
 from discord import app_commands
 
+
 class Link(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -210,7 +211,6 @@ class Link(commands.Cog):
         )
         from utils.HelpEmbeds import NotRobloxLinked
 
-
         if not await has_admin_role(ctx, "Infraction Permissions"):
             return
         from utils.roblox import (
@@ -318,7 +318,7 @@ class Link(commands.Cog):
         interaction: discord.Interaction,
         service: Literal["Roblox Groups", "Roblox Auth"],
     ):
-        AlreadyRegistered = await interaction.client.db['integrations'].find_one(
+        AlreadyRegistered = await interaction.client.db["integrations"].find_one(
             {"discord_id": str(interaction.user.id)}
         )
         msg = None
@@ -345,7 +345,7 @@ class Link(commands.Cog):
                     f"{tick} cancelled.", ephemeral=True
                 )
 
-        await self.client.db['Pending'].update_one(
+        await self.client.db["Pending"].update_one(
             {"user": interaction.user.id},
             {"$set": {"user": str(interaction.user.id)}},
             upsert=True,
@@ -384,13 +384,17 @@ class Link(commands.Cog):
                 embed=embed, view=view, ephemeral=True
             )
 
-        await interaction.client.db['integrations'].delete_one({"discord_id": str(interaction.user.id)})
+        await interaction.client.db["integrations"].delete_one(
+            {"discord_id": str(interaction.user.id)}
+        )
 
         try:
             await asyncio.wait_for(
                 self.wait_for_token_verification(interaction), timeout=180
             )
-            if await interaction.client.db['integrations'].find_one({"discord_id": str(interaction.user.id)}):
+            if await interaction.client.db["integrations"].find_one(
+                {"discord_id": str(interaction.user.id)}
+            ):
                 if msg:
                     if service == "Roblox Groups":
                         embed = (
@@ -412,7 +416,9 @@ class Link(commands.Cog):
                             icon_url=interaction.user.display_avatar,
                         )
                     await msg.edit(view=None, embed=embed)
-                    await interaction.client.db['Pending'].delete_one({"user": interaction.user.id})
+                    await interaction.client.db["Pending"].delete_one(
+                        {"user": interaction.user.id}
+                    )
                 return
         except asyncio.TimeoutError:
             if msg:
@@ -424,7 +430,9 @@ class Link(commands.Cog):
     async def wait_for_token_verification(self, interaction: discord.Interaction):
         attempts = 0
         while attempts < 60:
-            if await interaction.client.db['integrations'].find_one({"discord_id": str(interaction.user.id)}):
+            if await interaction.client.db["integrations"].find_one(
+                {"discord_id": str(interaction.user.id)}
+            ):
                 return True
             attempts += 1
             print("Checking token...")

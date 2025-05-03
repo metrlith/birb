@@ -2,31 +2,16 @@ import discord
 from discord.ext import commands
 from datetime import timedelta
 from discord import app_commands
-from discord.ext import tasks
 from utils.emojis import *
 import string
 import random
 from utils.ui import BasicPaginator
 import os
 
-
 from datetime import datetime
-
-
-# from utils.HelpEmbeds import (
-#     BotNotConfigured,
-#     NoPermissionChannel,
-#     ChannelNotFound,
-#     ModuleNotEnabled,
-#     NoChannelSet,
-#     Support,
-#     ModuleNotSetup,
-#     NotYourPanel,
-
-# )
 import utils.HelpEmbeds as HelpEmbeds
 
-from utils.permissions import has_admin_role, has_staff_role
+from utils.permissions import has_staff_role
 from utils.format import strtotime
 
 environment = os.getenv("ENVIRONMENT")
@@ -70,17 +55,13 @@ async def CurrentLOA(
     return embed
 
 
-async def Duration(loa: dict, IgnoreRequestExt: bool = False) -> str:
+async def Duration(loa: dict, Format: str = "d - d") -> str:
     if not loa:
         return "N/A"
 
     Added = 0
     if loa.get("AddedTime") is not None:
-        if not IgnoreRequestExt and loa["AddedTime"].get("RequestExt") is not None:
-            if loa["AddedTime"]["RequestExt"].get("status", "Rejected") == "Accepted":
-                Added = int(loa["AddedTime"].get("Time", 0))
-        else:
-            Added = int(loa["AddedTime"].get("Time", 0))
+        Added = int(loa["AddedTime"].get("Time", 0))
 
     Removed = 0
     if loa.get("RemovedTime") is not None and loa["RemovedTime"].get("Time", 0) > 0:
@@ -88,14 +69,15 @@ async def Duration(loa: dict, IgnoreRequestExt: bool = False) -> str:
 
     if not loa.get("start_time"):
         return "N/A"
-    return f"<t:{int(loa.get('start_time').timestamp())}:D> - <t:{int(loa.get('end_time').timestamp()) - (Removed - Added)}:D>"
+    if Format == "d - d":
+        return f"<t:{int(loa.get('start_time').timestamp())}:D> - <t:{int(loa.get('end_time').timestamp()) - (Removed - Added)}:D>"
+    elif Format == "end_time":
+        return f"<t:{int(loa.get('end_time').timestamp()) - (Removed - Added)}:D>"
 
 
 class LOAModule(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-
-    # TODO: Rewrite LOA's for V1.46.0
 
     @commands.hybrid_group()
     async def loa(self, ctx: commands.Context):
@@ -193,10 +175,8 @@ class LOAModule(commands.Cog):
 
     @loa.command(description="View pending leave of absence requests")
     async def pending(self, ctx: commands.Context):
-
         if not await has_staff_role(ctx):
             return
-
         LOA = (
             await self.client.db["loa"]
             .find(
@@ -243,6 +223,7 @@ class LOAModule(commands.Cog):
         await ctx.send(embed=pages[0], view=paginator)
 
     @loa.command(description="Request a leave of absence")
+    @app_commands.describe(duration="How long do you want the LOA for? (m/h/d/w)")
     async def request(
         self, ctx: commands.Context, duration: str, reason: str, start: str = None
     ):
@@ -250,7 +231,7 @@ class LOAModule(commands.Cog):
             return
         await ctx.defer(ephemeral=True)
 
-        Already = await self.client.db["loa"].find_one(
+        LOA = await self.client.db["loa"].find_one(
             {
                 "user": ctx.author.id,
                 "guild_id": ctx.guild.id,
@@ -265,7 +246,7 @@ class LOAModule(commands.Cog):
                 "request": True,
             }
         )
-        if Already or Also:
+        if LOA or Also:
             await ctx.send(
                 content=f"{no} **{ctx.author.display_name},** you already have an active LOA. Please end it before requesting a new one."
             )
@@ -275,27 +256,67 @@ class LOAModule(commands.Cog):
         S = False
         if start:
             S = True
-            Start = await strtotime(start, back=True)
-        Duration = await strtotime(duration, back=False)
+            Start = await strtotime(start)
+        Duration = await strtotime(duration)
 
         if Duration < datetime.now():
             await ctx.send(
-                embed=HelpEmbeds.CustomError("The duration must be in the future.")
+                content=f"{no} **{ctx.author.display_name}**, your LOA can't be in the past. On real note how tf did you get this?"
             )
             return
 
         if Duration > datetime.now() + timedelta(days=1000):
-            await ctx.send(embed=HelpEmbeds.CustomError("The duration is too long."))
+            await ctx.send(
+                content=f"{no} **{ctx.author.display_name}**, your LOA is wayyy too long."
+            )
             return
         if Duration < datetime.now() + timedelta(days=1):
             await ctx.send(
-                embed=HelpEmbeds.CustomError("The duration must be at least 1 day.")
+                content=f"{no} **{ctx.author.display_name},** your LOA must atleast be a day long."
             )
             return
 
         MSG = await ctx.send(
             f"<a:Loading:1167074303905386587> **{ctx.author.display_name},** requesting LOA..."
         )
+        C = await self.client.db["Config"].find_one(
+            {
+                "_id": ctx.guild.id,
+            }
+        )
+        if not C:
+            await MSG.edit(
+                embed=HelpEmbeds.BotNotConfigured(),
+                view=HelpEmbeds.Support(),
+                content=None,
+            )
+            return
+        if not C.get("LOA", {}):
+            await MSG.edit(
+                embed=HelpEmbeds.ModuleNotEnabled(),
+                view=HelpEmbeds.Support(),
+                content=None,
+            )
+            return
+        if not C.get("LOA", {}).get("channel"):
+            await MSG.edit(
+                embed=HelpEmbeds.NoChannelSet(), view=HelpEmbeds.Support(), content=None
+            )
+            return
+        try:
+            CH = await self.client.fetch_channel(C.get("LOA", {}).get("channel", 0))
+        except (discord.HTTPException, discord.NotFound):
+            return await ctx.send(embed=HelpEmbeds.ChannelNotFound())
+        client = await ctx.guild.fetch_member(self.client.user.id)
+        if (
+            CH.permissions_for(client).send_messages is False
+            or CH.permissions_for(client).view_channel is None
+        ):
+
+            return await MSG.edit(
+                content=f"",
+                embed=HelpEmbeds.NoPermissionChannel(CH),
+            )
         R = await self.client.db["loa"].insert_one(
             {
                 "LoaID": "".join(
@@ -321,7 +342,6 @@ class LOAModule(commands.Cog):
                 "AddedTime": {
                     "Time": 0,
                     "Reason": None,
-                    # "RequestExt": None,
                     "Log": [],
                 },
                 "RemovedTime": {
@@ -384,11 +404,6 @@ class LOAModule(commands.Cog):
 
         view = LOAManage(ctx.author, ctx.author, True)
         embed = discord.Embed(color=discord.Color.dark_embed())
-
-        view.remove_item(
-            view.RequestExt
-        )  # Temporarily removed until we can add a request extension feature
-
         view.PLOA.label = f"Past LOA's ({len(PastLOAs)})"
         if len(PastLOAs) > 0:
             view.PLOA.disabled = False
@@ -405,7 +420,7 @@ class LOAModule(commands.Cog):
             view.remove_item(view.RequestExt)
             view.remove_item(view.ReduceT)
             view.remove_item(view.End)
-
+        view.remove_item(view.CreateLOA)
         embed.set_thumbnail(url=ctx.author.display_avatar)
         embed.set_author(name="Leave Manage")
         embed.set_footer(text=f"@{ctx.author.name}", icon_url=ctx.author.display_avatar)
@@ -440,6 +455,7 @@ class LOAModule(commands.Cog):
 
         if ActiveLOA:
             embed = await CurrentLOA(ctx, ActiveLOA, user)
+            view.remove_item(view.CreateLOA)
 
         else:
             embed.add_field(
@@ -474,7 +490,18 @@ class LOAManage(discord.ui.View):
         self.target = target
         self.ExtRequest = ExtRequest
 
-    @discord.ui.button(label="Add Time", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Create", style=discord.ButtonStyle.green)
+    async def CreateLOA(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        if not interaction.user.id == self.author.id:
+            await interaction.response.send_message(
+                embed=HelpEmbeds.NotYourPanel(), ephemeral=True
+            )
+            return
+        await interaction.response.send_modal(CreateLOA(interaction.user, self.target))
+
+    @discord.ui.button(label="Request Extension", style=discord.ButtonStyle.green)
     async def RequestExt(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -510,14 +537,14 @@ class LOAManage(discord.ui.View):
             return
 
         await interaction.response.defer(ephemeral=True)
-        Already = await interaction.client.db["loa"].find_one(
+        LOA = await interaction.client.db["loa"].find_one(
             {
                 "user": self.target.id,
                 "guild_id": interaction.guild.id,
                 "active": True,
             }
         )
-        if Already is None:
+        if LOA is None:
             await interaction.followup.send(
                 embed=HelpEmbeds.CustomError("You have no active LOA."), ephemeral=True
             )
@@ -543,10 +570,10 @@ class LOAManage(discord.ui.View):
             return
         interaction.client.dispatch(
             "leave_end",
-            Already.get("_id"),
+            LOA.get("_id"),
         )
         interaction.client.dispatch(
-            "leave_log", Already.get("_id"), "End", interaction.user.id
+            "leave_log", LOA.get("_id"), "ForceEnd", interaction.user.id
         )
 
         await interaction.edit_original_response(
@@ -649,7 +676,7 @@ class RemoveTime(discord.ui.Modal):
             )
 
         await interaction.response.defer(ephemeral=True)
-        Already = await interaction.client.db["loa"].find_one(
+        LOA = await interaction.client.db["loa"].find_one(
             {
                 "user": self.target.id,
                 "guild_id": interaction.guild.id,
@@ -664,9 +691,9 @@ class RemoveTime(discord.ui.Modal):
             },
             {
                 "$set": {
-                    "RemovedTime.Time": Already.get("RemovedTime", {}).get("Time", 0)
+                    "RemovedTime.Time": LOA.get("RemovedTime", {}).get("Time", 0)
                     + Duration,
-                    "RemovedTime.Log": Already.get("RemovedTime", {}).get("Log", [])
+                    "RemovedTime.Log": LOA.get("RemovedTime", {}).get("Log", [])
                     + [
                         {
                             "time": datetime.now(),
@@ -691,9 +718,9 @@ class RemoveTime(discord.ui.Modal):
             ),
             ephemeral=True,
         )
-        interaction.client.dispatch("leave_log", Already.get("_id"), "modify", Already)
+        interaction.client.dispatch("leave_log", LOA.get("_id"), "modify", LOA)
         await interaction.edit_original_response(
-            embed=await CurrentLOA(ctx=interaction, loa=Already, user=self.target),
+            embed=await CurrentLOA(ctx=interaction, loa=LOA, user=self.target),
         )
 
 
@@ -714,14 +741,14 @@ class AddTime(discord.ui.Modal):
         )
         self.add_item(self.duration)
 
-        # if RequestExt:
-        #     self.reason = discord.ui.TextInput(
-        #         label="Reason",
-        #         placeholder="Why are you requesting this extension?",
-        #         required=True,
-        #         max_length=200,
-        #     )
-        #     self.add_item(self.reason)
+        if RequestExt:
+            self.reason = discord.ui.TextInput(
+                label="Reason",
+                placeholder="Why are you requesting this extension?",
+                required=True,
+                max_length=200,
+            )
+            self.add_item(self.reason)
 
     async def on_submit(self, interaction: discord.Interaction):
         if not interaction.user.id == self.author.id:
@@ -738,83 +765,152 @@ class AddTime(discord.ui.Modal):
             await interaction.response.send_message(
                 embed=HelpEmbeds.CustomError("Invalid duration format."), ephemeral=True
             )
+            return
         except OverflowError:
             await interaction.response.send_message(
                 embed=HelpEmbeds.CustomError("The duration is too long."),
                 ephemeral=True,
             )
+            return
 
         await interaction.response.defer(ephemeral=True)
-        Already = await interaction.client.db["loa"].find_one(
+        LOA = await interaction.client.db["loa"].find_one(
             {
                 "user": self.target.id,
                 "guild_id": interaction.guild.id,
                 "active": True,
             }
         )
-        Z = await interaction.client.db["loa"].update_one(
-            {
-                "user": self.target.id,
-                "guild_id": interaction.guild.id,
-                "active": True,
-            },
-            {
-                "$set": {
-                    "AddedTime.Time": Already.get("AddedTime", {}).get("Time", 0)
-                    + Duration,
-                    "AddedTime.Reason": (
-                        self.reason.value if hasattr(self, "reason") else None
-                    ),
-                    "AddedTime.RequestExt": (
-                        {"status": "Pending", "acceptedBy": None, "AcceptedAt": None}
-                        if self.RequestExt
-                        else None
-                    ),
-                    "AddedTime.Log": Already.get("AddedTime", {}).get("Log", [])
-                    + [
-                        {
-                            "time": datetime.now(),
-                            "duration": Duration,
-                            "user": interaction.user.id,
-                            # "ExtRequest": self.RequestExt,
-                            "reason": (
-                                self.reason.value if hasattr(self, "reason") else None
-                            ),
-                        }
-                    ],
-                }
-            },
-        )
-        if Z.modified_count == 0:
-            await interaction.followup.send(
-                embed=HelpEmbeds.CustomError("Failed to add time."), ephemeral=True
-            )
-            return
 
         if self.RequestExt:
-            interaction.client.dispatch(
-                "leave_request_ext",
-                Z.modified_id,
-                self.target.id,
+            C = await interaction.client.db["Config"].find_one(
+                {"_id": interaction.guild.id}
             )
+            if not C:
+                await interaction.followup.send(
+                    embed=HelpEmbeds.BotNotConfigured(),
+                    view=HelpEmbeds.Support(),
+                    ephemeral=True,
+                )
+                return
+            if not C.get("LOA", {}):
+                await interaction.followup.send(
+                    embed=HelpEmbeds.ModuleNotEnabled(),
+                    view=HelpEmbeds.Support(),
+                    ephemeral=True,
+                )
+                return
+            if not C.get("LOA", {}).get("channel"):
+                await interaction.followup.send(
+                    embed=HelpEmbeds.NoChannelSet(),
+                    view=HelpEmbeds.Support(),
+                    ephemeral=True,
+                )
+                return
+            try:
+                CH = await interaction.client.fetch_channel(
+                    C.get("LOA", {}).get("channel", 0)
+                )
+            except (discord.HTTPException, discord.NotFound):
+                await interaction.followup.send(
+                    embed=HelpEmbeds.ChannelNotFound(), ephemeral=True
+                )
+                return
+            client = await interaction.guild.fetch_member(interaction.client.user.id)
+            if (
+                CH.permissions_for(client).send_messages is False
+                or CH.permissions_for(client).view_channel is None
+            ):
+                await interaction.followup.send(
+                    embed=HelpEmbeds.NoPermissionChannel(CH), ephemeral=True
+                )
+                return
+            Z = await interaction.client.db["ExtRequests"].insert_one(
+                {
+                    "LoaID": LOA.get("LoaID"),
+                    "user": self.target.id,
+                    "guild": interaction.guild.id,
+                    "reason": self.reason.value,
+                    "duration": Duration,
+                    "durationstr": self.duration.value,
+                    "requested_by": interaction.user.id,
+                    "requested_at": datetime.now(),
+                    "status": "Pending",
+                    "Accepted": None,
+                    "Declined": None,
+                    "ExtendedUser": {
+                        "id": self.target.id,
+                        "name": self.target.name,
+                        "thumbnail": (
+                            self.target.display_avatar.url
+                            if self.target.display_avatar
+                            else None
+                        ),
+                    },
+                }
+            )
+            interaction.client.dispatch("leave_ext_request", Z.inserted_id)
             await interaction.followup.send(
                 content=f"{tick} **{interaction.user.display_name}**, I've requested an extension for `{self.duration.value}` on your LOA.",
                 ephemeral=True,
             )
             return
         else:
-            interaction.client.dispatch(
-                "leave_log", Already.get("_id"), "modify", Already
-            )
-            Already = await interaction.client.db["loa"].find_one(
+            interaction.client.dispatch("leave_log", LOA.get("_id"), "modify", LOA)
+            LOA = await interaction.client.db["loa"].find_one(
                 {
                     "user": self.target.id,
                     "guild_id": interaction.guild.id,
                     "active": True,
                 }
             )
+
+            Z = await interaction.client.db["loa"].update_one(
+                {
+                    "user": self.target.id,
+                    "guild_id": interaction.guild.id,
+                    "active": True,
+                },
+                {
+                    "$set": {
+                        "AddedTime.Time": LOA.get("AddedTime", {}).get("Time", 0)
+                        + Duration,
+                        "AddedTime.Reason": (
+                            self.reason.value if hasattr(self, "reason") else None
+                        ),
+                        "AddedTime.RequestExt": (
+                            {
+                                "status": "Pending",
+                                "acceptedBy": None,
+                                "AcceptedAt": None,
+                            }
+                            if self.RequestExt
+                            else None
+                        ),
+                        "AddedTime.Log": LOA.get("AddedTime", {}).get("Log", [])
+                        + [
+                            {
+                                "time": datetime.now(),
+                                "duration": Duration,
+                                "user": interaction.user.id,
+                                "reason": (
+                                    self.reason.value
+                                    if hasattr(self, "reason")
+                                    else None
+                                ),
+                            }
+                        ],
+                    }
+                },
+            )
+            if Z.modified_count == 0:
+                await interaction.followup.send(
+                    embed=HelpEmbeds.CustomError("Failed to add time."), ephemeral=True
+                )
+                return
+
             await interaction.edit_original_response(
-                embed=await CurrentLOA(ctx=interaction, loa=Already, user=self.target),
+                embed=await CurrentLOA(ctx=interaction, loa=LOA, user=self.target),
             )
             await interaction.followup.send(
                 content=(
@@ -824,6 +920,111 @@ class AddTime(discord.ui.Modal):
                 ),
                 ephemeral=True,
             )
+
+
+class CreateLOA(discord.ui.Modal):
+    def __init__(self, author: discord.Member, target: discord.Member):
+        super().__init__(title="Create LOA")
+        self.author = author
+        self.target = target
+
+        self.duration = discord.ui.TextInput(
+            label="Duration",
+            placeholder="1d 2h 30m",
+            required=True,
+            max_length=20,
+        )
+        self.add_item(self.duration)
+
+        self.reason = discord.ui.TextInput(
+            label="Reason",
+            placeholder="Why are you creating this LOA?",
+            required=True,
+            max_length=200,
+        )
+        self.add_item(self.reason)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not interaction.user.id == self.author.id:
+            await interaction.response.send_message(
+                embed=HelpEmbeds.NotYourPanel(), ephemeral=True
+            )
+            return
+
+        try:
+            Duration = await strtotime(self.duration.value)
+        except (ValueError, TypeError, AttributeError):
+            await interaction.response.send_message(
+                embed=HelpEmbeds.CustomError("Invalid duration format."), ephemeral=True
+            )
+            return
+        except OverflowError:
+            await interaction.response.send_message(
+                embed=HelpEmbeds.CustomError("The duration is too long."),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        Start = datetime.now()
+
+        LOA = await interaction.client.db["loa"].insert_one(
+            {
+                "LoaID": "".join(
+                    random.choices(string.ascii_letters + string.digits, k=8)
+                ),
+                "user": self.target.id,
+                "ExtendedUser": {
+                    "id": self.target.id,
+                    "name": self.target.name,
+                    "thumbnail": (
+                        self.target.display_avatar.url
+                        if self.target.display_avatar
+                        else None
+                    ),
+                },
+                "Created": {
+                    "id": self.author.id,
+                    "name": self.author.name,
+                    "thumbnail": (
+                        self.author.display_avatar.url
+                        if self.author.display_avatar
+                        else None
+                    ),
+                },
+                "guild_id": interaction.guild.id,
+                "start_time": Start,
+                "end_time": Duration,
+                "reason": self.reason.value,
+                "active": True,
+                "request": False,
+                "AddedTime": {
+                    "Time": 0,
+                    "Reason": None,
+                    "Log": [],
+                },
+                "RemovedTime": {
+                    "Duration": 0,
+                    "Log": [],
+                },
+            }
+        )
+
+        if not LOA.acknowledged:
+            await interaction.followup.send(
+                embed=HelpEmbeds.CustomError("Failed to create LOA."),
+                ephemeral=True,
+            )
+            return
+
+        interaction.client.dispatch("leave_start", LOA.inserted_id)
+        interaction.client.dispatch("leave_create", LOA.inserted_id)
+
+        await interaction.edit_original_response(
+            content=f"{tick} **{interaction.user.display_name}**, the LOA has been created.",
+            embed=None,
+            view=None,
+        )
 
 
 class PendingActions(discord.ui.View):
@@ -842,12 +1043,12 @@ class PendingActions(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
         embed = interaction.message.embeds[0]
 
-        Already = await interaction.client.db["loa"].find_one(
+        LOA = await interaction.client.db["loa"].find_one(
             {
                 "LoaID": embed.footer.text,
             }
         )
-        if Already is None:
+        if LOA is None:
             await interaction.followup.send(
                 embed=HelpEmbeds.CustomError("This isn't a valid LOA Request"),
                 ephemeral=True,
@@ -867,7 +1068,7 @@ class PendingActions(discord.ui.View):
                         "user": interaction.user.id,
                         "time": datetime.now(),
                     },
-                    "active": True,
+                    "active": not LOA.get("scheduled"),
                     "request": False,
                 }
             },
@@ -879,30 +1080,16 @@ class PendingActions(discord.ui.View):
             return
         interaction.client.dispatch(
             "leave_update",
-            Already.get("_id"),
+            LOA.get("_id"),
             "Accepted",
             interaction.user,
         )
-        await interaction.followup.send(
-            content=(
-                f"{tick} **{interaction.user.display_name}**, I've accepted `@{Already.get('ExtendedUser', {}).get('name', 'N/A')}'s` LOA."
-            ),
-            ephemeral=True,
-        )
-
         await interaction.edit_original_response(
-            embed=discord.Embed(
-                color=discord.Color.green(),
+            content=(
+                f"{tick} **{interaction.user.display_name}**, I've accepted `@{LOA.get('ExtendedUser', {}).get('name', 'N/A')}'s` LOA."
             ),
-            view=self.remove_item(self.Accept)
-            .remove_item(self.Decline)
-            .add_item(
-                discord.ui.Button(
-                    label="Accepted",
-                    style=discord.ButtonStyle.green,
-                    disabled=True,
-                )
-            ),
+            view=None,
+            embed=None,
         )
 
     @discord.ui.button(label="Decline", style=discord.ButtonStyle.red, row=0)
@@ -918,7 +1105,7 @@ class PendingActions(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
         embed = interaction.message.embeds[0]
 
-        Already = await interaction.client.db["loa"].find_one(
+        LOA = await interaction.client.db["loa"].find_one(
             {
                 "LoaID": embed.footer.text,
                 "guild_id": interaction.guild.id,
@@ -926,7 +1113,7 @@ class PendingActions(discord.ui.View):
                 "request": True,
             }
         )
-        if Already is None:
+        if LOA is None:
             await interaction.followup.send(
                 embed=HelpEmbeds.CustomError("This isn't a valid LOA Request"),
                 ephemeral=True,
@@ -955,65 +1142,14 @@ class PendingActions(discord.ui.View):
             return
         interaction.client.dispatch(
             "leave_update",
-            Already.get("_id"),
+            LOA.get("_id"),
             "Declined",
             interaction.user,
         )
-        await interaction.followup.send(
-            content=(
-                f"{tick} **{interaction.user.display_name}**, I've declined `@{Already.get('ExtendedUser', {}).get('name', 'N/A')}'s` LOA."
-            ),
-            ephemeral=True,
-        )
-
         await interaction.edit_original_response(
-            view=self.remove_item(self.Accept)
-            .remove_item(self.Decline)
-            .add_item(
-                discord.ui.Button(
-                    label="Declined",
-                    style=discord.ButtonStyle.red,
-                    disabled=True,
-                )
+            content=(
+                f"{tick} **{interaction.user.display_name}**, I've declined `@{LOA.get('ExtendedUser', {}).get('name', 'N/A')}'s` LOA."
             ),
+            view=None,
+            embed=None,
         )
-
-
-# class LOAContainer(discord.ui.Container):
-#     def __init__(self):
-#         super().__init__(id=1)
-#         text = discord.ui.TextDisplay("## <:LOA:1223063170856390806> Leave Manage")
-#         self.add_item(text)
-#         sep = discord.ui.Separator()
-#         self.add_item(sep)
-#         load_description = discord.ui.TextDisplay(
-#             "**Active LOA**\n> **Duration**: <t:{int(CurrentLOA.get('start_time').timestamp())}> - <t:{int(CurrentLOA.get('end_time').timestamp())}>\n> **Reason:** {CurrentLOA.get('reason')}\n"
-#         )
-#         self.add_item(load_description)
-#         sep2 = discord.ui.Separator()
-#         self.add_item(sep2)
-#         action_row = discord.ui.ActionRow()
-
-#         @action_row.button(label="Extension Request", style=discord.ButtonStyle.green)
-#         async def extension_request(interaction: discord.Interaction, button):
-#             await interaction.response.send_message("Extension request initiated.")
-
-#         @action_row.button(label="Reduce Time", style=discord.ButtonStyle.red)
-#         async def reduce_time(interaction: discord.Interaction, button):
-#             await interaction.response.send_message("Time reduction initiated.")
-
-#         @action_row.button(label="End", style=discord.ButtonStyle.red)
-#         async def end_loa(interaction: discord.Interaction, button):
-#             await interaction.response.send_message("LOA ended.")
-
-#         @action_row.button(label="LOA History", style=discord.ButtonStyle.blurple)
-#         async def loa_history(interaction: discord.Interaction, button):
-#             await interaction.response.send_message("Displaying LOA history.")
-
-#         self.add_item(action_row)
-
-
-# class LOAManage(discord.ui.LayoutView):
-#         def __init__(self, *, timeout = 180):
-#             super().__init__(timeout=timeout)
-#             self.add_item(LOAContainer())

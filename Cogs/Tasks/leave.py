@@ -1,31 +1,24 @@
-from discord.ext import commands, tasks
-import os
-
 import asyncio
-import datetime
 from datetime import datetime
 from bson import ObjectId
-from utils.emojis import *
-import discord
+from typing import Union
+from discord.ext import commands, tasks
 
 
-async def TimeLeftz(loa: dict) -> int | str:
+async def TimeLeftz(loa: dict) -> Union[int, str]:
     if not loa or not loa.get("start_time") or not loa.get("end_time"):
         return "N/A"
 
     Added = 0
-    if loa.get("AddedTime") is not None:
-        if loa["AddedTime"].get("RequestExt") is not None:
-            if loa["AddedTime"]["RequestExt"].get("status", "Rejected") == "Accepted":
-                Added = int(loa["AddedTime"].get("Time", 0))
-        else:
-            Added = int(loa["AddedTime"].get("Time", 0))
+    if loa.get("AddedTime"):
+        Added = int(loa["AddedTime"].get("Time", 0))
 
     Removed = 0
-    if loa.get("RemovedTime") is not None:
-        Removed = int(loa["RemovedTime"].get("Duration", 0))
-    return int(loa["end_time"].timestamp()) - int(datetime.utcnow().timestamp()) - (Removed - Added)
+    if loa.get("RemovedTime"):
+        Removed = int(loa["RemovedTime"].get("Time", 0))
 
+    End = loa["end_time"].timestamp() + Added - Removed
+    return int(End - datetime.now().timestamp())
 
 
 class Leave(commands.Cog):
@@ -51,24 +44,22 @@ class Leave(commands.Cog):
             )
             .to_list(length=None)
         )
+
         semaphore = asyncio.Semaphore(3)
 
-        async def Process(L):
+        async def Process(loa):
             async with semaphore:
-                TimeLeft = await TimeLeftz(L)
-                print(f"TimeLeft: {TimeLeft}")
-                print(f"LOA: {L.get('_id')}")
-
+                TimeLeft = await TimeLeftz(loa)
                 if TimeLeft in {None, "N/A"}:
                     return
-                if TimeLeft <= 0:
-                    print('hi')
-                    await self.client.db["loa"].update_one(
-                        {"_id": ObjectId(L["_id"])}, {"$set": {"active": False}}
-                    )
-                    self.client.dispatch("leave_end", L.get("_id"))
 
-        await asyncio.gather(*(Process(L) for L in LOAs))
+                if TimeLeft <= 0:
+                    await self.client.db["loa"].update_one(
+                        {"_id": ObjectId(loa["_id"])}, {"$set": {"active": False}}
+                    )
+                    self.client.dispatch("leave_end", loa.get("_id"))
+
+        await asyncio.gather(*(Process(loa) for loa in LOAs))
 
     @tasks.loop(seconds=10)
     async def ScheduledLOA(self):
@@ -85,22 +76,23 @@ class Leave(commands.Cog):
             )
             .to_list(length=None)
         )
+
         semaphore = asyncio.Semaphore(3)
 
-        async def Process(L):
+        async def Process(loa):
             async with semaphore:
-                if not L.get("start_time"):
+                if not loa.get("start_time"):
                     return
-                if int(datetime.utcnow().timestamp()) >= int(
-                    L.get("start_time").timestamp()
+                if int(datetime.now().timestamp()) >= int(
+                    loa["start_time"].timestamp()
                 ):
                     await self.client.db["loa"].update_one(
-                        {"_id": ObjectId(L["_id"])},
+                        {"_id": ObjectId(loa["_id"])},
                         {"$set": {"active": True, "scheduled": False}},
                     )
-                    self.client.dispatch("leave_start", L.get("_id"))
+                    self.client.dispatch("leave_start", loa.get("_id"))
 
-        await asyncio.gather(*(Process(L) for L in LOAs))
+        await asyncio.gather(*(Process(loa) for loa in LOAs))
 
 
 async def setup(client: commands.Bot) -> None:
