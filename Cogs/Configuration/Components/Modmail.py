@@ -20,6 +20,7 @@ class ModmailOptions(discord.ui.Select):
                 discord.SelectOption(
                     label="Modmail Pings", emoji="<:Ping:1298301862906298378>"
                 ),
+
                 discord.SelectOption(
                     label="Preferences", emoji="<:leaf:1160541147320553562>"
                 ),

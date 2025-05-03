@@ -130,6 +130,179 @@ class Modmail(commands.Cog):
     async def snippets(self, ctx):
         pass
 
+    @snippets.command(description="Create a modmail snippet")
+    @app_commands.describe(
+        name="The name of the snippet", content="The content of the snippet"
+    )
+    async def create(
+        self,
+        ctx: commands.Context,
+        name,
+        *,
+        content: discord.ext.commands.Range[str, 1, 1800],
+    ):
+        await ctx.defer()
+
+        if not await has_admin_role(ctx, "Modmail Permissions"):
+            return
+        result = await self.client.db["Modmail Snippets"].find_one(
+            {"guild_id": ctx.guild.id, "name": name}
+        )
+        if result:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, a snippet with that name already exists.",
+            )
+            return
+        await self.client.db["Modmail Snippets"].insert_one(
+            {"guild_id": ctx.guild.id, "name": name, "content": content}
+        )
+        await ctx.send(
+            f"{tick} **{ctx.author.display_name}**, I've created the snippet succesfully!",
+        )
+
+    @snippets.command(description="Delete a modmail snippet")
+    @app_commands.describe(name="The name of the snippet")
+    @app_commands.autocomplete(name=Snippets)
+    async def delete(self, ctx: commands.Context, *, name):
+        await ctx.defer()
+        if not await has_admin_role(ctx, "Modmail Permissions"):
+            return
+        result = await self.client.db["Modmail Snippets"].find_one(
+            {"guild_id": ctx.guild.id, "name": name}
+        )
+        if not result:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, a snippet with that name doesn't exist.",
+            )
+            return
+        await self.client.db["Modmail Snippets"].delete_many(
+            {"guild_id": ctx.guild.id, "name": name}
+        )
+        await ctx.send(
+            f"{tick} **{ctx.author.display_name}**, I've deleted the snippet succesfully!",
+        )
+
+    @snippets.command(description="Edit a modmail snippet")
+    @app_commands.describe(
+        name="The name of the snippet", content="The new content of the snippet"
+    )
+    @app_commands.autocomplete(name=Snippets)
+    async def edit(self, ctx: commands.Context, name, *, content):
+        await ctx.defer()
+        if not await has_admin_role(ctx, "Modmail Permissions"):
+            return
+        result = await self.client.db["Modmail Snippets"].find_one(
+            {"guild_id": ctx.guild.id, "name": name}
+        )
+        if not result:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, a snippet with that name doesn't exist.",
+            )
+            return
+        await self.client.db["Modmail Snippets"].update_one(
+            {"guild_id": ctx.guild.id, "name": name}, {"$set": {"content": content}}
+        )
+        await ctx.send(
+            f"{tick} **{ctx.author.display_name}**, I've edited the snippet succesfully!",
+        )
+
+    @snippets.command(description="Send a modmail snippet in a modmail")
+    @app_commands.describe(name="The name of the snippet")
+    @app_commands.autocomplete(name=Snippets)
+    async def send(self, ctx: commands.Context, *, name):
+        await ctx.defer(ephemeral=True)
+        if not await ModuleCheck(ctx.guild.id, "Modmail"):
+            await ctx.send(
+                embed=ModuleNotEnabled(),
+                view=Support(),
+            )
+            return
+        if not await has_staff_role(ctx, "Modmail Permissions"):
+            return
+        result = await self.client.db["Modmail Snippets"].find_one(
+            {"guild_id": ctx.guild.id, "name": name}
+        )
+        if not result:
+            await ctx.send(
+                f"{no} **{ctx.author.display_name}**, a snippet with that name doesn't exist.",
+            )
+            return
+        await self.Reply(ctx, content=result.get("content"))
+
+    @snippets.command(description="List all available modmail snippets")
+    async def all(self, ctx: commands.Context):
+        await ctx.defer()
+        if not await ModuleCheck(ctx.guild.id, "Modmail"):
+            await ctx.send(
+                embed=ModuleNotEnabled(),
+                view=Support(),
+            )
+            return
+        if not await has_staff_role(ctx, "Modmail Permissions"):
+            return
+
+        filter = {"guild_id": ctx.guild.id}
+
+        result = self.client.db["Modmail Snippets"].find(filter)
+        if result is None:
+            await ctx.send(
+                f"{no} {ctx.author.display_name}, there are no snippets in the server.\n{arrow} To create a new snippet, use </modmail snippets create:1226670215740264483>",
+            )
+            return
+        result = await result.to_list(length=750)
+
+        if IsSeperateBot():
+            msg = await ctx.send(
+                embed=discord.Embed(
+                    description="Loading...", color=discord.Color.dark_embed()
+                )
+            )
+
+        else:
+            msg = await ctx.send(
+                embed=discord.Embed(
+                    description="<a:astroloading:1245681595546079285>",
+                    color=discord.Color.dark_embed(),
+                )
+            )
+
+        def Embed():
+            embed = discord.Embed(color=discord.Color.dark_embed())
+            embed.set_author(
+                name="Snippets",
+                icon_url="https://cdn.discordapp.com/emojis/1234994806829355169.webp?size=32",
+            )
+            embed.set_image(url="https://www.astrobirb.dev/invisble.png")
+            return embed
+
+        embeds = []
+        embed = Embed()
+
+        count = 0
+
+        for snippet in result:
+            name = snippet["name"]
+            content = snippet["content"]
+            if len(content) > 1024:
+                content = content[:1021] + "..."
+                break
+
+            embed.add_field(name=name, value=f"{content}", inline=False)
+            count += 1
+
+            if count % 5 == 0 or count == len(result):
+                embeds.append(embed)
+                embed = Embed()
+        if count == 0:
+            await msg.edit(
+                content=f"{no} **{ctx.author.display_name}**, there are no snippets in the server.\n{arrow} To create a new snippet, use </modmail snippets create:1226670215740264483>",
+                embed=None,
+            )
+            return
+
+        paginator = await PaginatorButtons()
+        await paginator.start(ctx, pages=embeds[:45], msg=msg)
+
     @commands.command(description="Send a snippet", aliases=["s"])
     async def snippet(self, ctx: commands.Context, *, name):
         await ctx.defer(ephemeral=True)

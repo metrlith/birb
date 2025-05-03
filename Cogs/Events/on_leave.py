@@ -155,23 +155,27 @@ class on_leave(commands.Cog):
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
             return
         try:
+            member = G.get_member(L.get("user"))
             if C.get("LOA", {}).get("role", None):
                 try:
                     role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
-                    member = G.get_member(L.get("user"))
                     if role:
                         await member.remove_roles(role, reason="Leave Ended")
                 except (discord.NotFound, discord.HTTPException):
                     pass
+        except discord.Forbidden:
+            pass
 
+        try:
             await member.send(embed=embed)
         except discord.Forbidden:
-            return
+            pass
 
     @commands.Cog.listener()
     async def on_leave_log(
         self, _id: ObjectId, action: str, author: discord.User, unmodified: dict = None
     ):
+        
         L = await self.client.db["loa"].find_one({"_id": _id})
         if L is None:
             return
@@ -183,7 +187,7 @@ class on_leave(commands.Cog):
             return
         if not C.get("LOA", None):
             return
-        if not C.get("LOA", {}).get("AuditLog", None):
+        if not C.get("LOA", {}).get("LogChannel", None):
             return
         try:
             CH = await G.fetch_channel(int(C.get("LOA", {}).get("LogChannel", 0)))
@@ -191,11 +195,8 @@ class on_leave(commands.Cog):
             return
         embed = discord.Embed()
         color = {
-            "create": discord.Color.brand_green(),
-            "end": discord.Color.brand_red(),
+            "ForceEnd": discord.Color.brand_red(),
             "modify": discord.Color.dark_purple(),
-            "denied": discord.Color.brand_red(),
-            "accepted": discord.Color.brand_green(),
         }
         embed.color = color.get(action, discord.Color.dark_embed())
         embed.timestamp = discord.utils.utcnow()
@@ -204,11 +205,11 @@ class on_leave(commands.Cog):
             embed.title = "Leave Modified"
             embed.add_field(
                 name="Before",
-                value=f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(unmodified.get('start_time').timestamp())}>\n> **End Date:** <t:{int(unmodified.get('end_time').timestamp())}>\n> **Reason:** {unmodified.get('reason')}",
+                value=f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(unmodified.get('start_time').timestamp())}>\n> **End Date:** {await Duration(unmodified, 'end_time')}\n> **Reason:** {unmodified.get('reason')}",
             )
             embed.add_field(
                 name="After",
-                value=f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
+                value=f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** {await Duration(L, 'end_time')}\n> **Reason:** {L.get('reason')}",
             )
 
         if action == "ForceEnd":
@@ -269,15 +270,11 @@ class on_leave(commands.Cog):
     async def on_leave_ext_update(
         self, _id: ObjectId, status: str, author: discord.User
     ):
-        print("[Executes]")
-
         L = await self.client.db["ExtRequests"].find_one({"_id": _id})
         if L is None:
-            print("[Nope]")
             return
         LOA = await self.client.db["loa"].find_one({"LoaID": L.get("LoaID")})
         if LOA is None:
-            print("Feck you")
             return
         G = self.client.get_guild(L.get("guild"))
         if not G:
@@ -467,7 +464,6 @@ class on_leave(commands.Cog):
 
     @commands.Cog.listener()
     async def on_leave_update(self, _id: ObjectId, status: str, author: discord.User):
-
         L = await self.client.db["loa"].find_one({"_id": _id})
         if L is None:
             return
@@ -544,12 +540,12 @@ class on_leave(commands.Cog):
             embed.add_field(
                 name="Leave",
                 value=f"> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
-                inline=False
+                inline=False,
             )
             embed.add_field(
                 name="Denied",
                 value=f"> **Reason:** {L.get('Declined',{}).get('reason', 'N/A')}",
-                inline=False
+                inline=False,
             )
             embed.color = discord.Color.brand_red()
             embed.set_footer(
@@ -636,7 +632,7 @@ class ExtRequest(discord.ui.View):
         label="Accept", style=discord.ButtonStyle.green, row=0, custom_id="accept2"
     )
     async def Accept(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction):
+        if not await has_admin_role(interaction, defer=False):
             return
         await interaction.response.defer(ephemeral=True)
         LOA = await interaction.client.db["ExtRequests"].find_one(
@@ -659,7 +655,7 @@ class ExtRequest(discord.ui.View):
         label="Decline", style=discord.ButtonStyle.red, row=0, custom_id="decline2"
     )
     async def Decline(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction):
+        if not await has_admin_role(interaction, defer=False):
             return
         await interaction.response.send_modal(DenialReason())
 
@@ -688,9 +684,9 @@ class PendingActions(discord.ui.View):
         label="Accept", style=discord.ButtonStyle.green, row=0, custom_id="accept"
     )
     async def Accept(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction):
-            return
         await interaction.response.defer(ephemeral=True)
+        if not await has_admin_role(interaction, defer=False):
+            return
         LOA = await interaction.client.db["loa"].find_one(
             {"messageid": interaction.message.id}
         )
@@ -739,7 +735,8 @@ class PendingActions(discord.ui.View):
         label="Decline", style=discord.ButtonStyle.red, row=0, custom_id="decline"
     )
     async def Decline(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction):
+
+        if not await has_admin_role(interaction, defer=False):
             return
         await interaction.response.send_modal(DenialReason())
 

@@ -103,7 +103,10 @@ class LOAModule(commands.Cog):
         )
 
         if len(LOA) == 0:
-            await ctx.send(embed=HelpEmbeds.CustomError("No past LOAs."))
+            await ctx.send(
+                content=f"{no} * **{ctx.author.display_name}**, there haven't been any LOAs yet."
+            )
+
             return
 
         pages = []
@@ -147,7 +150,10 @@ class LOAModule(commands.Cog):
         )
 
         if len(LOA) == 0:
-            await ctx.send(embed=HelpEmbeds.CustomError("No active LOAs."))
+            await ctx.send(
+                content=f"{no} * **{ctx.author.display_name}**, there aren't any active LOAs."
+            )
+
             return
 
         pages = []
@@ -190,7 +196,9 @@ class LOAModule(commands.Cog):
         )
 
         if len(LOA) == 0:
-            await ctx.send(embed=HelpEmbeds.CustomError("No pending LOA requests."))
+            await ctx.send(
+                content=f"{no} * **{ctx.author.display_name}**, there aren't any pending LOAs."
+            )
             return
 
         pages = []
@@ -683,6 +691,7 @@ class RemoveTime(discord.ui.Modal):
                 "active": True,
             }
         )
+        Org = LOA.copy()
         Z = await interaction.client.db["loa"].update_one(
             {
                 "user": self.target.id,
@@ -718,7 +727,16 @@ class RemoveTime(discord.ui.Modal):
             ),
             ephemeral=True,
         )
-        interaction.client.dispatch("leave_log", LOA.get("_id"), "modify", LOA)
+        LOA = await interaction.client.db["loa"].find_one(
+            {
+                "user": self.target.id,
+                "guild_id": interaction.guild.id,
+                "active": True,
+            }
+        )
+        interaction.client.dispatch(
+            "leave_log", LOA.get("_id"), "modify", interaction.user, Org
+        )
         await interaction.edit_original_response(
             embed=await CurrentLOA(ctx=interaction, loa=LOA, user=self.target),
         )
@@ -781,6 +799,7 @@ class AddTime(discord.ui.Modal):
                 "active": True,
             }
         )
+        Org = LOA.copy()
 
         if self.RequestExt:
             C = await interaction.client.db["Config"].find_one(
@@ -856,7 +875,9 @@ class AddTime(discord.ui.Modal):
             )
             return
         else:
-            interaction.client.dispatch("leave_log", LOA.get("_id"), "modify", LOA)
+            interaction.client.dispatch(
+                "leave_log", LOA.get("_id"), "modify", interaction.user, Org
+            )
             LOA = await interaction.client.db["loa"].find_one(
                 {
                     "user": self.target.id,

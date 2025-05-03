@@ -124,7 +124,7 @@ async def check_admin_and_staff(guild: discord.Guild, user: discord.User):
     return False
 
 
-async def has_admin_role(toy, permissions=None, msg=None):
+async def has_admin_role(toy, permissions=None, msg=None, defer=True):
     if isinstance(toy, commands.Context):
         author = toy.author
         guild = toy.guild
@@ -132,7 +132,7 @@ async def has_admin_role(toy, permissions=None, msg=None):
     else:
         author = toy.user
         guild = toy.guild
-        send = toy.followup.send
+        send = toy.followup.send if defer else toy.response.send_message
 
     if msg:
         send = msg.edit
