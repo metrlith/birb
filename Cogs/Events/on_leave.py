@@ -175,7 +175,7 @@ class on_leave(commands.Cog):
     async def on_leave_log(
         self, _id: ObjectId, action: str, author: discord.User, unmodified: dict = None
     ):
-        
+
         L = await self.client.db["loa"].find_one({"_id": _id})
         if L is None:
             return
@@ -214,7 +214,7 @@ class on_leave(commands.Cog):
 
         if action == "ForceEnd":
             embed.title = "Leave Ended"
-            embed.description = f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}"
+            embed.description = f"> **ID:** `{L.get('LoaID')}`\n> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** {await Duration(L, 'end_time')}\n> **Reason:** {L.get('reason')}"
         try:
             await CH.send(embed=embed)
         except (discord.HTTPException, discord.Forbidden):
