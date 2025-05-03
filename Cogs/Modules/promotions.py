@@ -45,7 +45,8 @@ async def SingleHierarchy(
             ephemeral=True,
         )
         return
-
+    if not await has_admin_role(interaction, "Promotion Permissions", msg):
+        return
     await interaction.response.defer()
     msg: discord.Message = await interaction.followup.send(
         f"<a:Loading:1167074303905386587> Promoting **@{user.display_name}**...",
@@ -57,10 +58,6 @@ async def SingleHierarchy(
             ephemeral=True,
         )
         return
-
-    if not await has_admin_role(interaction, "Promotion Permissions", msg):
-        return
-
     if user is None:
         await msg.edit(
             content=f"{no} **{user.display_name}**, this user cannot be found.",
@@ -197,7 +194,8 @@ async def MultiHireachy(
             ephemeral=True,
         )
         return
-
+    if not await has_admin_role(interaction, "Promotion Permissions"):
+        return
     await interaction.response.defer()
     msg: discord.Message = await interaction.followup.send(
         f"<a:Loading:1167074303905386587> Promoting **@{user.display_name}**...",
@@ -210,8 +208,7 @@ async def MultiHireachy(
         )
         return
 
-    if not await has_admin_role(interaction, "Promotion Permissions"):
-        return
+
 
     if user is None:
         await msg.edit(
@@ -354,6 +351,8 @@ async def issue(
             ephemeral=True,
         )
         return
+    if not await has_admin_role(interaction, "Promotion Permissions"):
+        return    
     await interaction.response.defer()
     msg: discord.Message = await interaction.followup.send(
         f"<a:Loading:1167074303905386587> Promoting **@{staff.display_name}**...",
@@ -366,8 +365,7 @@ async def issue(
         )
         return
 
-    if not await has_admin_role(interaction, "Promotion Permissions"):
-        return
+
 
     if staff is None:
         await msg.edit(
