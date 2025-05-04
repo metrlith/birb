@@ -222,13 +222,13 @@ class Utility(commands.Cog):
         )
         embed.add_field(
             name="Database",
-            value=f"> **Database Latency:** `{round(DbLatency if DbLatency else 'N/A')} ms`\n> **Database Status:** `{await self.DbConnection()}`",
+            value=f"> **Latency:** `{round(DbLatency if DbLatency else 'N/A')} ms`\n> **Status:** `{await self.DbConnection()}`",
             inline=False,
         )
 
         embed.add_field(
             name="API",
-            value=f"> **API Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **API Status:** `{A.get('status', 'N/A') if isinstance(A, dict) else 'N/A'}`\n> **API Uptime:** <t:{int(A.get('uptime', 0)) if isinstance(A, dict) else 0}:R>",
+            value=f"> **Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **Status:** `{A.get('status', 'N/A') if isinstance(A, dict) else 'N/A'}`\n> **API Uptime:** <t:{int(A.get('uptime', 0)) if isinstance(A, dict) else 0}:R>",
             inline=False,
         )
 
