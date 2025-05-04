@@ -104,7 +104,7 @@ class LOAModule(commands.Cog):
 
         if len(LOA) == 0:
             await ctx.send(
-                content=f"{no} * **{ctx.author.display_name}**, there haven't been any LOAs yet."
+                content=f"{no} **{ctx.author.display_name}**, there haven't been any LOAs yet."
             )
 
             return
@@ -151,7 +151,7 @@ class LOAModule(commands.Cog):
 
         if len(LOA) == 0:
             await ctx.send(
-                content=f"{no} * **{ctx.author.display_name}**, there aren't any active LOAs."
+                content=f"{no} **{ctx.author.display_name}**, there aren't any active LOAs."
             )
 
             return
@@ -190,6 +190,7 @@ class LOAModule(commands.Cog):
                     "guild_id": ctx.guild.id,
                     "request": True,
                     "active": False,
+                    "LoaID": {"$exists": True},
                 }
             )
             .to_list(length=1000)
@@ -197,12 +198,13 @@ class LOAModule(commands.Cog):
 
         if len(LOA) == 0:
             await ctx.send(
-                content=f"{no} * **{ctx.author.display_name}**, there aren't any pending LOAs."
+                content=f"{no} **{ctx.author.display_name}**, there aren't any pending LOAs."
             )
             return
 
         pages = []
         for i in range(0, len(LOA), 1):
+
             chunk = LOA[i : i + 1]
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(name="Pending LOA Requests")
@@ -261,15 +263,33 @@ class LOAModule(commands.Cog):
             return
 
         Start = datetime.now()
-        S = False
-        if start:
-            S = True
-            Start = await strtotime(start)
-        Duration = await strtotime(duration)
+        try:
+            S = False
+            if start:
+                S = True
+                Start = await strtotime(start)
+                if Start is None:
+                    await ctx.send(
+                        content=f"{no} **{ctx.author.display_name}**, invalid start time format. (example: 2023-01-01 or 2d = 2 days from now)"
+                    )
+                    return
+            else:
+                Start = datetime.now()
+            Duration = await strtotime(duration)
+        except (ValueError, TypeError, AttributeError):
+            await ctx.send(
+                content=f"{no} **{ctx.author.display_name}**, invalid duration format. (example: 2d = 2 days, 2m = 2 minutes and etc)"
+            )
+            return
+        except OverflowError:
+            await ctx.send(
+                content=f"{no} **{ctx.author.display_name}**, the duration is too long."
+            )
+            return
 
         if Duration < datetime.now():
             await ctx.send(
-                content=f"{no} **{ctx.author.display_name}**, your LOA can't be in the past. On real note how tf did you get this?"
+                content=f"{no} **{ctx.author.display_name}**, your LOA can't be in the past. On a real note, how did you even manage this?"
             )
             return
 
@@ -396,6 +416,14 @@ class LOAModule(commands.Cog):
                 "start_time": {"$lt": datetime.now()},
             }
         )
+        RequestLOA = await self.client.db["loa"].find_one(
+            {
+                "user": ctx.author.id,
+                "guild_id": ctx.guild.id,
+                "active": False,
+                "request": True,
+            }
+        )
         PastLOAs = (
             await self.client.db["loa"]
             .find(
@@ -418,8 +446,18 @@ class LOAModule(commands.Cog):
 
         if ActiveLOA:
             embed = await CurrentLOA(ctx, ActiveLOA)
+            view.remove_item(view.CancelRequest)
 
-        else:
+        if RequestLOA:
+            embed = await CurrentLOA(ctx, RequestLOA)
+            embed.description = (
+                "-# This leave is currently being reviewed by staff members"
+            )
+            view.remove_item(view.RequestExt)
+            view.remove_item(view.ReduceT)
+            view.remove_item(view.End)
+
+        if not ActiveLOA and RequestLOA:
             embed.add_field(
                 name="Current LOA",
                 value="> You currently have no active LOA. To request one, use `/loa request`",
@@ -428,6 +466,7 @@ class LOAModule(commands.Cog):
             view.remove_item(view.RequestExt)
             view.remove_item(view.ReduceT)
             view.remove_item(view.End)
+            view.remove_item(view.CancelRequest)
         view.remove_item(view.CreateLOA)
         embed.set_thumbnail(url=ctx.author.display_avatar)
         embed.set_author(name="Leave Manage")
@@ -475,6 +514,7 @@ class LOAModule(commands.Cog):
             view.remove_item(view.ReduceT)
             view.remove_item(view.End)
 
+        view.remove_item(view.CancelRequest)
         view.RequestExt.label = "Add Time"
         embed.set_thumbnail(url=ctx.author.display_avatar)
         embed.set_author(name="Leave Admin")
@@ -498,7 +538,35 @@ class LOAManage(discord.ui.View):
         self.target = target
         self.ExtRequest = ExtRequest
 
-    @discord.ui.button(label="Create", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Cancel Request", style=discord.ButtonStyle.red, row=0)
+    async def CancelRequest(self, interaction: discord.Interaction, _):
+        if not interaction.user.id == self.author.id:
+            await interaction.response.send_message(
+                embed=HelpEmbeds.NotYourPanel(), ephemeral=True
+            )
+            return
+        RequestLOA = await interaction.client.db["loa"].find_one(
+            {
+                "user": interaction.user.id,
+                "guild_id": interaction.guild.id,
+                "active": False,
+                "request": True,
+            }
+        )
+        if not RequestLOA:
+            return await interaction.response.send_message(
+                content=f"{no} **{interaction.user.display_name}**, you have no current active request."
+            )
+
+        await interaction.response.edit_message(
+            content=f"{tick} **{interaction.user.display_name},** succesfully cancelled the leave request.",
+            view=None,
+            embed=None,
+        )
+
+        interaction.client.dispatch("leave_request_cancel", RequestLOA.get("_id"))
+
+    @discord.ui.button(label="Create", style=discord.ButtonStyle.green, row=2)
     async def CreateLOA(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -509,7 +577,9 @@ class LOAManage(discord.ui.View):
             return
         await interaction.response.send_modal(CreateLOA(interaction.user, self.target))
 
-    @discord.ui.button(label="Request Extension", style=discord.ButtonStyle.green)
+    @discord.ui.button(
+        label="Request Extension", style=discord.ButtonStyle.green, row=0
+    )
     async def RequestExt(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -522,7 +592,7 @@ class LOAManage(discord.ui.View):
             AddTime(author=self.author, target=self.target, RequestExt=self.ExtRequest)
         )
 
-    @discord.ui.button(label="Reduce Time", style=discord.ButtonStyle.red)
+    @discord.ui.button(label="Reduce Time", style=discord.ButtonStyle.red, row=0)
     async def ReduceT(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
@@ -536,7 +606,7 @@ class LOAManage(discord.ui.View):
             RemoveTime(author=self.author, target=self.target)
         )
 
-    @discord.ui.button(label="End", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="End", style=discord.ButtonStyle.blurple, row=0)
     async def End(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.id == self.author.id:
             await interaction.response.send_message(
@@ -595,7 +665,7 @@ class LOAManage(discord.ui.View):
         )
 
     @discord.ui.button(
-        label="Past LOA's (0)", style=discord.ButtonStyle.blurple, disabled=True
+        label="Past LOA's (0)", style=discord.ButtonStyle.blurple, disabled=True, row=0
     )
     async def PLOA(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not interaction.user.id == self.author.id:

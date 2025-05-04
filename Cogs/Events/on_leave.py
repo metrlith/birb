@@ -261,6 +261,33 @@ class on_leave(commands.Cog):
         )
 
     @commands.Cog.listener()
+    async def on_leave_request_cancel(self, _id: ObjectId):
+        L = await self.client.db["loa"].find_one({"_id": _id})
+        await self.client.db["loa"].delete_one({"_id": _id})
+        if L is None:
+            return
+        G = self.client.get_guild(L.get("guild_id"))
+        if not G:
+            return
+        C = await self.client.db["Config"].find_one({"_id": G.id})
+        if not C:
+            return
+        if not C.get("LOA", None):
+            return
+        if not C.get("LOA", {}).get("channel", None):
+            return
+        try:
+            CH = await G.fetch_channel(int(C.get("LOA", {}).get("channel", 0)))
+        except (discord.NotFound, discord.HTTPException):
+            print('e3')
+            return
+        try:
+            CM = await CH.fetch_message(L.get("messageid"))
+            await CM.delete()
+        except (discord.HTTPException, discord.Forbidden, discord.NotFound):
+            return
+
+    @commands.Cog.listener()
     async def on_leave_ext_update(
         self, _id: ObjectId, status: str, author: discord.User
     ):
@@ -651,8 +678,6 @@ class ExtRequest(discord.ui.View):
     async def Decline(self, interaction: discord.Interaction, _):
         if not await has_admin_role(interaction, defer=False):
             return
-        await interaction.response.send_modal(DenialReason())
-
         LOA = await interaction.client.db["ExtRequests"].find_one(
             {"messageid": interaction.message.id}
         )
@@ -716,12 +741,6 @@ class PendingActions(discord.ui.View):
             "leave_update",
             LOA.get("_id"),
             "Accepted",
-            interaction.user,
-        )
-        interaction.client.dispatch(
-            "leave_log",
-            LOA.get("_id"),
-            "accepted",
             interaction.user,
         )
 
