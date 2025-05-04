@@ -228,7 +228,7 @@ class Utility(commands.Cog):
 
         embed.add_field(
             name="API",
-            value=f"> **Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **Status:** `{A.get('status', 'N/A') if isinstance(A, dict) else 'N/A'}`\n> **API Uptime:** <t:{int(A.get('uptime', 0)) if isinstance(A, dict) else 0}:R>",
+            value=f"> **Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **Status:** `{A.get('status', 'N/A') if isinstance(A, dict) else 'N/A'}`\n> **Uptime:** <t:{int(A.get('uptime', 0)) if isinstance(A, dict) else 0}:R>",
             inline=False,
         )
 
