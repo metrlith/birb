@@ -346,6 +346,8 @@ class TicketsPublic(commands.Cog):
             and os.getenv("BUCKET")
         ):
             return
+        if os.getenv('ENVIRONMENT') in ["development", "custom"]:
+            return               
         await ClearOldFiles()
 
     @commands.Cog.listener()
