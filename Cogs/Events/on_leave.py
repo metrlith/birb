@@ -49,7 +49,6 @@ class on_leave(commands.Cog):
         try:
             CM = await CH.send(embed=embed, view=PendingActions())
         except (discord.HTTPException, discord.Forbidden):
-            print("Failed to send message")
             return
 
         await self.client.db["loa"].update_one(
@@ -97,19 +96,20 @@ class on_leave(commands.Cog):
             icon_url=L.get("ExtendedUser", {}).get("thumbnail"),
         )
         embed.set_footer(text=L.get("LoaID"))
-        try:
-            await Member.send(
-                embed=embed,
-            )
-        except (discord.Forbidden, discord.HTTPException):
-            return
-        if C.get("LOA", {}).get("role", None):
+        if Member:
             try:
-                role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
-                if role:
-                    await Member.add_roles(role, reason="Leave Started")
-            except (discord.NotFound, discord.HTTPException):
-                pass
+                await Member.send(
+                    embed=embed,
+                )
+            except (discord.Forbidden, discord.HTTPException):
+                return
+            if C.get("LOA", {}).get("role", None):
+                try:
+                    role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
+                    if role:
+                        await Member.add_roles(role, reason="Leave Started")
+                except (discord.NotFound, discord.HTTPException):
+                    pass
 
     @commands.Cog.listener()
     async def on_leave_end(self, _id: ObjectId):
@@ -153,7 +153,7 @@ class on_leave(commands.Cog):
             if C.get("LOA", {}).get("role", None):
                 try:
                     role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
-                    if role:
+                    if role and member:
                         await member.remove_roles(role, reason="Leave Ended")
                 except (discord.NotFound, discord.HTTPException):
                     pass
@@ -279,7 +279,6 @@ class on_leave(commands.Cog):
         try:
             CH = await G.fetch_channel(int(C.get("LOA", {}).get("channel", 0)))
         except (discord.NotFound, discord.HTTPException):
-            print("e3")
             return
         try:
             CM = await CH.fetch_message(L.get("messageid"))
@@ -372,20 +371,20 @@ class on_leave(commands.Cog):
                 text=f"{L.get('LoaID') } | Accepted By @{author.name}",
                 icon_url=author.display_avatar,
             )
-
-            try:
-                await member.send(
-                    embed=discord.Embed(
-                        color=discord.Color.brand_green(),
+            if member:
+                try:
+                    await member.send(
+                        embed=discord.Embed(
+                            color=discord.Color.brand_green(),
+                        )
+                        .set_author(name="Extension Accepted")
+                        .add_field(
+                            name="LOA",
+                            value=f"> **User:** <@{L.get('user')}>\n> **Extension:** {L.get('durationstr')}\n> **Reason:** {L.get('reason')}",
+                        )
                     )
-                    .set_author(name="Extension Accepted")
-                    .add_field(
-                        name="LOA",
-                        value=f"> **User:** <@{L.get('user')}>\n> **Extension:** {L.get('durationstr')}\n> **Reason:** {L.get('reason')}",
-                    )
-                )
-            except (discord.Forbidden, discord.HTTPException):
-                pass
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
         elif status == "Declined":
             view = discord.ui.View().add_item(
                 discord.ui.Button(
@@ -410,20 +409,21 @@ class on_leave(commands.Cog):
                     }
                 },
             )
-            try:
+            if member:
+                try:
 
-                await member.send(
-                    embed=discord.Embed(
-                        color=discord.Color.brand_red(),
+                    await member.send(
+                        embed=discord.Embed(
+                            color=discord.Color.brand_red(),
+                        )
+                        .set_author(name="Extension Declined")
+                        .add_field(
+                            name="LOA",
+                            value=f"> **User:** <@{L.get('user')}>\n> **Extension:** {L.get('durationstr')}\n> **Reason:** {L.get('reason')}",
+                        )
                     )
-                    .set_author(name="Extension Declined")
-                    .add_field(
-                        name="LOA",
-                        value=f"> **User:** <@{L.get('user')}>\n> **Extension:** {L.get('durationstr')}\n> **Reason:** {L.get('reason')}",
-                    )
-                )
-            except (discord.Forbidden, discord.HTTPException):
-                pass
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
 
         try:
             CM = await CH.fetch_message(L.get("messageid"))
