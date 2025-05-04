@@ -146,6 +146,8 @@ class Utility(commands.Cog):
             if not np.isnan(self.client.latency)
             else 0
         )
+        if Latency > 700:
+            Latency = None
 
         try:
             Start = datetime.now()
@@ -160,6 +162,8 @@ class Utility(commands.Cog):
             Start = datetime.now()
             await self.APIConnection()
             API = (datetime.now() - Start).total_seconds() * 1000
+            if API > 700:
+                API = None
         except Exception:
             API = None
 
