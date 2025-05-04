@@ -107,7 +107,7 @@ class GuildJoins(commands.Cog):
             embed.set_author(name=f"{guild.name}", icon_url=guild.icon)
             embed.set_footer(text=f"ID: {guild.id}")
             embed.set_thumbnail(url=guild.icon)
-            if guild.member_count >= 1000:
+            if guild.member_count is not None and guild.member_count >= 1000:
                 channel: discord.TextChannel = self.client.get_channel(
                     self.GuildChannels.get("notable-leaves")
                 )

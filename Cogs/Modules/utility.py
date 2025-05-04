@@ -168,7 +168,7 @@ class Utility(commands.Cog):
 
         embed.add_field(
             name="Status",
-            value=f"> **Latency:** `{Dis} ms`{Z}\n> **Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
+            value=f"> **Latency:** `{Dis} ms` {Z}\n> **Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
             inline=False,
         )
         embed.add_field(

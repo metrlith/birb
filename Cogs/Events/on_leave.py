@@ -279,7 +279,7 @@ class on_leave(commands.Cog):
         try:
             CH = await G.fetch_channel(int(C.get("LOA", {}).get("channel", 0)))
         except (discord.NotFound, discord.HTTPException):
-            print('e3')
+            print("e3")
             return
         try:
             CM = await CH.fetch_message(L.get("messageid"))
@@ -530,15 +530,16 @@ class on_leave(commands.Cog):
                 text=f"{L.get('LoaID') } | Accepted By @{author.name}",
                 icon_url=author.display_avatar,
             )
-            if not L.get("scheduled") is True:
-                if C.get("LOA", {}).get("role", None):
-                    try:
-                        role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
+            if member:
+                if not L.get("scheduled") is True:
+                    if C.get("LOA", {}).get("role", None):
+                        try:
+                            role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
 
-                        if role:
-                            await member.add_roles(role, reason="Leave Accepted")
-                    except (discord.NotFound, discord.HTTPException):
-                        pass
+                            if role and member:
+                                await member.add_roles(role, reason="Leave Accepted")
+                        except (discord.NotFound, discord.HTTPException):
+                            pass
                     try:
                         await member.send(
                             embed=discord.Embed(
@@ -553,6 +554,7 @@ class on_leave(commands.Cog):
                     except (discord.Forbidden, discord.HTTPException):
                         pass
         elif status == "Declined":
+
             view = discord.ui.View().add_item(
                 discord.ui.Button(
                     label="Declined", style=discord.ButtonStyle.red, disabled=True
@@ -573,23 +575,23 @@ class on_leave(commands.Cog):
                 text=f"{L.get('LoaID') } | Declined By @{author.name}",
                 icon_url=author.display_avatar,
             )
-
-            await member.send(
-                embed=discord.Embed(
-                    color=discord.Color.brand_red(),
+            if member:
+                await member.send(
+                    embed=discord.Embed(
+                        color=discord.Color.brand_red(),
+                    )
+                    .set_author(name="Leave Declined")
+                    .add_field(
+                        name="Leave",
+                        value=f"> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
+                        inline=False,
+                    )
+                    .add_field(
+                        name="Denied",
+                        value=f"> **Reason:** {L.get('Declined',{}).get('reason', 'N/A')}",
+                        inline=False,
+                    )
                 )
-                .set_author(name="Leave Declined")
-                .add_field(
-                    name="Leave",
-                    value=f"> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
-                    inline=False,
-                )
-                .add_field(
-                    name="Denied",
-                    value=f"> **Reason:** {L.get('Declined',{}).get('reason', 'N/A')}",
-                    inline=False,
-                )
-            )
 
         try:
             CM = await CH.fetch_message(L.get("messageid"))
