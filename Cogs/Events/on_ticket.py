@@ -346,7 +346,7 @@ class TicketsPublic(commands.Cog):
             and os.getenv("BUCKET")
         ):
             return
-        if os.getenv('ENVIRONMENT') in ["development", "custom"]:
+        if os.getenv('ENVIRONMENT') in ["development", "custom"] and (not os.getenv('VIDEO_DAYS') or not os.getenv('IMAGE_DAYS')):
             return               
         await ClearOldFiles()
 
