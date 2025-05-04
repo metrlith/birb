@@ -27,7 +27,7 @@ class GuildJoins(commands.Cog):
         }
 
     async def LogJoin(self, guild: discord.Guild):
-        if not (guild, guild.member_count, guild.id):
+        if not (guild and guild.member_count is not None and guild.id):
             return
         blacklist = await self.client.db["blacklists"].find_one(
             {"user": guild.owner_id}
@@ -42,7 +42,7 @@ class GuildJoins(commands.Cog):
             embed.set_author(name=f"{guild.name}", icon_url=guild.icon)
             embed.set_footer(text=f"ID: {guild.id}")
             embed.set_thumbnail(url=guild.icon)
-            if guild.member_count >= 1000:
+            if guild.member_count is not None and guild.member_count >= 1000:
                 channel: discord.TextChannel = self.client.get_channel(
                     self.GuildChannels.get("notable-joins")
                 )
@@ -53,7 +53,7 @@ class GuildJoins(commands.Cog):
             if not channel:
                 return
             await channel.send(embed=embed)
-        except (discord.HTTPException, discord.Forbidden):
+        except (discord.HTTPException, discord.Forbidden, TypeError):
             return
 
     async def LogWebhookJoin(self, guild: discord.Guild):

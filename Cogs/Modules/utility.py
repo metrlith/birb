@@ -162,9 +162,13 @@ class Utility(commands.Cog):
         embed.set_author(
             name=self.client.user.name, icon_url=self.client.user.display_avatar
         )
+        Z = ""
+        if interaction.guild:
+            Z = f"\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms"
+
         embed.add_field(
             name="Status",
-            value=f"> **Latency:** `{Dis} ms`\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms`\n> **Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
+            value=f"> **Latency:** `{Dis} ms`{Z}\n> **Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
             inline=False,
         )
         embed.add_field(
