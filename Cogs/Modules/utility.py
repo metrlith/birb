@@ -90,7 +90,7 @@ class Utility(commands.Cog):
 
         for key in keys:
             if key in data and data[key]:
-                y = [float(x) if x != "N/A" else 0 for x in data[key]]
+                y = [float(x) if x not in ["N/A", "None"] else 0 for x in data[key]]
                 x = np.arange(len(y))
 
                 cs = CubicSpline(x, y)
