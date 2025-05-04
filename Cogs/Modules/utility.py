@@ -164,7 +164,7 @@ class Utility(commands.Cog):
         )
         Z = ""
         if interaction.guild:
-            Z = f"\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms"
+            Z = f"\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms`"
 
         embed.add_field(
             name="Status",
