@@ -11,34 +11,20 @@ class management(commands.Cog):
     @commands.is_owner()
     async def account(self, ctx: commands.Context, user: discord.User):
         await ctx.defer()
+        
         premiumresult = await self.client.db['premium'].find_one({"user_id": user.id})
-        if premiumresult:
-            premiums = tick
-        else:
-            premiums = no
         blacklistsresult = await self.client.db['blacklists'].find_one({"user": user.id})
-        if blacklistsresult:
-            blacklistss = tick
-        else:
-            blacklistss = no
-        badgesresult = await self.client.db["User Badges"].find({"user_id": user.id}).to_list(length=None)
-        badgess = []
-        if badgesresult:
-            for x in badgesresult:
-                badgess.append(x["badge"])
-        badgess = ", ".join(badgess)
-        if not badgess:
-            badgess = "None"
+
+        premiums = tick if premiumresult else no
+        blacklistss = tick if blacklistsresult else no
+        
         view = ManageAccount(ctx.author, user)
-        view.premium.style = (
-            discord.ButtonStyle.green if premiumresult else discord.ButtonStyle.red
-        )
-        view.blacklisted.style = (
-            discord.ButtonStyle.green if blacklistsresult else discord.ButtonStyle.red
-        )
+        view.premium.style = discord.ButtonStyle.green if premiumresult else discord.ButtonStyle.red
+        view.blacklisted.style = discord.ButtonStyle.green if blacklistsresult else discord.ButtonStyle.red
+        
         embed = discord.Embed(
             title=f"@{user.display_name}",
-            description=f"**Premium:** {premiums}\n**Blacklisted:** {blacklistss}\n**Badges:** {badgess}",
+            description=f"**Premium:** {premiums}\n**Blacklisted:** {blacklistss}",
             color=discord.Color.dark_embed(),
         )
         embed.set_thumbnail(url=user.avatar)
@@ -87,35 +73,16 @@ class management(commands.Cog):
     async def analyticss(self, ctx: commands.Context):
         result = await self.client.db["analytics"].find({}).to_list(length=None)
 
-        description = ""
+        content = ""
         for x in result:
             for key, value in x.items():
                 if key != "_id":
-                    description += f"**{key}:** `{value}`\n"
-            description += ""
+                    content += f"{key}: {value}\n"
+            content += "\n"
+            with open("analytics.txt", "w", encoding="utf-8") as file:
+                file.write(content)
 
-        embed = discord.Embed(
-            title="Command Analytics",
-            description=description,
-            color=discord.Color.dark_embed(),
-        )
-        embed.set_thumbnail(url=ctx.guild.icon)
-        embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
-        embed.set_footer(
-            text="Analytics started on 14th December 2024",
-            icon_url="https://media.discordapp.net/ephemeral-attachments/1114281227579559998/1197680763341111377/1158064756104630294.png?ex=65bc2621&is=65a9b121&hm=9e278e5e96573663fb42396dd52e56ece56ba6af59e53f9720873ca484fabf19&=&format=webp&quality=lossless",
-        )
-        await ctx.send(embed=embed)
-
-  
-    @commands.command()
-    @commands.is_owner()
-    async def reloadjsk(self, ctx):
-        await self.client.load_extension("jishaku")
-        await ctx.send(
-            f"{tick} **{ctx.author.display_name},** I've successfully reloaded Jishaku!"
-        )
-
+            await ctx.send(file=discord.File("analytics.txt"))
 
 class ManageAccount(discord.ui.View):
     def __init__(self, author, user: discord.User):
@@ -123,28 +90,19 @@ class ManageAccount(discord.ui.View):
         self.user = user
         self.author = author
 
-    async def updateembed(self, user, interaction=None):
+    async def updateembed(self, user: discord.User, interaction: discord.Interaction = None) -> discord.Embed:
         premiumresult = await interaction.client.db['premium'].find_one({"user_id": user.id})
-        if premiumresult:
-            premiums = tick
-        else:
-            premiums = no
         blacklistsresult = await interaction.client.db['blacklists'].find_one({"user": user.id})
-        if blacklistsresult:
-            blacklistss = tick
-        else:
-            blacklistss = no
-        badgesresult = await interaction.client.db['User Badges'].find({"user_id": user.id}).to_list(length=None)
-        badgess = []
-        if badgesresult:
-            for x in badgesresult:
-                badgess.append(x["badge"])
-        badgess = ", ".join(badgess)
-        if not badgess:
-            badgess = "None"
+
+        premiums = tick if premiumresult else no
+        blacklistss = tick if blacklistsresult else no
+
         embed = discord.Embed(
             title=f"@{user.display_name}",
-            description=f"**Premium:** {premiums}\n**Blacklisted:** {blacklistss}\n**Badges:** {badgess}",
+            description=(
+                f"**Premium:** {premiums}\n"
+                f"**Blacklisted:** {blacklistss}\n"
+            ),
             color=discord.Color.dark_embed(),
         )
         embed.set_thumbnail(url=user.avatar)

@@ -17,3 +17,7 @@ sentry_sdk
 aioboto3
 pillow
 ffmpeg-python
+
+scipy
+matplotlib
+numpy
