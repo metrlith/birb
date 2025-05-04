@@ -202,7 +202,12 @@ class Utility(commands.Cog):
         embed.set_author(
             name=self.client.user.name, icon_url=self.client.user.display_avatar
         )
-
+        try:
+            Start = datetime.now()
+            await self.APIConnection()
+            API = (datetime.now() - Start).total_seconds() * 1000
+        except Exception:
+            API = None
         Z = ""
         if interaction.guild:
             Z = f"\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms`"
@@ -220,7 +225,7 @@ class Utility(commands.Cog):
 
         embed.add_field(
             name="API",
-            value=f"> **API Latency:** `{round(API.get('latency', 0))} ms`\n> **API Status:** `{API.get('status', 'N/A')}`\n> **API Uptime:** <t:{int(API.get('uptime', 0))}:R>",
+            value=f"> **API Latency:** `{round(API)} ms`\n> **API Status:** `{API.get('status', 'N/A')}`\n> **API Uptime:** <t:{int(API.get('uptime', 0))}:R>",
             inline=False,
         )
 
