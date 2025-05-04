@@ -77,6 +77,7 @@ async def RestrictedValidation(key: str):
 class APIRoutes:
     def __init__(self, client: discord.Client):
         self.client = client
+        self.Uptime = datetime.now()
         self.router = APIRouter()
         self.ratelimits = {}
         for i in dir(self):
@@ -223,9 +224,14 @@ class APIRoutes:
         perms = await isAdmin(guild, member)
         return {
             "status": "success",
-            "isAdmin": perms or member.guild_permissions.administrator or member.guild_permissions.manage_guild,
-            "isStaff": await isStaff(guild, member) or member.guild_permissions.administrator or member.guild_permissions.manage_guild,
-            "isDashboardUser": member.guild_permissions.administrator or member.guild_permissions.manage_guild,
+            "isAdmin": perms
+            or member.guild_permissions.administrator
+            or member.guild_permissions.manage_guild,
+            "isStaff": await isStaff(guild, member)
+            or member.guild_permissions.administrator
+            or member.guild_permissions.manage_guild,
+            "isDashboardUser": member.guild_permissions.administrator
+            or member.guild_permissions.manage_guild,
         }
 
     async def DELETE_delinfraction(self, auth: str, server: int, id: str):
@@ -398,7 +404,9 @@ class APIRoutes:
                     for channel in guild.channels
                 ],
                 "isAdmin": member.guild_permissions.administrator,
-                "isManager": (guild.owner_id is not None and guild.owner_id == member.id)
+                "isManager": (
+                    guild.owner_id is not None and guild.owner_id == member.id
+                )
                 or await isStaff(guild, member)
                 or member.guild_permissions.administrator,
             }
@@ -959,7 +967,7 @@ class APIRoutes:
         return {"status": "success", "leaderboard": Leaderboard}
 
     def GET_status(self):
-        return {"status": "online"}
+        return {"status": "Connected", "uptime": self.Uptime.timestamp()}
 
 
 class APICog(commands.Cog):

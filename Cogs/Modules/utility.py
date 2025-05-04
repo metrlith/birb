@@ -67,6 +67,7 @@ class Utility(commands.Cog):
         background = "#2b2d31"
         GridColor = "#4f545c"
         TextColor = "#b9bbbe"
+        purple = "#9b59b6"
 
         plt.rcParams.update(
             {
@@ -84,8 +85,8 @@ class Utility(commands.Cog):
 
         plt.figure(figsize=(10, 5))
 
-        keys = ["Latency", "DB"]
-        colors = {"Latency": blurple, "DB": green}
+        keys = ["Latency", "DB", "API"]
+        colors = {"Latency": blurple, "DB": green, "API": purple}
 
         for key in keys:
             if key in data and data[key]:
@@ -105,7 +106,6 @@ class Utility(commands.Cog):
                     linestyle="-",
                     alpha=1.0,
                 )
-                plt.fill_between(x_new, y_new, color=colors[key], alpha=0.1)
 
         plt.xticks([])
         plt.legend(facecolor=background, edgecolor="none", fontsize=18, fancybox=True)
@@ -119,6 +119,7 @@ class Utility(commands.Cog):
         plt.close()
         return buffer
 
+
     async def DbConnection(self) -> str:
         try:
             await self.client.db.command("ping")
@@ -126,10 +127,20 @@ class Utility(commands.Cog):
         except Exception:
             return "Not Connected"
 
-    @tasks.loop(minutes=5)
+    async def APIConnection(self) -> str:
+        try:
+            async with aiohttp.ClientSession() as session, session.get(
+                "https://api.astrobirb.dev/status"
+            ) as response:
+                response.raise_for_status()
+                return await response.json()
+        except aiohttp.ClientError:
+            return "Not Connected"
+
+    @tasks.loop(seconds=1)
     async def SavePing(self):
-        if os.getenv("ENVIRONMENT") in ["development", "custom"]:
-            return
+        # if os.getenv("ENVIRONMENT") in ["development", "custom"]:
+        #     return
         Latency = (
             round(self.client.latency * 1000)
             if not np.isnan(self.client.latency)
@@ -145,6 +156,13 @@ class Utility(commands.Cog):
         except Exception:
             DbLatency = None
 
+        try:
+            Start = datetime.now()
+            await self.APIConnection()
+            API = (datetime.now() - Start).total_seconds() * 1000
+        except Exception:
+            API = None
+
         await self.client.db["Ping"].update_one(
             {"_id": 0},
             {
@@ -154,6 +172,7 @@ class Utility(commands.Cog):
                         "$each": [str(DbLatency) if DbLatency else "100"],
                         "$slice": -30,
                     },
+                    "API": {"$each": [str(API) if API else "100"], "$slice": -30},
                 },
                 "$setOnInsert": {"_id": 0},
             },
@@ -163,6 +182,7 @@ class Utility(commands.Cog):
     @app_commands.command(name="ping", description="Check the bot's latency")
     async def ping(self, interaction: discord.Interaction):
         data = await self.client.db["Ping"].find_one({"_id": 0})
+        API = await self.APIConnection()
         await interaction.response.defer()
         graph = await self.Gen(data)
         file = discord.File(graph, filename="ping_graph.png")
@@ -182,12 +202,13 @@ class Utility(commands.Cog):
         embed.set_author(
             name=self.client.user.name, icon_url=self.client.user.display_avatar
         )
+
         Z = ""
         if interaction.guild:
             Z = f"\n> **Shard ({interaction.guild.shard_id}):** `{self.client.shards[interaction.guild.shard_id].latency * 1000:.0f} ms`"
 
         embed.add_field(
-            name="Status",
+            name="Bot",
             value=f"> **Latency:** `{Dis} ms` {Z}\n> **Uptime:** <t:{int(self.client.launch_time.timestamp())}:R>",
             inline=False,
         )
@@ -196,6 +217,13 @@ class Utility(commands.Cog):
             value=f"> **Database Latency:** `{round(DbLatency if DbLatency else 'N/A')} ms`\n> **Database Status:** `{await self.DbConnection()}`",
             inline=False,
         )
+
+        embed.add_field(
+            name="API",
+            value=f"> **API Latency:** `{round(API.get('latency', 0))} ms`\n> **API Status:** `{API.get('status', 'N/A')}`\n> **API Uptime:** <t:{int(API.get('uptime', 0))}:R>",
+            inline=False,
+        )
+
         embed.set_image(url="attachment://ping_graph.png")
 
         await interaction.followup.send(embed=embed, file=file)
