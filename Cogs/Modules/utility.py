@@ -110,6 +110,8 @@ class Utility(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def SavePing(self):
+        if os.getenv('ENVIRONMENT') in ["development", "custom"]:
+            return        
         Latency = (
             round(self.client.latency * 1000)
             if not np.isnan(self.client.latency)
