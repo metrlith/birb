@@ -19,7 +19,7 @@ from scipy.interpolate import CubicSpline
 
 
 class Utility(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         self.client = client
         client.launch_time = datetime.now()
         self.client.help_command = None
@@ -62,19 +62,37 @@ class Utility(commands.Cog):
             )
 
     async def Gen(self, data: dict) -> BytesIO:
-        plt.style.use("dark_background")
+        blurple = "#5865F2"
+        green = "#57F287"
+        background = "#2b2d31"
+        GridColor = "#4f545c"
+        TextColor = "#b9bbbe"
+
+        plt.rcParams.update(
+            {
+                "axes.edgecolor": TextColor,
+                "axes.labelcolor": TextColor,
+                "xtick.color": TextColor,
+                "ytick.color": TextColor,
+                "font.family": "DejaVu Sans",
+                "axes.facecolor": background,
+                "figure.facecolor": background,
+                "grid.color": GridColor,
+                "text.color": TextColor,
+            }
+        )
+
         plt.figure(figsize=(10, 5))
 
         keys = ["Latency", "DB"]
-        colors = {"Latency": "cyan", "DB": "green"}
+        colors = {"Latency": blurple, "DB": green}
 
         for key in keys:
             if key in data and data[key]:
-                y = list(map(lambda x: float(x) if x != "N/A" else 0, data[key]))
+                y = [float(x) if x != "N/A" else 0 for x in data[key]]
                 x = np.arange(len(y))
 
                 cs = CubicSpline(x, y)
-
                 x_new = np.linspace(x.min(), x.max(), 500)
                 y_new = cs(x_new)
 
@@ -83,16 +101,16 @@ class Utility(commands.Cog):
                     y_new,
                     label=key,
                     color=colors[key],
-                    linewidth=2,
+                    linewidth=3,
                     linestyle="-",
-                    alpha=0.8,
+                    alpha=1.0,
                 )
-                plt.fill_between(x_new, y_new, color=colors[key], alpha=0.2)
+                plt.fill_between(x_new, y_new, color=colors[key], alpha=0.1)
 
         plt.xticks([])
-        plt.legend()
-        plt.grid(alpha=0.2)
-        plt.ylim(0, 400)  
+        plt.legend(facecolor=background, edgecolor="none", fontsize=18, fancybox=True)
+        plt.grid(True, linestyle="--", linewidth=0.5)
+        plt.ylim(0, 400)
         plt.tight_layout()
 
         buffer = BytesIO()
@@ -110,8 +128,8 @@ class Utility(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def SavePing(self):
-        if os.getenv('ENVIRONMENT') in ["development", "custom"]:
-            return        
+        if os.getenv("ENVIRONMENT") in ["development", "custom"]:
+            return
         Latency = (
             round(self.client.latency * 1000)
             if not np.isnan(self.client.latency)
