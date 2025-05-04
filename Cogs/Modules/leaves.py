@@ -97,6 +97,7 @@ class LOAModule(commands.Cog):
                     "active": False,
                     "request": False,
                     "Declined": {"$exists": False},
+                    "LoaID": {"$exists": True},
                 }
             )
             .to_list(length=1000)
@@ -144,6 +145,7 @@ class LOAModule(commands.Cog):
                     "guild_id": ctx.guild.id,
                     "request": False,
                     "active": True,
+                    "LoaID": {"$exists": True},
                 }
             )
             .to_list(length=1000)
@@ -516,9 +518,9 @@ class LOAModule(commands.Cog):
 
         view.remove_item(view.CancelRequest)
         view.RequestExt.label = "Add Time"
-        embed.set_thumbnail(url=ctx.author.display_avatar)
+        embed.set_thumbnail(url=user.display_avatar)
         embed.set_author(name="Leave Admin")
-        embed.set_footer(text=f"@{ctx.author.name}", icon_url=ctx.author.display_avatar)
+        embed.set_footer(text=f"@{user.name}", icon_url=user.display_avatar)
         await ctx.send(embed=embed, view=view)
 
 
