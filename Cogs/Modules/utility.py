@@ -119,7 +119,6 @@ class Utility(commands.Cog):
         plt.close()
         return buffer
 
-
     async def DbConnection(self) -> str:
         try:
             await self.client.db.command("ping")
@@ -135,7 +134,7 @@ class Utility(commands.Cog):
                 response.raise_for_status()
                 return await response.json()
         except aiohttp.ClientError:
-            return {"status": "Not Connected", "uptime": 0} 
+            return {"status": "Not Connected", "uptime": 0}
 
     @tasks.loop(minutes=5)
     async def SavePing(self):
@@ -147,25 +146,25 @@ class Utility(commands.Cog):
             else 0
         )
         if Latency > 700:
-            Latency = None
+            return
 
         try:
             Start = datetime.now()
             await self.client.db.command("ping")
             DbLatency = (datetime.now() - Start).total_seconds() * 1000
             if DbLatency > 700:
-                DbLatency = None
+                return
         except Exception:
-            DbLatency = None
+            return
 
         try:
             Start = datetime.now()
             await self.APIConnection()
             API = (datetime.now() - Start).total_seconds() * 1000
             if API > 700:
-                API = None
+                return
         except Exception:
-            API = None
+            return
 
         await self.client.db["Ping"].update_one(
             {"_id": 0},
