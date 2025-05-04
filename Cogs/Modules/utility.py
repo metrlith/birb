@@ -135,7 +135,7 @@ class Utility(commands.Cog):
                 response.raise_for_status()
                 return await response.json()
         except aiohttp.ClientError:
-            return "Not Connected"
+            return {"status": "Not Connected", "uptime": 0} 
 
     @tasks.loop(minutes=5)
     async def SavePing(self):
@@ -208,7 +208,7 @@ class Utility(commands.Cog):
         )
         try:
             Start = datetime.now()
-            await self.APIConnection()
+            A = await self.APIConnection()
             API = (datetime.now() - Start).total_seconds() * 1000
         except Exception:
             API = None
@@ -229,7 +229,7 @@ class Utility(commands.Cog):
 
         embed.add_field(
             name="API",
-            value=f"> **API Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **API Status:** `{API.get('status', 'N/A') if isinstance(API, dict) else 'N/A'}`\n> **API Uptime:** <t:{int(API.get('uptime', 0)) if isinstance(API, dict) else 0}:R>",
+            value=f"> **API Latency:** `{round(API) if isinstance(API, (int, float)) else 'N/A'} ms`\n> **API Status:** `{A.get('status', 'N/A') if isinstance(A, dict) else 'N/A'}`\n> **API Uptime:** <t:{int(A.get('uptime', 0)) if isinstance(A, dict) else 0}:R>",
             inline=False,
         )
 
