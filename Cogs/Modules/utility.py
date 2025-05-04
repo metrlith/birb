@@ -137,10 +137,10 @@ class Utility(commands.Cog):
         except aiohttp.ClientError:
             return "Not Connected"
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=120)
     async def SavePing(self):
-        # if os.getenv("ENVIRONMENT") in ["development", "custom"]:
-        #     return
+        if os.getenv("ENVIRONMENT") in ["development", "custom"]:
+            return
         Latency = (
             round(self.client.latency * 1000)
             if not np.isnan(self.client.latency)
