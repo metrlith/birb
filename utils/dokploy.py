@@ -52,7 +52,7 @@ async def Create(name, user: discord.User):
 
 
 async def UpdateENV(application_id, env, build_args=None):
-    url = "https://birb.lgm.lol/api/application.update"
+    url = f"{os.getenv('DOCKER_URL')}/api/application.update"
     headers = {
         "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
         "Content-Type": "application/json",
@@ -332,10 +332,8 @@ class Depl(commands.Cog):
         if not before.guild.id == 1092976553752789054:
             return
         if isinstance(before, discord.Member) and isinstance(after, discord.Member):
-            role_name = "Custom Branding"
-
-            role = discord.utils.get(after.guild.roles, name=role_name)
-            role2 = discord.utils.get(after.guild.roles, name="Premium")
+            role = discord.utils.get(after.guild.roles, id=1182022232407543981)
+            role2 = discord.utils.get(after.guild.roles, name=1233945875680596010)
             botrole = discord.utils.get(after.guild.roles, id=1279097432482775051)
 
             if role:
