@@ -504,11 +504,11 @@ class quota(commands.Cog):
 
         if not Types or len(Types) == 0:
             from utils.format import DefaultTypes
-
             Types = DefaultTypes()
 
         options = [
-            discord.SelectOption(label=name[:80], value=name[:80]) for name in Types
+            discord.SelectOption(label=name[:80], value=name[:80])
+            for name in set(Types)
         ]
         view.add_item(InfractionTypeSelection(ctx.author, options, failedmembers))
 
