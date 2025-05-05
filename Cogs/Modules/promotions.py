@@ -43,7 +43,7 @@ async def SingleHierarchy(
             ephemeral=True,
         )
         return
-    if not await has_admin_role(interaction, "Promotion Permissions", msg, defer=False):
+    if not await has_admin_role(interaction, "Promotion Permissions", defer=False):
         return
     await interaction.response.defer()
     msg: discord.Message = await interaction.followup.send(

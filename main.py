@@ -192,7 +192,7 @@ class Client(commands.AutoShardedBot):
             # Configuration
             "Cogs.Configuration.Configuration",
             # Events
-            "Cogs.Events.Dev.guilds",
+            "Cogs.Events.Dev.on_guild",
             "Cogs.Events.Dev.welcome",
             "Cogs.Events.quota",
             "Cogs.Events.modmail",
