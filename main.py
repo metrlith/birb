@@ -173,8 +173,6 @@ class Client(commands.AutoShardedBot):
             # Modules
             "Cogs.Modules.suggestions",
             "Cogs.Modules.leaves",
-            "Cogs.Modules.utility",
-            "Cogs.Modules.info",
             "Cogs.Modules.suspension",
             "Cogs.Modules.feedback",
             "Cogs.Modules.connection-roles",
@@ -186,6 +184,11 @@ class Client(commands.AutoShardedBot):
             "Cogs.Modules.data",
             "Cogs.Modules.integrations",
             "Cogs.Modules.tickets",
+
+            # Utilities
+            "Cogs.Modules.Utilities.extras",
+            "Cogs.Modules.Utilities.ping",
+            "Cogs.Modules.Utilities.info",
             # Configuration
             "Cogs.Configuration.Configuration",
             # Events
