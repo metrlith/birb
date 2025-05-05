@@ -148,22 +148,24 @@ class on_leave(commands.Cog):
             await CM.reply(embed=embed)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
             return
-        try:
-            member = G.get_member(L.get("user"))
-            if C.get("LOA", {}).get("role", None):
-                try:
-                    role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
-                    if role and member:
-                        await member.remove_roles(role, reason="Leave Ended")
-                except (discord.NotFound, discord.HTTPException):
-                    pass
-        except discord.Forbidden:
-            pass
+        member = G.get_member(L.get("user"))
+        if member:
+            try:
+                
+                if C.get("LOA", {}).get("role", None):
+                    try:
+                        role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
+                        if role and member:
+                            await member.remove_roles(role, reason="Leave Ended")
+                    except (discord.NotFound, discord.HTTPException):
+                        pass
+            except discord.Forbidden:
+                pass
 
-        try:
-            await member.send(embed=embed)
-        except discord.Forbidden:
-            pass
+            try:
+                await member.send(embed=embed)
+            except discord.Forbidden:
+                pass
 
     @commands.Cog.listener()
     async def on_leave_log(

@@ -348,7 +348,7 @@ class Depl(commands.Cog):
                     name = re.sub(r"[^a-zA-Z0-9]", "", after.name)
                     Projects = await GetProjects()
                     for project in Projects.get("applications", []):
-                        if project.get("appName") == name:
+                        if project.get("name") == name:
                             await StopApplication(project.get("applicationId"))
                             await after.guild.owner.send(
                                 f"{tick} **@{after.name}** branding has been stopped succesfully."
