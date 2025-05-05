@@ -3,7 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 from typing import Union
 from discord.ext import commands, tasks
-
+import os
 
 async def TimeLeftz(loa: dict) -> Union[int, str]:
     if not loa or not loa.get("start_time") or not loa.get("end_time"):
@@ -33,18 +33,33 @@ class Leave(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def LeaveExpiration(self):
-        LOAs = (
+        if os.getenv('CUSTOM_GUILD'):
+         LOAs = (
             await self.client.db["loa"]
             .find(
                 {
                     "start_time": {"$exists": True},
                     "end_time": {"$exists": True},
                     "active": True,
+                    "guild_id": int(os.getenv('CUSTOM_GUILD'))
+                    
                 }
             )
-            .to_list(length=None)
-        )
-
+            .to_list(length=None))
+        else:
+            
+        
+         LOAs = (
+            await self.client.db["loa"]
+            .find(
+                {
+                    "start_time": {"$exists": True},
+                    "end_time": {"$exists": True},
+                    "active": True,
+                    
+                }
+            )
+            .to_list(length=None))
         semaphore = asyncio.Semaphore(3)
 
         async def Process(loa):
@@ -63,7 +78,22 @@ class Leave(commands.Cog):
 
     @tasks.loop(seconds=10)
     async def ScheduledLOA(self):
-        LOAs = (
+        if os.getenv('CUSTOM_GUILD'):
+         LOAs = (
+            await self.client.db["loa"]
+            .find(
+                {
+                    "start_time": {"$exists": True},
+                    "end_time": {"$exists": True},
+                    "scheduled": True,
+                    "active": False,
+                    "request": False,
+                    "guild_id": int(os.getenv('CUSTOM_GUILD'))
+                }
+            )
+            .to_list(length=None))
+        else:
+            LOAs = (
             await self.client.db["loa"]
             .find(
                 {
@@ -76,6 +106,7 @@ class Leave(commands.Cog):
             )
             .to_list(length=None)
         )
+        
 
         semaphore = asyncio.Semaphore(3)
 
