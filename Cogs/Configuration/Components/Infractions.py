@@ -10,8 +10,6 @@ from utils.permissions import premium
 from utils.HelpEmbeds import NoPremium, Support
 
 
-
-
 class InfractionOption(discord.ui.Select):
     def __init__(self, author: discord.Member):
         super().__init__(
@@ -844,6 +842,43 @@ class InfractionChannel(discord.ui.ChannelSelect):
             pass
 
 
+class RequiredRoles(discord.ui.RoleSelect):
+    def __init__(
+        self,
+        author: discord.Member,
+        type: str
+        
+    ):
+        super().__init__(
+            placeholder="Select Required Roles",
+            max_values=10,
+        )
+        self.author = author
+        self.Ty = type
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+        config = await interaction.client.db["infractiontypeactions"].find_one(
+            {"guild_id": interaction.guild.id, "name": self.Ty}
+        )
+        config["RequiredRoles"] = [role.id for role in self.values]
+        await interaction.client.db["infractiontypeactions"].update_one(
+            {"guild_id": interaction.guild.id, "name": self.Ty},
+            {"$set": config},
+            upsert=True,
+        )
+        await interaction.response.edit_message(
+            content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
+            view=None,
+        )
+
+
 class LogChannel(discord.ui.ChannelSelect):
     def __init__(
         self,
@@ -870,13 +905,9 @@ class LogChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        if config is None:
-            config = {"_id": interaction.guild.id, "Infraction": {}}
-        elif "Infraction" not in config:
-            config["Infraction"] = {}
-        elif "LogChannel" not in config.get("Infraction", {}):
-            config["Infraction"]["LogChannel"] = None
+        config = await interaction.client.db["infractiontypeactions"].find_one(
+            {"guild_id": interaction.guild.id}
+        )
 
         config["Infraction"]["LogChannel"] = self.values[0].id
         await interaction.client.config.update_one(
@@ -906,6 +937,9 @@ class InfractionTypesAction(discord.ui.Select):
         options = [
             discord.SelectOption(
                 label="Send to channel", emoji="<:tag:1234998802948034721>"
+            ),
+            discord.SelectOption(
+                label="Required Permissions", emoji="<:Permissions:1207365901956026368>"
             ),
             discord.SelectOption(
                 label="Give Roles", emoji="<:Promotion:1234997026677198938>"
@@ -951,11 +985,12 @@ class InfractionTypesAction(discord.ui.Select):
         update_data = {"name": self.name}
         view = discord.ui.View()
 
-        action_mapping = {
+        Action = {
             "Send to channel": TypeChannel,
             "Give Roles": GiveRoles,
             "Remove Roles": RemoveRoles,
             "Change Group Role": ChangeGroupRole,
+            "Required Permissions": RequiredRoles,
         }
 
         option = self.values[0]
@@ -992,8 +1027,8 @@ class InfractionTypesAction(discord.ui.Select):
                 )
             view.add_item(ChangeGroupRole(self.author, self.name, options))
 
-        if option in action_mapping and option != "Change Group Role":
-            view.add_item(action_mapping[option](self.author, self.name))
+        if option in Action and option != "Change Group Role":
+            view.add_item(Action[option](self.author, self.name))
         else:
             update_data[option.lower().replace(" ", "")] = True
 
@@ -1065,7 +1100,8 @@ class Escalate(discord.ui.Modal, title="Escalate"):
         if "_id" in Result:
             del Result["_id"]
         await interaction.client.db["infractiontypeactions"].update_one(
-            {"guild_id": interaction.guild.id, "name": self.type}, {"$set": Result},
+            {"guild_id": interaction.guild.id, "name": self.type},
+            {"$set": Result},
             upsert=True,
         )
         await interaction.response.edit_message(

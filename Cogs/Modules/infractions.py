@@ -125,6 +125,13 @@ class Infractions(commands.Cog):
             view=view,
         )
 
+    async def TypePerms(self, author: discord.Member, Action: dict):
+        if not Action.get("RequiredRoles"):
+            return True
+        if any(role.id in Action.get("RequiredRoles", []) for role in author.roles):
+            return True
+        return False
+
     @infraction.command(description="Infract staff members")
     @app_commands.autocomplete(action=infractiontypes)
     @app_commands.autocomplete(reason=infractionreasons)
@@ -166,6 +173,9 @@ class Infractions(commands.Cog):
         TypeActions = await self.client.db["infractiontypeactions"].find_one(
             {"guild_id": ctx.guild.id, "name": action}
         )
+        if not await self.TypePerms(ctx.author, TypeActions):
+            return await ctx.send(f"{no} **{ctx.author.display_name},** you don't have permission to use this shift type.")
+
         Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await ctx.send(embed=BotNotConfigured(), view=Support())
@@ -249,7 +259,12 @@ class Infractions(commands.Cog):
                 InfractionsWithType = await self.client.db[
                     "infractions"
                 ].count_documents(
-                    {"guild_id": ctx.guild.id, "staff": staff.id, "action": action, "Upscaled": {'$exists': False}}
+                    {
+                        "guild_id": ctx.guild.id,
+                        "staff": staff.id,
+                        "action": action,
+                        "Upscaled": {"$exists": False},
+                    }
                 )
                 if len(Threshold) + 1 < InfractionsWithType:
                     isEscalated = True
@@ -524,7 +539,6 @@ class Infractions(commands.Cog):
             len(field.name or "") + len(field.value or "") for field in embed.fields
         )
         return size
-
 
 
 class InfractionMultiple(discord.ui.UserSelect):
