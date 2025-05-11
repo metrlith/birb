@@ -900,8 +900,8 @@ class LogChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await interaction.client.db["infractiontypeactions"].find_one(
-            {"guild_id": interaction.guild.id}
+        config = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
         )
 
         config["Infraction"]["LogChannel"] = self.values[0].id
