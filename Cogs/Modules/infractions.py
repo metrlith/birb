@@ -126,6 +126,8 @@ class Infractions(commands.Cog):
         )
 
     async def TypePerms(self, author: discord.Member, Action: dict):
+        if not Action:
+            return True
         if not Action.get("RequiredRoles"):
             return True
         if any(role.id in Action.get("RequiredRoles", []) for role in author.roles):
