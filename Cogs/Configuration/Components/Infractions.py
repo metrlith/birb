@@ -843,12 +843,7 @@ class InfractionChannel(discord.ui.ChannelSelect):
 
 
 class RequiredRoles(discord.ui.RoleSelect):
-    def __init__(
-        self,
-        author: discord.Member,
-        type: str
-        
-    ):
+    def __init__(self, author: discord.Member, type: str):
         super().__init__(
             placeholder="Select Required Roles",
             max_values=10,
@@ -981,8 +976,6 @@ class InfractionTypesAction(discord.ui.Select):
             )
         from utils.roblox import GroupRoles
 
-        filter = {"guild_id": interaction.guild.id, "name": self.name}
-        update_data = {"name": self.name}
         view = discord.ui.View()
 
         Action = {
@@ -997,7 +990,7 @@ class InfractionTypesAction(discord.ui.Select):
         if option == "Escalate":
             await interaction.response.send_modal(Escalate(self.name))
             return
-        if option == "Change Group Role":
+        elif option == "Change Group Role":
             Roles = await GroupRoles(interaction)
             if Roles == 0:
                 from utils.HelpEmbeds import NotRobloxLinked
@@ -1026,19 +1019,21 @@ class InfractionTypesAction(discord.ui.Select):
                     )
                 )
             view.add_item(ChangeGroupRole(self.author, self.name, options))
-
-        if option in Action and option != "Change Group Role":
-            view.add_item(Action[option](self.author, self.name))
         else:
-            update_data[option.lower().replace(" ", "")] = True
+            if self.values[0] in Action:
+                view.add_item(Action[self.values[0]](self.author, self.name))
+                await interaction.response.edit_message(view=view)
+                return
 
-        await interaction.client.db["infractiontypeactions"].update_one(
-            filter, {"$set": update_data}, upsert=True
-        )
-        await interaction.response.edit_message(
-            content=f"{tick} Infraction type successfully updated.",
-            view=view if view.children else None,
-        )
+            await interaction.client.db["infractiontypeactions"].update_one(
+                {"guild_id": interaction.guild.id, "name": self.name},
+                {"$set": {option.lower().replace(" ", ""): True}},
+                upsert=True,
+            )
+            await interaction.response.edit_message(
+                content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
+                view=None
+            )
 
 
 class Done(discord.ui.View):
