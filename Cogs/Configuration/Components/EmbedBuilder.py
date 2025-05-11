@@ -179,10 +179,15 @@ async def DisplayEmbed(data: dict, user: discord.User = None, replacements: dict
     except (ValueError, TypeError) as e:
         embed.color = discord.Color.dark_embed()
 
-    if (embed.title is None or embed.title == "") and (
-        embed.description is None or embed.description == ""
+    if not any(
+        [
+            embed.title,
+            embed.description,
+            embed.author.name if embed.author else None,
+            embed.fields,
+        ]
     ):
-        embed.description = "You need a Title & Description"
+        embed.description = "You need at least one of the following: Title, Description, Author, or Fields."
 
     return embed
 
