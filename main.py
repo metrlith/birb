@@ -215,7 +215,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Events.on_promotion_log",
             "Cogs.Events.on_promotion_void",
             "Cogs.Events.on_leave",
-            "Cogs.Events.on_shard",
+            "Cogs.Events.Dev.on_shard",
             # Tasks
             "Cogs.Tasks.expiration",
             "Cogs.Tasks.leave",
