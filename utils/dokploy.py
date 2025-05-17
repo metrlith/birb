@@ -362,7 +362,7 @@ class Depl(commands.Cog):
                             else after.display_avatar
                         )
                     )
-                    embed.set_footer(text="AstroBirb • Branding Expiry")
+                    embed.set_footer(text="Birb • astrobirb.dev")
                     await after.send(embed=embed)
 
                     Owner = discord.Embed(
@@ -411,7 +411,7 @@ class Depl(commands.Cog):
                             else after.display_avatar
                         )
                     )
-                    embed.set_footer(text="AstroBirb • Custom Branding")
+                    embed.set_footer(text="Birb • astrobirb.dev")
                     await after.send(embed=embed)
             if botrole:
                 if botrole in before.roles and botrole in after.roles:
@@ -438,7 +438,7 @@ class Depl(commands.Cog):
                             else after.display_avatar
                         )
                     )
-                    embed.set_footer(text="AstroBirb • Premium Expiry")
+                    embed.set_footer(text="Birb • astrobirb.dev")
                     await after.send(embed=embed)
 
                     Owner = discord.Embed(
@@ -480,7 +480,7 @@ class Depl(commands.Cog):
                             else after.display_avatar
                         )
                     )
-                    embed.set_footer(text="AstroBirb • Premium Activated")
+                    embed.set_footer(text="Birb • astrobirb.dev")
                     await after.send(embed=embed)
                     await premium.update_one(
                         {"user": after.id},
@@ -670,6 +670,8 @@ class SetUP(discord.ui.Modal):
                 f"FILE_URL={os.getenv('FILE_URL')}\n"
                 f"R2_URL={os.getenv('R2_URL')}\n"
                 f"R2_TOKEN={os.getenv('R2_TOKEN')}"
+                f"PatreonClientID={os.getenv('PatreonClientID')}"
+                f"PatreonClientSecret={os.getenv('PatreonClientSecret')}"
             )
             env = await UpdateENV(ProjectID, environment)
             if not env:

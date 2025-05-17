@@ -184,12 +184,11 @@ class Client(commands.AutoShardedBot):
             "Cogs.Modules.data",
             "Cogs.Modules.integrations",
             "Cogs.Modules.tickets",
-
             # Utilities
             "Cogs.Modules.Utilities.extras",
             "Cogs.Modules.Utilities.ping",
             "Cogs.Modules.Utilities.info",
-            "Cogs.Modules.Utilities.premium",            
+            "Cogs.Modules.Utilities.premium",
             "Cogs.Modules.Developer.astro",
             # Configuration
             "Cogs.Configuration.Configuration",
