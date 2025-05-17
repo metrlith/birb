@@ -7,6 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import aiohttp
 import re
 from utils.patreon import SubscriptionUser
+from utils.format import IsSeperateBot
 from datetime import datetime
 
 MONGO_URL = os.getenv("MONGO_URL")
@@ -347,6 +348,10 @@ class Depl(commands.Cog):
 
     @tasks.loop(hours=6)
     async def ViewSubscriptionStatus(self):
+        if IsSeperateBot():
+            return
+        if os.getenv('ENVIRONMENT') in ['custom', 'development']:
+            return
         Bots = await self.client.db["bots"].find({}).to_list(length=None)
         Sub = await self.client.db["bots"].find({}).to_list(length=None)
         for P in Sub:
