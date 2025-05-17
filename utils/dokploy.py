@@ -350,7 +350,7 @@ class Depl(commands.Cog):
     async def ViewSubscriptionStatus(self):
         if IsSeperateBot():
             return
-        if os.getenv('ENVIRONMENT') in ['custom', 'development']:
+        if os.getenv("ENVIRONMENT") in ["custom", "development"]:
             return
         Bots = await self.client.db["bots"].find({}).to_list(length=None)
         Sub = await self.client.db["bots"].find({}).to_list(length=None)
@@ -381,7 +381,12 @@ class Depl(commands.Cog):
             Z = await SubscriptionUser(B.get("user"), "22733636")
             _, HasBranding, _ = Z
             if not HasBranding:
-                User = await self.client.fetch_user(B.get("user"))
+                try:
+                    if not B.get("user") or not isinstance(B.get("user"), int):
+                        continue
+                    User = await self.client.fetch_user(int(B.get("user")))
+                except:
+                    continue
                 name = re.sub(r"[^a-zA-Z0-9]", "", User.name)
                 Projects = await GetProjects()
                 if Projects:
