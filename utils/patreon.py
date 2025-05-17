@@ -70,7 +70,7 @@ async def GetAccessToken():
     return AccessToken
 
 
-async def SubscriptionUser(UserID: int, Sub: str = "22855340"):
+async def SubscriptionUser(UserID: int, Sub: str = "22855340", Tiers: list = None):
     AccessToken = await GetAccessToken()
     if not AccessToken:
         return
@@ -132,7 +132,11 @@ async def SubscriptionUser(UserID: int, Sub: str = "22855340"):
                     TierIDs = [Tier.get("id") for Tier in EntitledTiers]
 
                     HasPremium = Sub in TierIDs
-                    return User, HasPremium, True
+                    InTiers = False
+                    if Tiers:
+                        InTiers = any(tier in TierIDs for tier in Tiers)
+
+                    return User, HasPremium, InTiers
 
                 URL = Data.get("links", {}).get("next")
                 Params = None
