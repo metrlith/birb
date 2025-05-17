@@ -137,6 +137,22 @@ class ManageAccount(discord.ui.View):
             await interaction.client.db["Subscriptions"].delete_one(
                 {"user": self.user.id}
             )
+            PR = await interaction.client.db["Subscriptions"].find_one(
+                {"user": self.user.id}
+            )
+            if PR:
+                for server in PR.get("guilds", []):
+                    Config = await self.client.db["Config"].find_one({"_id": server})
+                    if Config is not None:
+                        features = Config.get("Features", [])
+                        if "PREMIUM" in features:
+                            features.remove("PREMIUM")
+                            await self.client.db["Config"].update_one(
+                                {"_id": server}, {"$set": {"Features": features}}
+                            )
+                await interaction.client.db["Subscriptions"].delete_one(
+                    {"user": self.user.id}
+                )
             self.premium.style = discord.ButtonStyle.red
         else:
             await interaction.client.db["Subscriptions"].insert_one(

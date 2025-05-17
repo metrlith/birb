@@ -456,8 +456,20 @@ class Depl(commands.Cog):
                     )
                     Owner.set_footer(text=f"User ID: {after.id}")
                     await after.guild.owner.send(embed=Owner)
-
-                    await premium.delete_one({"user": after.id})
+                    PR = await premium.find_one({"user": after.id})
+                    if PR:
+                        for server in PR.get("guilds", []):
+                            Config = await self.client.db["Config"].find_one(
+                                {"_id": server}
+                            )
+                            if Config is not None:
+                                features = Config.get("Features", [])
+                                if "PREMIUM" in features:
+                                    features.remove("PREMIUM")
+                                    await self.client.db["Config"].update_one(
+                                        {"_id": server}, {"$set": {"Features": features}}
+                                    )
+                        await premium.delete_one({"user": after.id})
 
                 if prem not in before.roles and prem in after.roles:
                     embed = discord.Embed(
