@@ -467,7 +467,8 @@ class Depl(commands.Cog):
                                 if "PREMIUM" in features:
                                     features.remove("PREMIUM")
                                     await self.client.db["Config"].update_one(
-                                        {"_id": server}, {"$set": {"Features": features}}
+                                        {"_id": server},
+                                        {"$set": {"Features": features}},
                                     )
                         await premium.delete_one({"user": after.id})
 
