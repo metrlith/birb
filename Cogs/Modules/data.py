@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from utils.emojis import *
 
+
 class Data(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -298,7 +299,9 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await interaction.client.db['infractions'].delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db["infractions"].delete_many(
+            {"guild_id": interaction.guild.id}
+        )
         await interaction.response.send_message(
             f"{tick} Successfully cleared all infractions.", ephemeral=True
         )
@@ -313,7 +316,9 @@ class ClearData(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        await interaction.client.db['promotions'].delete_many({"guild_id": interaction.guild.id})
+        await interaction.client.db["promotions"].delete_many(
+            {"guild_id": interaction.guild.id}
+        )
         await interaction.response.send_message(
             f"{tick} Successfully cleared all promotions.", ephemeral=True
         )

@@ -201,7 +201,6 @@ class NoEmbed(discord.ui.View):
         self.author = author
         self.typed = type
         self.data = data
-        print(f"[1] {self.data} | {self.typed}")
         self.add_item(
             discord.ui.Button(
                 label="Documentation",
@@ -428,7 +427,6 @@ class NoEmbed(discord.ui.View):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        print(self.data)
 
         await self.finalfunc(interaction, self.data)
         self.stop()
@@ -447,7 +445,6 @@ class Embed(discord.ui.View):
         self.typed = type
         self.finalfunc = finalfunc
         self.data = data
-        print(f"[2] {self.data} | {self.typed}")
 
         self.add_item(
             discord.ui.Button(
@@ -467,7 +464,6 @@ class Embed(discord.ui.View):
     async def RemoveEmbed(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        print(self.data)
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
@@ -936,7 +932,6 @@ class Embed(discord.ui.View):
     async def Finished(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        print(self.data)
         await self.finalfunc(interaction, self.data)
         self.stop()
 

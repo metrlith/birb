@@ -45,7 +45,6 @@ async def Reply(
                     files=files,
                 )
             except Exception as e:
-                print(e)
                 return await message.add_reaction("⚠️")
             return await message.add_reaction("📨")
     try:

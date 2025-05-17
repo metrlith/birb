@@ -124,8 +124,8 @@ async def PromotionSystem(
             return
         try:
             await member.add_roles(newrole, reason="Staff Promotion")
-        except discord.HTTPException as e:
-            logger.error(f"Error adding role: {e}")
+        except (discord.Forbidden, discord.NotFound, discord.HTTPException) as e:
+            pass
     FirstRole = None
     NextRole = None
     SkipRole = None

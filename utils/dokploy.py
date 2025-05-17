@@ -332,8 +332,6 @@ class Depl(commands.Cog):
         if not before.guild.id == 1092976553752789054:
             return
 
-        print(before)
-
         if not before.guild.chunked:
             await before.guild.chunk()
         if isinstance(before, discord.Member) and isinstance(after, discord.Member):

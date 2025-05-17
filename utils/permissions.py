@@ -35,7 +35,7 @@ async def has_staff_role(toy, permissions=None):
     blacklists = await blacklist.find_one({"user": author.id})
     if blacklists:
         await send(
-            f"{no} **{author.display_name}**, you are blacklisted from using **Astro Birb.** You are probably a shitty person and that might be why?",
+            f"{no} **{author.display_name}**, you are blacklisted from using **Birb.** You are probably a shitty person and that might be why?",
             ephemeral=True,
         )
         return False

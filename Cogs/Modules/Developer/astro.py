@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import psutil
 from utils.emojis import *
+from typing import Optional, Literal
 
 
 class management(commands.Cog):
@@ -74,9 +75,34 @@ class management(commands.Cog):
         await channel.send(message)
         await ctx.message.delete()
 
+    @commands.group()
+    @commands.is_owner()
+    async def features(self, ctx: commands.Context):
+        return
+
+    @features.command()
+    @commands.is_owner()
+    async def add(self, ctx: commands.Context, server: int, *, feature: str):
+        await self.client.db["Config"].update_one(
+            {"_id": server}, {"$addToSet": {"Features": feature}}, upsert=True
+        )
+        await ctx.send(
+            f"` ✅ ` **{ctx.author.display_name},** feature added to server `{server}`."
+        )
+
+    @features.command()
+    @commands.is_owner()
+    async def remove(self, ctx: commands.Context, server: int, *, features: str):
+        await self.client.db["Config"].update_one(
+            {"_id": server}, {"$pull": {"Features": features}}, upsert=True
+        )
+        await ctx.send(
+            f"` ❌ ` **{ctx.author.display_name},** feature removed from server `{server}`."
+        )
+
     @commands.command()
     @commands.is_owner()
-    async def analyticss(self, ctx: commands.Context):
+    async def analytics(self, ctx: commands.Context):
         result = await self.client.db["analytics"].find({}).to_list(length=None)
 
         content = ""
@@ -90,7 +116,44 @@ class management(commands.Cog):
 
             await ctx.send(file=discord.File("analytics.txt"))
 
+    @commands.command()
+    @commands.guild_only()
+    @commands.is_owner()
+    async def sync(
+        self,
+        ctx: commands.Context,
+        guilds: commands.Greedy[discord.Object],
+        spec: Optional[Literal["~", "*", "^"]] = None,
+    ) -> None:
 
+        if not guilds:
+            if spec == "~":
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "*":
+                ctx.bot.tree.copy_global_to(guild=ctx.guild)
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "^":
+                ctx.bot.tree.clear_commands(guild=ctx.guild)
+                await ctx.bot.tree.sync(guild=ctx.guild)
+                synced = []
+            else:
+                synced = await ctx.bot.tree.sync()
+
+            await ctx.send(
+                f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+            )
+            return
+
+        ret = 0
+        for guild in guilds:
+            try:
+                await ctx.bot.tree.sync(guild=guild)
+            except discord.HTTPException:
+                pass
+            else:
+                ret += 1
+
+        await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 class ManageAccount(discord.ui.View):
     def __init__(self, author, user: discord.User):
         super().__init__()

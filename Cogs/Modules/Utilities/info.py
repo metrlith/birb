@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 from utils.format import IsSeperateBot
+
+
 class botinfo(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -10,26 +12,9 @@ class botinfo(commands.Cog):
     )
     async def info(self, ctx: commands.Context):
         await ctx.defer()
-
-
-        if IsSeperateBot():
-            msg = await ctx.send(
-                embed=discord.Embed(
-                    description="Loading...", color=discord.Color.dark_embed()
-                )
-            )
-
-        else:
-            msg = await ctx.send(
-                embed=discord.Embed(
-                    description="<a:astroloading:1245681595546079285>",
-                    color=discord.Color.dark_embed(),
-                )
-            )
-
         embed = discord.Embed(
             color=discord.Color.dark_embed(),
-            description="Astro Birb is designed to simplify tasks related to managing staff, staff punishment, activity tracking.",
+            description="Birb is designed to simplify tasks related to managing staff, staff punishment, activity tracking.",
         )
         embed.add_field(
             name="Birb Information",
@@ -64,15 +49,13 @@ class botinfo(commands.Cog):
                 url="https://docs.astrobirb.dev",
             )
         )
-        await msg.edit(content=None, embed=embed, view=view)
+        await ctx.send(embed=embed, view=view)
 
-    async def get_total_users(self):
-        total_members = sum(guild.member_count for guild in self.client.guilds)
-        return total_members
+
 
 
 class Buttons(discord.ui.View):
-    def __init__(self, client):
+    def __init__(self, client: commands.Bot):
         super().__init__()
         self.client = client
 
@@ -94,7 +77,7 @@ class Buttons(discord.ui.View):
             color=discord.Color.dark_embed(),
         )
         embed.set_author(
-            name="Astro Birb", icon_url=self.client.user.display_avatar.url
+            name="Birb", icon_url=self.client.user.display_avatar.url
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 

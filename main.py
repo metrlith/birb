@@ -57,27 +57,6 @@ SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
 
-def ProgressBar(
-    iterable, prefix="", suffix="", decimals=1, length=50, fill="█", print_end="\r"
-):
-    total = len(iterable)
-
-    def print_progress_bar(iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(
-            100 * (iteration / float(total))
-        )
-        filled_length = int(length * iteration // total)
-        bar = fill * filled_length + "-" * (length - filled_length)
-        sys.stdout.write(f"\r{prefix} |{bar}| {percent}% {suffix}")
-        sys.stdout.flush()
-
-    print_progress_bar(0)
-    for i, item in enumerate(iterable):
-        yield item
-        print_progress_bar(i + 1)
-    print()
-
-
 if not (TOKEN or MONGO_URL, PREFIX):
     print("[❌] Missing .env variables. [TOKEN, MONGO_URL]")
     sys.exit(1)
@@ -373,11 +352,12 @@ class Client(commands.AutoShardedBot):
         self.loop.create_task(self.load_jishaku())
         DoNotLoad = os.getenv("DoNotLoad", "").replace(" ", "").split(",")
         self.cogslist = [cog for cog in self.cogslist if cog and cog not in DoNotLoad]
-        for ext in ProgressBar(
-            self.cogslist, prefix="[⏳] Loading Cogs:", suffix="Complete", length=50
-        ):
-            await self.load_extension(ext)
-            print(f"[✅] {ext} loaded")
+        for ext in self.cogslist:
+            try:
+                await self.load_extension(ext)
+                print(f"[✅] Loaded cog: {ext}")
+            except Exception as e:
+                print(f"[❌] Failed to load cog {ext}: {e}")
 
     async def GetVersion(self):
         V = await SupportVariables.find_one({"_id": 1})
@@ -404,7 +384,7 @@ class Client(commands.AutoShardedBot):
         await SyncCommands(self)
         await self._print_startup_info()
         await self._set_custom_status()
-        await self._cache_modmail_enabled_servers()
+        await self._cache_enabled_servers()
 
     async def _handle_custom_environment(self):
         if not guildid:
@@ -447,41 +427,37 @@ class Client(commands.AutoShardedBot):
         else:
             print("[⚠️] STATUS not defined in .env, bot will not set a custom status.")
 
-    async def _cache_modmail_enabled_servers(self):
+    async def _cache_enabled_servers(self):
         prfx = time.strftime("%H:%M:%S GMT", time.gmtime())
         prfx = f"[📖] {prfx}"
-        filter = {"Modules.Modmail": True}
+
+        query = {"Modules.Modmail": True}
         if environment == "custom":
-            filter["_id"] = int(guildid)
-        Modmail = await self.db["Config"].find(filter).to_list(length=None)
-        if not Modmail:
-            print(prfx + " No modmail enabled servers found.")
-            return
-        Guilds = 0
-        DevServers = [1092976553752789054]
-        for server in DevServers:
+            query["_id"] = int(guildid)
+
+        Modmail = await self.db["Config"].find(query).to_list(length=None) or []
+        Enabled = (
+            await self.db["Config"]
+            .find({"features": {"$in": ["CACHED"]}})
+            .to_list(length=None)
+        ) or []
+
+        Guilds = {int(server["_id"]) for server in Modmail + Enabled if "_id" in server}
+        Guilds.update([1092976553752789054])
+
+        cached = 0
+        for ID in Guilds:
             try:
-                guild = self.get_guild(server)
+                guild = self.get_guild(ID)
                 if guild:
                     await guild.chunk()
-            except:
-                continue
-        for Servers in Modmail:
-            try:
-                try:
-                    Guild = self.get_guild(int(Servers.get("_id")))
-                except (discord.NotFound, discord.HTTPException):
-                    continue
-                if not Guild:
-                    continue
-
-                await Guild.chunk()
-                Guilds += 1
+                    cached += 1
             except:
                 continue
 
-        print(prfx + f" Succesfully cached {Guilds} modmail enabled servers.")
-        del Modmail
+        print(prfx + f" Successfully cached {cached} servers.")
+
+        del Modmail, Enabled, ID
 
     async def on_disconnect(self):
         print("[⚠️] Disconnected from Discord Gateway!")

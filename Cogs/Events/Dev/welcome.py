@@ -10,7 +10,7 @@ class welcome(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if os.getenv("ENVIRONMENT") == "development":
+        if os.getenv("ENVIRONMENT") in ['development', 'custom']:
             return
 
         guild_id, channel_id = 1092976553752789054, 1092976554541326372

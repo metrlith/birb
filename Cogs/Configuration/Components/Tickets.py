@@ -815,7 +815,6 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
             }
         }
     else:
-        print(d)
         data = {
             f"{d.get('option')}": {
                 "content": interaction.message.content,
