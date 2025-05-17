@@ -20,7 +20,7 @@ class Premium(commands.Cog):
         )
 
         try:
-            user, HasPremium, Status = await SubscriptionUser(ctx.author.id)
+            user, _, HasPremium = await SubscriptionUser(UserID=ctx.author, Tiers=["22733636", "22855340"])
         except Exception:
             await msg.edit(
                 embed=discord.Embed(
@@ -32,7 +32,7 @@ class Premium(commands.Cog):
             )
             return
 
-        if not Status:
+        if not user:
             await msg.edit(
                 embed=discord.Embed(
                     color=discord.Color.red(),
