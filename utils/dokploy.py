@@ -332,6 +332,8 @@ class Depl(commands.Cog):
         if not before.guild.id == 1092976553752789054:
             return
 
+        print(before)
+
         if not before.guild.chunked:
             await before.guild.chunk()
         if isinstance(before, discord.Member) and isinstance(after, discord.Member):
@@ -339,43 +341,77 @@ class Depl(commands.Cog):
                 return
 
             role = discord.utils.get(after.guild.roles, id=1182022232407543981)
-            prem = discord.utils.get(after.guild.roles, name=1233945875680596010)
+            prem = discord.utils.get(after.guild.roles, id=1233945875680596010)
             botrole = discord.utils.get(after.guild.roles, id=1279097432482775051)
-
             if role:
                 if role in before.roles and role not in after.roles:
                     embed = discord.Embed(
-                        title="Custom Branding Expired",
-                        description=f"**{after.name}'s** custom branding has just expired!!!",
-                        color=discord.Color.brand_red(),
+                        title="🚫 Custom Branding Expired",
+                        description=(
+                            f"Hey {after.mention},\n\n"
+                            f"Your **custom branding** subscription has expired and your bot has been powered off.\n\n"
+                            "To continue using custom branding, please renew your subscription via [Patreon](https://patreon.com/astrobirb)."
+                        ),
+                        color=discord.Color.red(),
+                        timestamp=datetime.utcnow(),
                     )
-                    embed.set_thumbnail(url=after.display_avatar)
-                    await after.guild.owner.send(embed=embed)
+                    embed.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
+                    )
+                    embed.set_footer(text="AstroBirb • Branding Expiry")
+                    await after.send(embed=embed)
+
+                    Owner = discord.Embed(
+                        title="Custom Branding Expired",
+                        description=f"**{after.name}**'s custom branding has expired and the bot has been stopped.",
+                        color=discord.Color.red(),
+                        timestamp=datetime.utcnow(),
+                    )
+                    Owner.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
+                    )
+                    Owner.set_footer(text=f"User ID: {after.id}")
+                    await after.guild.owner.send(embed=Owner)
+
                     name = re.sub(r"[^a-zA-Z0-9]", "", after.name)
                     Projects = await GetProjects()
                     for project in Projects.get("applications", []):
                         if project.get("name") == name:
                             await StopApplication(project.get("applicationId"))
                             await after.guild.owner.send(
-                                f"{tick} **@{after.name}** branding has been stopped succesfully."
+                                f"{tick} **@{after.name}** branding has been stopped successfully."
                             )
                             break
 
-                    embed = discord.Embed(
-                        title="Custom Branding Expired",
-                        description="Your custom branding has RAN out. Your bot has powered off. If you want to continue, please head to [Patreon](https://patreon.com/astrobirb).",
-                        color=discord.Color.brand_red(),
-                    )
-                    embed.set_thumbnail(url=after.display_avatar)
-                    await after.send(embed=embed)
-
                 if role not in before.roles and role in after.roles:
                     embed = discord.Embed(
-                        title="🎉 Welcome to Custom Branding",
-                        description="> Head over to https://discord.com/channels/1092976553752789054/1250156302831718461 and open a custom branding ticket and you will be given instructions on how to boot up your bot.",
-                        color=discord.Color.yellow(),
+                        title="✨ Welcome to Custom Branding!",
+                        description=(
+                            f"Hey {after.mention},\n\n"
+                            "You're now eligible for **Custom Branding**!\n"
+                            "To get started, please open a ticket in "
+                            "https://discord.com/channels/1092976553752789054/1250156302831718461\n\n"
+                            "Our team will guide you through the setup process."
+                        ),
+                        color=discord.Color.gold(),
+                        timestamp=datetime.utcnow(),
                     )
-                    embed.set_thumbnail(url=after.display_avatar)
+                    embed.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
+                    )
+                    embed.set_footer(text="AstroBirb • Custom Branding")
                     await after.send(embed=embed)
             if botrole:
                 if botrole in before.roles and botrole in after.roles:
@@ -386,32 +422,69 @@ class Depl(commands.Cog):
             if prem:
                 if prem in before.roles and prem not in after.roles:
                     embed = discord.Embed(
-                        title="Premium Expired",
-                        description=f"**{after.name}'s** premium has just expired!!!",
-                        color=discord.Color.brand_red(),
+                        title="💔 Premium Expired",
+                        description=(
+                            f"Hey {after.mention},\n\n"
+                            "Your **Premium** subscription has expired.\n\n"
+                            "To regain access to premium features, please renew your subscription via [Patreon](https://patreon.com/astrobirb)."
+                        ),
+                        color=discord.Color.red(),
+                        timestamp=datetime.utcnow(),
                     )
-                    embed.set_thumbnail(url=after.display_avatar)
-                    await after.guild.owner.send(embed=embed)
-                    await premium.delete_one({"user": after.id})
-                    embed = discord.Embed(
-                        title="Premium Expired",
-                        description="Your premium has run out. If you want to continue, please head to [Patreon](https://patreon.com/astrobirb).",
-                        color=discord.Color.brand_red(),
+                    embed.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
                     )
-                    embed.set_thumbnail(url=after.display_avatar)
+                    embed.set_footer(text="AstroBirb • Premium Expiry")
                     await after.send(embed=embed)
+
+                    Owner = discord.Embed(
+                        title="Premium Expired",
+                        description=f"**{after.name}**'s premium has expired.",
+                        color=discord.Color.red(),
+                        timestamp=datetime.utcnow(),
+                    )
+                    Owner.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
+                    )
+                    Owner.set_footer(text=f"User ID: {after.id}")
+                    await after.guild.owner.send(embed=Owner)
+
+                    await premium.delete_one({"user": after.id})
 
                 if prem not in before.roles and prem in after.roles:
                     embed = discord.Embed(
-                        title="🎉 Welcome to Premium",
-                        description="> Head to /config `->` Subscriptions and then active the server!\n-# If your subscription hasn't been activated run /premium.\nIf you have any questions head over to https://discord.com/channels/1092976553752789054/1328460590120702094!",
-                        color=discord.Color.yellow(),
+                        title="🎉 Welcome to Premium!",
+                        description=(
+                            f"Hey {after.mention},\n\n"
+                            "You're now a **Premium** member!\n\n"
+                            "• Go to `/config` → **Subscriptions** and activate your server.\n"
+                            "• If your subscription isn't active, run `/premium`.\n\n"
+                            "Need help? Visit our [Support Channel]"
+                            "(https://discord.com/channels/1092976553752789054/1328460590120702094)."
+                        ),
+                        color=discord.Color.gold(),
+                        timestamp=datetime.utcnow(),
                     )
-                    embed.set_thumbnail(url=after.display_avatar)
+                    embed.set_thumbnail(
+                        url=(
+                            after.display_avatar.url
+                            if hasattr(after.display_avatar, "url")
+                            else after.display_avatar
+                        )
+                    )
+                    embed.set_footer(text="AstroBirb • Premium Activated")
                     await after.send(embed=embed)
                     await premium.update_one(
                         {"user": after.id},
-                        {"$set": {"user": after.id}, "Tokens": 1, "guilds": []},
+                        {"$set": {"user": after.id, "Tokens": 1, "guilds": []}},
                         upsert=True,
                     )
 
