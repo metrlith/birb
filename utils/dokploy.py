@@ -344,16 +344,65 @@ class DeployAllButton(discord.ui.View):
 class Depl(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.ViewSubscriptionStatus.start()
+        self.SubscriptionStatus.start()
+        self.SubscriptionRoles.start()
+
+    @tasks.loop(hours=12)
+    async def SubscriptionRoles(self):
+        await self.client.wait_until_ready()
+        if IsSeperateBot():
+            return
+        if os.getenv("ENVIRONMENT") in ["custom", "development"]:
+            return
+        Guild = self.client.get_guild(1092976553752789054)
+        PremiumRole = Guild.get_role(1233945875680596010)
+        BrandingRole = Guild.get_role(1182022232407543981)
+        if not PremiumRole or not BrandingRole:
+            return
+        PremiumMembers = set()
+        BrandingMembers = set()
+        for member in Guild.members:
+            if PremiumRole in member.roles:
+                PremiumMembers.add(member.id)
+            if BrandingRole in member.roles:
+                BrandingMembers.add(member.id)
+
+        for B in BrandingMembers:
+            U = await SubscriptionUser(UserID=B, Sub="22733636")
+            if U:
+                _, has_branding, _ = U
+                if not has_branding:
+                    member = Guild.get_member(B)
+                    if member and BrandingRole in member.roles:
+                        try:
+                            await member.remove_roles(
+                                BrandingRole, reason="Custom branding expired"
+                            )
+                        except (discord.Forbidden, discord.HTTPException):
+                            pass
+        for P in PremiumMembers:
+            U = await SubscriptionUser(UserID=P, Tiers=["22733636", "22855340"])
+            if U:
+                _, _, HAs = U
+                if not HAs:
+                    member = Guild.get_member(P)
+                    if member and PremiumRole in member.roles:
+                        try:
+                            await member.remove_roles(
+                                PremiumRole, reason="Premium expired"
+                            )
+                        except (discord.Forbidden, discord.HTTPException):
+                            pass
 
     @tasks.loop(hours=6)
-    async def ViewSubscriptionStatus(self):
+    async def SubscriptionStatus(self):
+        await self.client.wait_until_ready()
         if IsSeperateBot():
             return
         if os.getenv("ENVIRONMENT") in ["custom", "development"]:
             return
         Bots = await self.client.db["bots"].find({}).to_list(length=None)
-        Sub = await self.client.db["bots"].find({}).to_list(length=None)
+        Sub = await self.client.db["Subscriptions"].find({}).to_list(length=None)
         guild = self.client.get_guild(1092976553752789054)
         for P in Sub:
             Z = await SubscriptionUser(
