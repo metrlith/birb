@@ -12,7 +12,7 @@ MONGO_URL = os.getenv("MONGO_URL")
 mongo = AsyncIOMotorClient(MONGO_URL)
 db = mongo["astro"]
 
-premiums = db["premium"]
+premiums = db["Subscriptions"]
 blacklist = db["blacklists"]
 Configuration = db["Config"]
 
@@ -97,12 +97,11 @@ async def has_staff_role(toy, permissions=None):
 
 
 async def premium(id):
-    result = await Configuration.find_one({"_id": id, "Features": {"$in": ["Premium"]}})
-    Result2 = await premiums.find_one({"guilds": {"$in": [id]}})
-    if result or Result2:
+    R1 = await Configuration.find_one({"_id": id, "Features": {"$in": ["Premium"]}})
+    R2 = await premiums.find_one({"guilds": {"$in": [id]}})
+    if R1 or R2:
         return True
-    else:
-        return False
+    return False
 
 
 async def check_admin_and_staff(guild: discord.Guild, user: discord.User):
