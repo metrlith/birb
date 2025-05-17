@@ -4,3 +4,4 @@
 utils/configer.py
 dev.env
 __pycache__/
+migrate.py

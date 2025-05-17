@@ -820,7 +820,7 @@ class ManagePromotion(discord.ui.View):
                 {"_id": promotion["_id"]}
             )
             return await interaction.response.edit_message(
-                content=f"{tick} **{interaction.user.display_name}**, I've deleted the infraction permanently.",
+                content=f"{tick} **{interaction.user.display_name}**, I've deleted the promotion permanently.",
                 view=None,
                 embed=None,
             )
@@ -831,7 +831,7 @@ class ManagePromotion(discord.ui.View):
             upsert=False,
         )
         await interaction.response.edit_message(
-            content=f"{tick} **{interaction.user.display_name}**, I've voided the infraction.",
+            content=f"{tick} **{interaction.user.display_name}**, I've voided the promotion.",
             view=None,
             embed=None,
         )

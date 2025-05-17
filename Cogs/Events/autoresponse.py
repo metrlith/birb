@@ -5,6 +5,7 @@ import re
 import random
 from fuzzywuzzy import fuzz
 from datetime import datetime
+from utils.permissions import premium
 
 
 class autoresponse(commands.Cog):
@@ -20,13 +21,14 @@ class autoresponse(commands.Cog):
         if message.author.bot:
             return
 
-        premiums = await self.client.db['premium'].find_one({"guild_id": message.guild.id})
-        if premiums:
+        if not await premium(message.guild.id):
             return
 
-        autoresponses = await self.client.db['Auto Responders'].find(
-            {"guild_id": message.guild.id}, limit=750
-        ).to_list(length=None)
+        autoresponses = (
+            await self.client.db["Auto Responders"]
+            .find({"guild_id": message.guild.id}, limit=750)
+            .to_list(length=None)
+        )
 
         if not autoresponses:
             return

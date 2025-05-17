@@ -7,8 +7,6 @@ from utils.HelpEmbeds import NoPremium, Support
 from utils.ui import PMButton
 
 
-
-
 class ConfigMenu(discord.ui.Select):
     def __init__(self, options: list, author: discord.Member) -> None:
         self.author = author
@@ -238,7 +236,9 @@ class ConfigMenu(discord.ui.Select):
                 QOTDOptions,
             )
 
-            daily = await interaction.client.db['qotd'].find_one({"guild_id": interaction.guild.id})
+            daily = await interaction.client.db["qotd"].find_one(
+                {"guild_id": interaction.guild.id}
+            )
 
             if daily and daily.get("nextdate", None):
                 options = [
@@ -284,9 +284,13 @@ class ConfigMenu(discord.ui.Select):
                 PremiumButtons,
             )
 
-            result = await interaction.client.db['premium'].find_one({"guild_id": interaction.guild.id})
+            result = await interaction.client.db["Subscriptions"].find_one(
+                {"guilds": {"$in": [interaction.guild.id]}}
+            )
             view = discord.ui.View()
-            user = await interaction.client.db['premium'].find_one({"user_id": interaction.user.id})
+            user = await interaction.client.db["Subscriptions"].find_one(
+                {"user": interaction.user.id}
+            )
             if not user and not result:
                 view = PMButton()
             if user and not result:
@@ -296,7 +300,7 @@ class ConfigMenu(discord.ui.Select):
                 view = PremiumButtons(interaction.user)
                 view.disable.disabled = False
                 view.enable.disabled = True
-            embed = await SubscriptionsEmbed(interaction=interaction)
+            embed = await SubscriptionsEmbed(interaction)
         elif selection == "Auto Responder":
             if not await premium(interaction.guild.id):
                 return await interaction.followup.send(
@@ -429,13 +433,13 @@ def Options(Config: dict = None):
             description="",
             value="customcommands",
             emoji="<:command1:1223062616872583289>",
-        ),       
+        ),
         discord.SelectOption(
             label="Staff List",
             description="",
             value="Staff List",
             emoji="<:StaffList:1264584889727193159>",
-        ), 
+        ),
         discord.SelectOption(
             label="Forums",
             description="",
@@ -460,7 +464,6 @@ def Options(Config: dict = None):
             value="suggestions",
             emoji="<:suggestion:1207370004379607090>",
         ),
-
         discord.SelectOption(
             label="Staff Feedback",
             description="",

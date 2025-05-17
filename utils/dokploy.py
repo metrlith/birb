@@ -11,7 +11,7 @@ from datetime import datetime
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["astro"]
-premium = db["premium"]
+premium = db["Subscriptions"]
 bots = db["bots"]
 
 
@@ -331,9 +331,15 @@ class Depl(commands.Cog):
     async def on_member_update(self, before, after):
         if not before.guild.id == 1092976553752789054:
             return
+
+        if not before.guild.chunked:
+            await before.guild.chunk()
         if isinstance(before, discord.Member) and isinstance(after, discord.Member):
+            if after.guild is None:
+                return
+
             role = discord.utils.get(after.guild.roles, id=1182022232407543981)
-            role2 = discord.utils.get(after.guild.roles, name=1233945875680596010)
+            prem = discord.utils.get(after.guild.roles, name=1233945875680596010)
             botrole = discord.utils.get(after.guild.roles, id=1279097432482775051)
 
             if role:
@@ -377,8 +383,8 @@ class Depl(commands.Cog):
                     await after.kick(reason="Bot account")
                     return
 
-            if role2:
-                if role2 in before.roles and role2 not in after.roles:
+            if prem:
+                if prem in before.roles and prem not in after.roles:
                     embed = discord.Embed(
                         title="Premium Expired",
                         description=f"**{after.name}'s** premium has just expired!!!",
@@ -386,7 +392,7 @@ class Depl(commands.Cog):
                     )
                     embed.set_thumbnail(url=after.display_avatar)
                     await after.guild.owner.send(embed=embed)
-                    await premium.delete_one({"user_id": after.id})
+                    await premium.delete_one({"user": after.id})
                     embed = discord.Embed(
                         title="Premium Expired",
                         description="Your premium has run out. If you want to continue, please head to [Patreon](https://patreon.com/astrobirb).",
@@ -395,17 +401,17 @@ class Depl(commands.Cog):
                     embed.set_thumbnail(url=after.display_avatar)
                     await after.send(embed=embed)
 
-                if role2 not in before.roles and role2 in after.roles:
+                if prem not in before.roles and prem in after.roles:
                     embed = discord.Embed(
                         title="🎉 Welcome to Premium",
-                        description="> Head to /config `->` Subscriptions and then active the server!\nIf you have any questions head over to https://discord.com/channels/1092976553752789054/1328460590120702094!",
+                        description="> Head to /config `->` Subscriptions and then active the server!\n-# If your subscription hasn't been activated run /premium.\nIf you have any questions head over to https://discord.com/channels/1092976553752789054/1328460590120702094!",
                         color=discord.Color.yellow(),
                     )
                     embed.set_thumbnail(url=after.display_avatar)
                     await after.send(embed=embed)
                     await premium.update_one(
-                        {"user_id": after.id},
-                        {"$set": {"user_id": after.id}},
+                        {"user": after.id},
+                        {"$set": {"user": after.id}, "Tokens": 1, "guilds": []},
                         upsert=True,
                     )
 

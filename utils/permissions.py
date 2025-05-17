@@ -97,8 +97,9 @@ async def has_staff_role(toy, permissions=None):
 
 
 async def premium(id):
-    result = await premiums.find_one({"guild_id": id})
-    if result:
+    result = await Configuration.find_one({"_id": id, "Features": {"$in": ["Premium"]}})
+    Result2 = await premiums.find_one({"guilds": {"$in": [id]}})
+    if result or Result2:
         return True
     else:
         return False

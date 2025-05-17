@@ -3,6 +3,7 @@ from discord.ext import commands
 import psutil
 from utils.emojis import *
 
+
 class management(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
@@ -11,20 +12,24 @@ class management(commands.Cog):
     @commands.is_owner()
     async def account(self, ctx: commands.Context, user: discord.User):
         await ctx.defer()
-        
-        premiumresult = await self.client.db['premium'].find_one({"user_id": user.id})
-        blacklistsresult = await self.client.db['blacklists'].find_one({"user": user.id})
 
-        premiums = tick if premiumresult else no
-        blacklistss = tick if blacklistsresult else no
-        
+        Pre = await self.client.db["Subscriptions"].find_one({"user": user.id})
+        B = await self.client.db["blacklists"].find_one({"user": user.id})
+
+        PS = tick if Pre else no
+        BS = tick if B else no
+
         view = ManageAccount(ctx.author, user)
-        view.premium.style = discord.ButtonStyle.green if premiumresult else discord.ButtonStyle.red
-        view.blacklisted.style = discord.ButtonStyle.green if blacklistsresult else discord.ButtonStyle.red
-        
+        view.premium.style = (
+            discord.ButtonStyle.green if Pre else discord.ButtonStyle.red
+        )
+        view.blacklisted.style = (
+            discord.ButtonStyle.green if B else discord.ButtonStyle.red
+        )
+
         embed = discord.Embed(
             title=f"@{user.display_name}",
-            description=f"**Premium:** {premiums}\n**Blacklisted:** {blacklistss}",
+            description=f"> **Premium:** {PS}\n> **Blacklisted:** {BS}",
             color=discord.Color.dark_embed(),
         )
         embed.set_thumbnail(url=user.avatar)
@@ -34,32 +39,33 @@ class management(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def version(self, ctx: commands.Context, v: str):
-        await self.client.db['Support Variables'].update_one({"_id": 1}, {'$set': {'version': v}}, upsert=True)
-
+        await self.client.db["Support Variables"].update_one(
+            {"_id": 1}, {"$set": {"version": v}}, upsert=True
+        )
 
     @commands.command()
     @commands.is_owner()
     async def vps(self, ctx: commands.Context):
         await ctx.defer()
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
-        embed = discord.Embed(
-            color=discord.Color.dark_embed()
-        ).add_field(
-            name="`🧠` Memory", 
-            value=f"> `Total:` {memory.total / 1e9:.2f} GB\n> `Available:` {memory.available / 1e9:.2f} GB\n> `Usage:` {memory.percent}%", 
-            inline=False
-        ).add_field(
-            name="` 💫 ` CPU Usage", 
-            value=f"{psutil.cpu_percent()}%", 
-            inline=False
-        ).add_field(
-            name="` 💿 ` Disk", 
-            value=f"> `Total:` {disk.total / 1e9:.2f} GB\n> `Used:` {disk.used / 1e9:.2f} GB\n> `Usage:` {disk.percent}%", 
-            inline=False
+        disk = psutil.disk_usage("/")
+        embed = (
+            discord.Embed(color=discord.Color.dark_embed())
+            .add_field(
+                name="`🧠` Memory",
+                value=f"> `Total:` {memory.total / 1e9:.2f} GB\n> `Available:` {memory.available / 1e9:.2f} GB\n> `Usage:` {memory.percent}%",
+                inline=False,
+            )
+            .add_field(
+                name="` 💫 ` CPU Usage", value=f"{psutil.cpu_percent()}%", inline=False
+            )
+            .add_field(
+                name="` 💿 ` Disk",
+                value=f"> `Total:` {disk.total / 1e9:.2f} GB\n> `Used:` {disk.used / 1e9:.2f} GB\n> `Usage:` {disk.percent}%",
+                inline=False,
+            )
         )
         await ctx.author.send(embed=embed)
-        
 
     @commands.command()
     @commands.is_owner()
@@ -84,25 +90,26 @@ class management(commands.Cog):
 
             await ctx.send(file=discord.File("analytics.txt"))
 
+
 class ManageAccount(discord.ui.View):
     def __init__(self, author, user: discord.User):
         super().__init__()
         self.user = user
         self.author = author
 
-    async def updateembed(self, user: discord.User, interaction: discord.Interaction = None) -> discord.Embed:
-        premiumresult = await interaction.client.db['premium'].find_one({"user_id": user.id})
-        blacklistsresult = await interaction.client.db['blacklists'].find_one({"user": user.id})
+    async def updateembed(
+        self, user: discord.User, interaction: discord.Interaction = None
+    ) -> discord.Embed:
+        db = interaction.client.db
+        premium_result = await db["Subscriptions"].find_one({"user": user.id})
+        blacklist_result = await db["blacklists"].find_one({"user": user.id})
 
-        premiums = tick if premiumresult else no
-        blacklistss = tick if blacklistsresult else no
+        premium_status = tick if premium_result else no
+        blacklist_status = tick if blacklist_result else no
 
         embed = discord.Embed(
             title=f"@{user.display_name}",
-            description=(
-                f"**Premium:** {premiums}\n"
-                f"**Blacklisted:** {blacklistss}\n"
-            ),
+            description=f"*> *Premium:** {premium_status}\n> **Blacklisted:** {blacklist_status}",
             color=discord.Color.dark_embed(),
         )
         embed.set_thumbnail(url=user.avatar)
@@ -113,20 +120,30 @@ class ManageAccount(discord.ui.View):
     async def premium(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        author = self.author.id
-        if interaction.user.id != author:
-            embed = discord.Embed(
-                description=f"**{interaction.user.display_name},** this is not your view!",
-                color=discord.Colour.dark_embed(),
+        if interaction.user.id != self.author.id:
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    description=f"**{interaction.user.display_name},** this is not your view!",
+                    color=discord.Colour.dark_embed(),
+                ),
+                ephemeral=True,
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-        premiumresult = await interaction.client.db['premium'].find_one({"user_id": self.user.id})
-        if premiumresult:
-            await interaction.client.db['premium'].delete_one({"user_id": self.user.id})
+
+        premium_result = await interaction.client.db["Subscriptions"].find_one(
+            {"user": self.user.id}
+        )
+
+        if premium_result:
+            await interaction.client.db["Subscriptions"].delete_one(
+                {"user": self.user.id}
+            )
             self.premium.style = discord.ButtonStyle.red
         else:
-            await interaction.client.db['premium'].insert_one({"user_id": self.user.id})
+            await interaction.client.db["Subscriptions"].insert_one(
+                {"user": self.user.id, "Tokens": 1, "guilds": []}
+            )
             self.premium.style = discord.ButtonStyle.green
+
         embed = await self.updateembed(self.user, interaction)
         await interaction.response.edit_message(embed=embed, view=self)
 
@@ -134,36 +151,42 @@ class ManageAccount(discord.ui.View):
     async def blacklisted(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        author = self.author.id
-        if interaction.user.id != author:
-            embed = discord.Embed(
-                description=f"**{interaction.user.display_name},** this is not your view!",
-                color=discord.Colour.dark_embed(),
+        if interaction.user.id != self.author.id:
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    description=f"**{interaction.user.display_name},** this is not your view!",
+                    color=discord.Colour.dark_embed(),
+                ),
+                ephemeral=True,
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-        blacklistsresult = await interaction.client.db['blacklists'].find_one({"user": self.user.id})
-        if blacklistsresult:
-            await interaction.client.db['blacklists'].delete_one({"user": self.user.id})
+
+        db = interaction.client.db
+        blacklist_result = await db["blacklists"].find_one({"user": self.user.id})
+
+        if blacklist_result:
+            await db["blacklists"].delete_one({"user": self.user.id})
             self.blacklisted.style = discord.ButtonStyle.red
         else:
-            await interaction.client.db['blacklists'].insert_one({"user": self.user.id})
+            await db["blacklists"].insert_one({"user": self.user.id})
             self.blacklisted.style = discord.ButtonStyle.green
 
-        embed = await self.updateembed(self.user)
+        embed = await self.updateembed(self.user, interaction)
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Refresh", style=discord.ButtonStyle.blurple)
     async def refresh(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        author = self.author.id
-        if interaction.user.id != author:
-            embed = discord.Embed(
-                description=f"**{interaction.user.display_name},** this is not your view!",
-                color=discord.Colour.dark_embed(),
+        if interaction.user.id != self.author.id:
+            return await interaction.response.send_message(
+                embed=discord.Embed(
+                    description=f"**{interaction.user.display_name},** this is not your view!",
+                    color=discord.Colour.dark_embed(),
+                ),
+                ephemeral=True,
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-        embed = await self.updateembed(self.user)
+
+        embed = await self.updateembed(self.user, interaction)
         await interaction.response.edit_message(embed=embed, view=self)
 
 
