@@ -355,7 +355,7 @@ class Depl(commands.Cog):
         Bots = await self.client.db["bots"].find({}).to_list(length=None)
         Sub = await self.client.db["bots"].find({}).to_list(length=None)
         for P in Sub:
-            Z = await SubscriptionUser(UserID=B.get("user"), Tiers=["22733636", "22855340"])
+            Z = await SubscriptionUser(UserID=P.get("user"), Tiers=["22733636", "22855340"])
             _, _, HasPremium = Z
             if not HasPremium:
                 print(f"Premium expired for user {P.get('user')}")
