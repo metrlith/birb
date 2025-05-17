@@ -1,11 +1,12 @@
 # cog
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import os
 from utils.emojis import *
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiohttp
 import re
+from utils.patreon import SubscriptionUser
 from datetime import datetime
 
 MONGO_URL = os.getenv("MONGO_URL")
@@ -83,6 +84,22 @@ async def GetProjects():
             else:
                 print(await r.text())
 
+                return None
+
+
+async def DeleteApplication(AppID: int):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            f"{os.getenv('DOCKER_URL')}/api/application.delete",
+            json={"applicationId": AppID},
+            headers={
+                "x-api-key": f"{os.getenv('DOCKER_TOKEN')}",
+                "Content-Type": "application/json",
+            },
+        ) as r:
+            if r.status == 200:
+                return True
+            else:
                 return None
 
 
@@ -326,6 +343,59 @@ class DeployAllButton(discord.ui.View):
 class Depl(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+        self.ViewSubscriptionStatus.start()
+
+    @tasks.loop(hours=6)
+    async def ViewSubscriptionStatus(self):
+        Bots = await self.client.db["bots"].find({}).to_list(length=None)
+        Sub = await self.client.db["bots"].find({}).to_list(length=None)
+        for P in Sub:
+            Z = await SubscriptionUser(P.get("user"))
+            _, HasPremium, _ = Z
+            if not HasPremium:
+                print(f"Premium expired for user {P.get('user')}")
+                for guild_id in P.get("guilds", []):
+                    config = await self.client.db["Config"].find_one({"_id": guild_id})
+                    if config is not None:
+                        features = config.get("Features", [])
+                        if "PREMIUM" in features:
+                            features.remove("PREMIUM")
+                            await self.client.db["Config"].update_one(
+                                {"_id": guild_id},
+                                {"$set": {"Features": features}},
+                            )
+                await premium.delete_one({"user": P.get("user")})
+                try:
+                    Owner = await self.client.fetch_user(1092976553752789054)
+                    await Owner.send(
+                        f"Premium expired for user <@{P.get('user')}>. Their premium status has been removed and all associated servers have lost premium features."
+                    )
+                except:
+                    pass
+        for B in Bots:
+            Z = await SubscriptionUser(B.get("user"), "22733636")
+            _, HasBranding, _ = Z
+            if not HasBranding:
+                User = await self.client.fetch_user(B.get("user"))
+                name = re.sub(r"[^a-zA-Z0-9]", "", User.name)
+                Projects = await GetProjects()
+                if Projects:
+                    for project in Projects.get("applications", []):
+                        if project.get("name") == name:
+                            print(
+                                f"Branding expired for user {B.get('user')} - stopping application {project.get('applicationId')}"
+                            )
+                            await StopApplication(project.get("applicationId"))
+                            try:
+                                Owner = await self.client.fetch_user(
+                                    1092976553752789054
+                                )
+                                Owner.send(
+                                    f"Branding expired for user <@{B.get('user')}> - application {project.get('applicationId')} has been stopped."
+                                )
+                            except:
+                                pass
+                            break
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):

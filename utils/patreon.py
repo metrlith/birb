@@ -69,14 +69,15 @@ async def GetAccessToken():
                 return None
     return AccessToken
 
-async def PremiumUser(UserID: int):
+
+async def SubscriptionUser(UserID: int, Sub: str = "22855340"):
     AccessToken = await GetAccessToken()
     if not AccessToken:
-        return None, False, False
+        return
 
     CampaignID = await GetCampaignID(AccessToken)
     if not CampaignID:
-        return None, False, False
+        return
 
     URL = f"https://www.patreon.com/api/oauth2/v2/campaigns/{CampaignID}/members"
     Params = {
@@ -95,7 +96,7 @@ async def PremiumUser(UserID: int):
         while URL:
             async with Session.get(URL, headers=Headers, params=Params) as Resp:
                 if Resp.status != 200:
-                    return None, False, False
+                    return
 
                 Data = await Resp.json()
                 Included = Data.get("included", [])
@@ -106,24 +107,31 @@ async def PremiumUser(UserID: int):
                     if PatronStatus != "active_patron":
                         continue
 
-                    UserRef = Member.get("relationships", {}).get("user", {}).get("data", {})
+                    UserRef = (
+                        Member.get("relationships", {}).get("user", {}).get("data", {})
+                    )
                     UserID_ = UserRef.get("id")
                     User = Users.get(UserID_)
                     if not User:
                         continue
 
-                    SocialConnections = User.get("attributes", {}).get("social_connections", {})
+                    SocialConnections = User.get("attributes", {}).get(
+                        "social_connections", {}
+                    )
                     DiscordInfo = SocialConnections.get("discord")
                     if not DiscordInfo:
                         continue
-
                     if str(DiscordInfo.get("user_id")) != str(UserID):
                         continue
 
-                    EntitledTiers = Member.get("relationships", {}).get("currently_entitled_tiers", {}).get("data", [])
+                    EntitledTiers = (
+                        Member.get("relationships", {})
+                        .get("currently_entitled_tiers", {})
+                        .get("data", [])
+                    )
                     TierIDs = [Tier.get("id") for Tier in EntitledTiers]
 
-                    HasPremium = "22855340" in TierIDs
+                    HasPremium = Sub in TierIDs
                     return User, HasPremium, True
 
                 URL = Data.get("links", {}).get("next")

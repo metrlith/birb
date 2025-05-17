@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from utils.patreon import PremiumUser
+from utils.patreon import SubscriptionUser
 
 
 class Premium(commands.Cog):
@@ -20,7 +20,7 @@ class Premium(commands.Cog):
         )
 
         try:
-            user, HasPremium, Status = await PremiumUser(ctx.author.id)
+            user, HasPremium, Status = await SubscriptionUser(ctx.author.id)
         except Exception:
             await msg.edit(
                 embed=discord.Embed(
