@@ -354,8 +354,11 @@ class Depl(commands.Cog):
             return
         Bots = await self.client.db["bots"].find({}).to_list(length=None)
         Sub = await self.client.db["bots"].find({}).to_list(length=None)
+        guild = self.client.get_guild(1092976553752789054)
         for P in Sub:
-            Z = await SubscriptionUser(UserID=P.get("user"), Tiers=["22733636", "22855340"])
+            Z = await SubscriptionUser(
+                UserID=P.get("user"), Tiers=["22733636", "22855340"]
+            )
             _, _, HasPremium = Z
             if not HasPremium:
                 print(f"Premium expired for user {P.get('user')}")
@@ -370,6 +373,19 @@ class Depl(commands.Cog):
                                 {"$set": {"Features": features}},
                             )
                 await premium.delete_one({"user": P.get("user")})
+
+                if guild:
+                    member = guild.get_member(P.get("user"))
+                    if member:
+                        role = guild.get_role(1233945875680596010)
+                        if role and role in member.roles:
+                            try:
+                                await member.remove_roles(
+                                    role, reason="Premium expired"
+                                )
+                            except Exception as e:
+                                pass
+
                 try:
                     Owner = await self.client.fetch_user(1092976553752789054)
                     await Owner.send(
@@ -377,10 +393,38 @@ class Depl(commands.Cog):
                     )
                 except:
                     pass
+
         for B in Bots:
             Z = await SubscriptionUser(UserID=B.get("user"), Sub="22733636")
             _, HasBranding, _ = Z
             if not HasBranding:
+                if guild:
+                    member = guild.get_member(B.get("user"))
+                    if member:
+                        role = guild.get_role(1182022232407543981)
+                        Premium = guild.get_role(1233945875680596010)
+                        if role and role in member.roles:
+                            try:
+                                await member.remove_roles(
+                                    role, reason="Custom branding expired"
+                                )
+                            except (discord.Forbidden, discord.HTTPException):
+                                pass
+
+                        if Premium and Premium in member.roles:
+                            try:
+                                await member.remove_roles(
+                                    Premium, reason="Premium expired"
+                                )
+                            except (discord.Forbidden, discord.HTTPException):
+                                pass
+                            try:
+                                await member.remove_roles(
+                                    role, reason="Custom branding expired"
+                                )
+                            except (discord.Forbidden, discord.HTTPException):
+                                pass
+
                 try:
                     if not B.get("user") or not isinstance(B.get("user"), int):
                         continue
@@ -400,7 +444,7 @@ class Depl(commands.Cog):
                                 Owner = await self.client.fetch_user(
                                     1092976553752789054
                                 )
-                                Owner.send(
+                                await Owner.send(
                                     f"Branding expired for user <@{B.get('user')}> - application {project.get('applicationId')} has been stopped."
                                 )
                             except:
