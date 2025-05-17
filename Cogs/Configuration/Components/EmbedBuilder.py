@@ -1,15 +1,11 @@
 import discord
-import discord.http
 from utils.emojis import *
+from utils.permissions import premium
 
-from dotenv import load_dotenv
-from utils.format import Replace
-from utils.format import IsSeperateBot
+from utils.format import Replace, Replace, IsSeperateBot
+from utils.HelpEmbeds import NoPremium
 
 import discord
-
-
-
 
 
 async def HandleButton(data: dict):
@@ -553,6 +549,8 @@ class Embed(discord.ui.View):
             )
 
         else:
+            if not await premium(interaction.guild.id):
+                return await interaction.response.send_message(embed=NoPremium(), ephemeral=True)
             view = discord.ui.View()
             view.add_item(
                 Buttons(
@@ -611,7 +609,7 @@ class Embed(discord.ui.View):
     @discord.ui.button(
         label="Thumbnail",
         style=discord.ButtonStyle.blurple,
-        emoji="<:image:1223062544135094363>"  if not IsSeperateBot() else None,
+        emoji="<:image:1223062544135094363>" if not IsSeperateBot() else None,
         row=1,
     )
     async def Thu(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -787,7 +785,7 @@ class Embed(discord.ui.View):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
-            await interaction.client.db['Customisation'].delete_one(
+            await interaction.client.db["Customisation"].delete_one(
                 {"guild_id": interaction.guild.id, "type": self.typed}
             )
             if self.typed == "Promotions":
