@@ -46,20 +46,23 @@ async def has_staff_role(toy, permissions=None):
         return False
 
     if Config.get("Advanced Permissions", None):
-        if toy.command.qualified_name in Config.get("Advanced Permissions", {}).keys():
-            Permissions = Config.get("Advanced Permissions", {}).get(
-                toy.command.qualified_name, []
-            )
-            if not isinstance(Permissions, list):
-                Permissions = [Permissions]
-            if any(role.id in Permissions for role in author.roles):
-                return True
-            else:
-                await send(
-                    f"{no} **{author.display_name}**, you don't have permission to use this command.\n-# Advanced Permission",
-                    ephemeral=True,
+        if toy.command:
+            if (
+                toy.command.qualified_name
+                in Config.get("Advanced Permissions", {}).keys()
+            ):
+                Permissions = Config.get("Advanced Permissions", {}).get(
+                    toy.command.qualified_name, []
                 )
-                return False
+                if not isinstance(Permissions, list):
+                    Permissions = [Permissions]
+                if any(role.id in Permissions for role in author.roles):
+                    return True
+                else:
+                    await send(
+                        f"{no} **{author.display_name}**, you don't have permission to use this command.\n-# Advanced Permission"
+                    )
+                    return False
 
     if not Config.get("Permissions"):
         await send(
