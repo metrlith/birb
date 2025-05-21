@@ -192,7 +192,7 @@ class NoEmbed(discord.ui.View):
     def __init__(
         self, author: discord.User, finalfunc: callable, type: str, data: dict = {}
     ):
-        super().__init__(timeout=1092)
+        super().__init__(timeout=2048)
         self.finalfunc = finalfunc
         self.author = author
         self.typed = type
@@ -436,7 +436,7 @@ class Embed(discord.ui.View):
         type: str,
         data: dict = {},
     ):
-        super().__init__()
+        super().__init__(timeout=2048)
         self.author = author
         self.typed = type
         self.finalfunc = finalfunc
