@@ -17,6 +17,7 @@ from scipy.interpolate import CubicSpline
 class Ping(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+        self.SavePing.start()
 
     async def Gen(self, data: dict) -> BytesIO:
         blurple = "#5865F2"
