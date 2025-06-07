@@ -176,7 +176,9 @@ class Infractions(commands.Cog):
             {"guild_id": ctx.guild.id, "name": action}
         )
         if not await self.TypePerms(ctx.author, TypeActions):
-            return await ctx.send(f"{no} **{ctx.author.display_name},** you don't have permission to use this shift type.")
+            return await ctx.send(
+                f"{no} **{ctx.author.display_name},** you don't have permission to use this shift type."
+            )
 
         Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
@@ -338,6 +340,7 @@ class Infractions(commands.Cog):
                 embed=None,
                 view=None,
             )
+        
 
         self.client.dispatch(
             "infraction", InfractionResult.inserted_id, Config, TypeActions

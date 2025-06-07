@@ -151,7 +151,7 @@ class on_leave(commands.Cog):
         member = G.get_member(L.get("user"))
         if member:
             try:
-                
+
                 if C.get("LOA", {}).get("role", None):
                     try:
                         role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
@@ -542,19 +542,19 @@ class on_leave(commands.Cog):
                                 await member.add_roles(role, reason="Leave Accepted")
                         except (discord.NotFound, discord.HTTPException):
                             pass
-                    try:
-                        await member.send(
-                            embed=discord.Embed(
-                                color=discord.Color.brand_green(),
-                            )
-                            .set_author(name="Leave Accepted")
-                            .add_field(
-                                name="LOA",
-                                value=f"> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
-                            )
+                try:
+                    await member.send(
+                        embed=discord.Embed(
+                            color=discord.Color.brand_green(),
                         )
-                    except (discord.Forbidden, discord.HTTPException):
-                        pass
+                        .set_author(name="Leave Accepted")
+                        .add_field(
+                            name="LOA",
+                            value=f"> **User:** <@{L.get('user')}>\n> **Start Date:** <t:{int(L.get('start_time').timestamp())}>\n> **End Date:** <t:{int(L.get('end_time').timestamp())}>\n> **Reason:** {L.get('reason')}",
+                        )
+                    )
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
         elif status == "Declined":
 
             view = discord.ui.View().add_item(
@@ -731,7 +731,7 @@ class PendingActions(discord.ui.View):
                         "user": interaction.user.id,
                         "time": datetime.now(),
                     },
-                    "active": True,
+                    "active": True if LOA.get("scheduled") is True else False,
                     "request": False,
                 }
             },

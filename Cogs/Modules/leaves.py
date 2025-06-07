@@ -277,7 +277,8 @@ class LOAModule(commands.Cog):
                     return
             else:
                 Start = datetime.now()
-            Duration = await strtotime(duration)
+
+            Duration = await strtotime(duration, DifferentNow=Start)
         except (ValueError, TypeError, AttributeError):
             await ctx.send(
                 content=f"{no} **{ctx.author.display_name}**, invalid duration format. (example: 2d = 2 days, 2m = 2 minutes and etc)"
@@ -336,7 +337,11 @@ class LOAModule(commands.Cog):
         try:
             CH = await self.client.fetch_channel(C.get("LOA", {}).get("channel", 0))
         except (discord.HTTPException, discord.NotFound):
-            return await ctx.send(embed=HelpEmbeds.ChannelNotFound())
+            return await MSG.edit(
+                embed=HelpEmbeds.ChannelNotFound(),
+                content=None,
+                view=HelpEmbeds.Support(),
+            )
         client = await ctx.guild.fetch_member(self.client.user.id)
         if (
             CH.permissions_for(client).send_messages is False
@@ -450,7 +455,7 @@ class LOAModule(commands.Cog):
             embed = await CurrentLOA(ctx, ActiveLOA)
             view.remove_item(view.CancelRequest)
 
-        if RequestLOA:
+        elif RequestLOA:
             embed = await CurrentLOA(ctx, RequestLOA)
             embed.description = (
                 "-# This leave is currently being reviewed by staff members"
@@ -459,12 +464,11 @@ class LOAModule(commands.Cog):
             view.remove_item(view.ReduceT)
             view.remove_item(view.End)
 
-        if not ActiveLOA and RequestLOA:
+        else:
             embed.add_field(
                 name="Current LOA",
                 value="> You currently have no active LOA. To request one, use `/loa request`",
             )
-
             view.remove_item(view.RequestExt)
             view.remove_item(view.ReduceT)
             view.remove_item(view.End)
@@ -491,7 +495,14 @@ class LOAModule(commands.Cog):
         )
         PastLOAs = (
             await self.client.db["loa"]
-            .find({"user": user.id, "guild_id": ctx.guild.id, "active": False})
+            .find(
+                {
+                    "user": user.id,
+                    "guild_id": ctx.guild.id,
+                    "active": False,
+                    "Declined": {"$exists": False},
+                }
+            )
             .to_list(length=750)
         )
 

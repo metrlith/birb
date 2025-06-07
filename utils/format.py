@@ -57,8 +57,9 @@ async def PaginatorButtons(extra: list = None):
     return paginator
 
 
-async def strtotime(duration: str, *, back: bool = False, Interger: bool = False):
-    now = datetime.now()
+async def strtotime(duration: str, *, back: bool = False, Interger: bool = False, DifferentNow: bool = False):
+
+    now = datetime.now() if not DifferentNow else DifferentNow
     units = {
         "s": 1,
         "m": 60,

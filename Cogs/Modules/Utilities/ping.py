@@ -155,6 +155,7 @@ class Ping(commands.Cog):
             if not np.isnan(self.client.latency)
             else 0
         )
+    
         try:
             Start = datetime.now()
             await self.client.db.command("ping")
