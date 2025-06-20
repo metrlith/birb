@@ -533,7 +533,7 @@ class on_leave(commands.Cog):
                 icon_url=author.display_avatar,
             )
             if member:
-                if not L.get("scheduled") is True:
+                if not L.get("scheduled", False):
                     if C.get("LOA", {}).get("role", None):
                         try:
                             role = G.get_role(int(C.get("LOA", {}).get("role", 0)))
