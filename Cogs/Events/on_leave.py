@@ -731,7 +731,7 @@ class PendingActions(discord.ui.View):
                         "user": interaction.user.id,
                         "time": datetime.now(),
                     },
-                    "active": True if LOA.get("scheduled") is True else False,
+                    "active": True if LOA.get("scheduled", False) == False else False,
                     "request": False,
                 }
             },

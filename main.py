@@ -13,6 +13,7 @@ import logging
 
 from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
+# import pymongo
 from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
 
@@ -47,6 +48,7 @@ SHARDS = os.getenv("SHARDS")
 
 
 client = AsyncIOMotorClient(MONGO_URL)
+# client = pymongo.AsyncMongoClient(MONGO_URL)
 qdb = client["quotadb"]
 db = client["astro"]
 prefixdb = db["prefixes"]
