@@ -889,6 +889,7 @@ class APIRoutes:
                 {
                     "username": member.name,
                     "display": member.display_name,
+                    "avatar": member.display_avatar,
                     "id": str(member.id),
                     "ClaimedTickets": claimed_count,
                     "OnLOA": bool(
