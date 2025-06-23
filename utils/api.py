@@ -889,7 +889,7 @@ class APIRoutes:
                 {
                     "username": member.name,
                     "display": member.display_name,
-                    "avatar": member.display_avatar,
+                    "avatar": member.display_avatar.url if member.display_avatar else None,
                     "id": str(member.id),
                     "ClaimedTickets": claimed_count,
                     "OnLOA": bool(
