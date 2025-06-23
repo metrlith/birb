@@ -889,7 +889,7 @@ class APIRoutes:
                 {
                     "username": member.name,
                     "display": member.display_name,
-                    "id": member.id,
+                    "id": str(member.id),
                     "ClaimedTickets": claimed_count,
                     "OnLOA": bool(
                         await self.client.db["loa"].find_one(
