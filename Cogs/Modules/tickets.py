@@ -909,13 +909,6 @@ class TicketsPub(commands.Cog):
                 view=Support(),
                 ephemeral=True,
             )
-        if not Config.get("Tickets"):
-            return await interaction.followup.send(
-                embed=ModuleNotSetup(),
-                view=Support(),
-                ephemeral=True,
-            )
-
         Panel = await interaction.client.db["Panels"].find_one(
             {"guild": interaction.guild.id, "name": Result.get("panel")}
         )
