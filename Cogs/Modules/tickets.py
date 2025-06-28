@@ -626,7 +626,9 @@ class TicketsPub(commands.Cog):
 
             Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
             if quota != 0:
-                Description += f"{replybottom} **Status:** {emoji}\n\n"
+                Description += f"{replybottom} **Status:** {emoji}\n"
+            Description += "\n"
+
 
             if i % 9 == 0:
                 embed = discord.Embed(
