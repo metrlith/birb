@@ -961,6 +961,7 @@ class quota(commands.Cog):
             )
             Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages"
             if Config.get("Message Quota", {}).get("quota", 0) != 0:
+                Description += "\n"
                 Description += f"{replybottom} **Status:** {emoji}\n"
                 Description += "\n"
 

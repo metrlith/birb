@@ -626,6 +626,7 @@ class TicketsPub(commands.Cog):
 
             Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets"
             if quota != 0:
+                Description += "\n"
                 Description += f"{replybottom} **Status:** {emoji}\n"
                 Description += "\n"
 
