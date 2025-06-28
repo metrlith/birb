@@ -959,10 +959,10 @@ class quota(commands.Cog):
                     )
                 )
             )
-            Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
+            Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages"
             if Config.get("Message Quota", {}).get("quota", 0) != 0:
                 Description += f"{replybottom} **Status:** {emoji}\n"
-            Description += "\n"
+                Description += "\n"
 
             if i % 9 == 0:
                 embed = discord.Embed(
