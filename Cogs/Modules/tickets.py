@@ -624,9 +624,8 @@ class TicketsPub(commands.Cog):
                 else ("Met" if staff.get("ClaimedTickets", 0) >= quota else "Not Met")
             )
 
-            Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets"
+            Description += f"* `{i}` {member.display_name} • {staff.get('ClaimedTickets', 0)} tickets\n"
             if quota != 0:
-                Description += "\n"
                 Description += f"{replybottom} **Status:** {emoji}\n"
                 Description += "\n"
 
