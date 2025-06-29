@@ -55,13 +55,6 @@ async def ModuleOptions(Config, data = None):
             default=Config.get("Modules", {}).get("suspensions", False) or False if not data else False,
         ),
         discord.SelectOption(
-            label="Ban Appeal",
-            description="",
-            emoji="<:reports:1224723845726998651>",
-            value="Ban Appeal",
-            default=Config.get("Modules", {}).get("Ban Appeal", False) or False if not data else False,
-        ),
-        discord.SelectOption(
             label="Suggestions",
             description="",
             value="suggestions",
