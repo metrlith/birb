@@ -6,6 +6,7 @@ import os
 from utils.emojis import *
 from datetime import datetime
 from utils.Module import ModuleCheck
+import asyncio
 
 
 environment = os.getenv("ENVIRONMENT")
@@ -17,115 +18,113 @@ class StaffList(commands.Cog):
         self.client = client
         self.updatelist.start()
         print("[✅] Staff List loop started")
-    
 
-    @tasks.loop(minutes=10, reconnect=True)
+    @tasks.loop(seconds=360, reconnect=True)
     async def updatelist(self):
         print("Checking Staff List")
         if environment == "custom":
-            activelistresult = await self.client.db["Active Staff List"].find(
-                {"guild_id": int(guildid)}
-            ).to_list(length=None)
+            activelistresult = (
+                await self.client.db["Active Staff List"]
+                .find({"guild_id": int(guildid)})
+                .to_list(length=None)
+            )
         else:
-            activelistresult = await self.client.db["Active Staff List"].find({}).to_list(length=None)
+            activelistresult = (
+                await self.client.db["Active Staff List"].find({}).to_list(length=None)
+            )
 
-        if activelistresult:
+        if not activelistresult:
+            return
+        semaphore = asyncio.Semaphore(5)
 
-            for data in activelistresult:
-                try:
+        async def process(data):
+            async with semaphore:
+                await self.UpdateList(data)
 
-                    try:
-                        guild = self.client.get_guild(data.get("guild_id", None))
-                    except (discord.HTTPException, discord.NotFound):
-                        continue
-                    if not guild:
-                        continue
-                    if not await ModuleCheck(guild.id, "Staff List"):
-                        continue
-
-                    results = await self.client.db["Staff List"].find({"guild_id": guild.id}).to_list(
-                        length=None
-                    )
-                    if not results:
-                        continue
-                    results = sorted(results, key=lambda x: int(x.get("position", 0)))
-                    member_roles = {}
-                    highest_role_seen = {}
-                    
-                    if not guild.chunked:
-                        await guild.chunk()
-                    for member in guild.members:
-                        highest_role = max(
-                            (
-                                role
-                                for role in member.roles
-                                if any(role.id == result["rank"] for result in results)
-                            ),
-                            key=lambda role: role.position,
-                            default=None,
-                        )
-                        member_roles[member] = highest_role
-                        highest_role_seen[member] = highest_role
-
-                    embed = discord.Embed(
-                        title="Staff Team",
-                        color=discord.Color.dark_embed(),
-                        timestamp=datetime.now(),
-                    )
-                    embed.set_thumbnail(url=guild.icon)
-                    embed.set_author(name=guild.name, icon_url=guild.icon)
-                    embed.set_footer(text="Last Updated")
-
-                    description = ""
-                    for result in results:
-                        role = guild.get_role(result.get("rank"))
-                        if role is not None:
-                            members = [
-                                member.mention
-                                for member in member_roles
-                                if member_roles[member] == role
-                                and highest_role_seen[member] == role
-                            ]
-                            if members:
-                                description += (
-                                    f"### **{role.mention}** ({len(members)})\n\n> "
-                                    + "\n> ".join(members)
-                                    + "\n"
-                                )
-                            else:
-                                continue
-                        else:
-                            continue
-                    embed.description = description
-                    ChannelsResult = data.get("channel_id")
-                    msgresult = data.get("msg")
-                    if ChannelsResult and msgresult:
-                        try:
-                            channel = await self.client.fetch_channel(ChannelsResult)
-                        except (discord.HTTPException, discord.NotFound):
-                            continue
-                        if channel:
-                            try:
-                                msg = await channel.fetch_message(msgresult)
-                                if not msg:
-                                    continue
-                                await msg.edit(
-                                    embed=embed,
-                                    
-                                )
-                            except (discord.HTTPException, discord.NotFound):
-                                continue
-                    else:
-                        continue
-                except Exception as e:
-                    print(f"[ERROR] {e}")
-                    continue
+        await asyncio.gather(*(process(data) for data in activelistresult))
         del activelistresult
-                
+
+    async def UpdateList(self, data):
+        try:
+            guild = self.client.get_guild(data.get("guild_id"))
+            if not guild:
+                return
+            if not await ModuleCheck(guild.id, "Staff List"):
+                return
+
+            results = (
+                await self.client.db["Staff List"]
+                .find({"guild_id": guild.id})
+                .to_list(length=None)
+            )
+            if not results:
+                return
+
+            results = sorted(results, key=lambda x: int(x.get("position", 0)))
+            MemberRoles = {}
+            HighestSeen = {}
+
+            if not guild.chunked:
+                await guild.chunk()
+
+            for member in guild.members:
+                HighestRole = max(
+                    (
+                        role
+                        for role in member.roles
+                        if any(role.id == result["rank"] for result in results)
+                    ),
+                    key=lambda role: role.position,
+                    default=None,
+                )
+                MemberRoles[member] = HighestRole
+                HighestSeen[member] = HighestRole
+
+            embed = discord.Embed(
+                title="Staff Team",
+                color=discord.Color.dark_embed(),
+                timestamp=datetime.now(),
+            )
+            embed.set_thumbnail(url=guild.icon)
+            embed.set_author(name=guild.name, icon_url=guild.icon)
+            embed.set_footer(text="Last Updated")
+
+            description = ""
+            for result in results:
+                role = guild.get_role(result.get("rank"))
+                if role:
+                    members = [
+                        member.mention
+                        for member in MemberRoles
+                        if MemberRoles[member] == role
+                        and HighestSeen[member] == role
+                    ]
+                    if members:
+                        description += (
+                            f"### **{role.mention}** ({len(members)})\n\n> "
+                            + "\n> ".join(members)
+                            + "\n"
+                        )
+
+            embed.description = description
+            ChannelID = data.get("channel_id")
+            MessageId = data.get("msg")
+
+            if ChannelID and MessageId:
+                try:
+                    channel = await self.client.fetch_channel(ChannelID)
+                    msg = await channel.fetch_message(MessageId)
+                    if msg:
+                        await msg.edit(embed=embed)
+                except (discord.HTTPException, discord.NotFound):
+                    return
+        except Exception as e:
+            print(f"[ERROR] {e}")
 
     @updatelist.before_loop
     async def before_updatelist(self):
         await self.client.wait_until_ready()
+
 
 async def setup(client):
     await client.add_cog(StaffList(client))

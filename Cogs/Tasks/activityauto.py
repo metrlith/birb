@@ -24,7 +24,7 @@ class activityauto(commands.Cog):
         self.client = client
         self.quota_activity.start()
 
-    @tasks.loop(minutes=15, reconnect=True)
+    @tasks.loop(minutes=3, reconnect=True)
     async def quota_activity(self):
         print("[INFO] Checking for quota activity")
         if environment == "custom":
@@ -49,22 +49,22 @@ class activityauto(commands.Cog):
                 days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
                 nextdate = data.get("nextdate")
                 day = data.get("day", "").lower()
-                current_day_index = datetime.now().weekday()
+                CurrentDay = datetime.now().weekday()
                 if day not in days:
                     continue
 
                 specified = days.index(day)
-                days_until = (specified - current_day_index) % 7
-                if days_until == 0:
+                DayTill = (specified - CurrentDay) % 7
+                if DayTill == 0:
                     if datetime.now() < nextdate:
-                        next_occurrence_date = datetime.now()
+                        NextDate = datetime.now()
                     else:
-                        next_occurrence_date = datetime.now() + timedelta(days=7)
+                        NextDate = datetime.now() + timedelta(days=7)
                 else:
-                    next_occurrence_date = datetime.now() + timedelta(days=days_until)
+                    NextDate = datetime.now() + timedelta(days=DayTill)
 
-                if next_occurrence_date < datetime.now():
-                    next_occurrence_date = datetime.now() + timedelta(days=7)
+                if NextDate < datetime.now():
+                    NextDate = datetime.now() + timedelta(days=7)
 
                 if datetime.now() < nextdate:
                     continue
@@ -75,10 +75,10 @@ class activityauto(commands.Cog):
 
                 await self.client.db["auto activity"].update_one(
                     {"guild_id": guild.id},
-                    {"$set": {"nextdate": next_occurrence_date, "lastposted": datetime.now()}},
+                    {"$set": {"nextdate": NextDate, "lastposted": datetime.now()}},
                 )
 
-                print(f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!")
+                print(f"[⏰] Sending Activity @{guild.name} next post is {NextDate}!")
 
                 result = await self.client.qdb["auto activity"].find({"guild_id": guild.id}).to_list(length=None)
                 if not result:
@@ -86,12 +86,12 @@ class activityauto(commands.Cog):
 
                 passed = []
                 failed = []
-                on_loa = []
+                OnLOA = []
                 failedids = []
 
                 semaphore = asyncio.Semaphore(10)
 
-                async def process_user(userdata):
+                async def Process(userdata):
                     async with semaphore:
                         try:
                             user = await guild.fetch_member(userdata.get("user_id"))
@@ -103,17 +103,17 @@ class activityauto(commands.Cog):
                             if not config or not config.get("Message Quota") or not message_data:
                                 return
 
-                            loa_role_id = config.get("LOA", {}).get("role")
-                            on_loa_status = any(role.id == loa_role_id for role in user.roles) if loa_role_id else False
+                            LoaRole = config.get("LOA", {}).get("role")
+                            LoaStatus = any(role.id == LoaRole for role in user.roles) if LoaRole else False
 
                             quota = config.get("Message Quota", {}).get("quota", 0)
-                            message_count = message_data.get("message_count", 0)
+                            Messages = message_data.get("message_count", 0)
 
-                            entry = f"> **{user.name}** • `{message_count}` messages"
+                            entry = f"> **{user.name}** • `{Messages}` messages"
 
-                            if on_loa_status:
-                                on_loa.append(entry)
-                            elif message_count >= quota:
+                            if LoaStatus:
+                                OnLOA.append(entry)
+                            elif Messages >= quota:
                                 passed.append(entry)
                             else:
                                 failed.append(entry)
@@ -122,7 +122,7 @@ class activityauto(commands.Cog):
                         except Exception as e:
                             print(f"[UserProcessError] {e}")
 
-                await asyncio.gather(*(process_user(userdata) for userdata in result))
+                await asyncio.gather(*(Process(userdata) for userdata in result))
 
                 await self.client.db["auto activity"].update_one({"guild_id": guild.id}, {"$set": {"failed": failedids}})
 
@@ -131,7 +131,7 @@ class activityauto(commands.Cog):
 
                 passed.sort(key=sort_key, reverse=True)
                 failed.sort(key=sort_key, reverse=True)
-                on_loa.sort(key=sort_key, reverse=True)
+                OnLOA.sort(key=sort_key, reverse=True)
 
                 embeds = []
 
@@ -142,7 +142,7 @@ class activityauto(commands.Cog):
 
                 loaembed = discord.Embed(title="On LOA", color=discord.Color.purple())
                 loaembed.set_image(url="https://www.astrobirb.dev/invisble.png")
-                loaembed.description = "\n".join(on_loa) if on_loa else "> No users on LOA."
+                loaembed.description = "\n".join(OnLOA) if OnLOA else "> No users on LOA."
                 embeds.append(loaembed)
 
                 failedembed = discord.Embed(title="Failed", color=discord.Color.brand_red())
