@@ -7,10 +7,11 @@ class UpdateChannel(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.UpdateChannelName.start()
+        client.Tasks.add("Channel Name")
 
     @tasks.loop(minutes=10, reconnect=True)
     async def UpdateChannelName(self):
-        if os.getenv('ENVIRONMENT') in ["development", "custom"]:
+        if os.getenv("ENVIRONMENT") in ["development", "custom"]:
             return
         channel = self.client.get_channel(1131245978704420964)
         if not channel:

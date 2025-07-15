@@ -5,18 +5,16 @@ from utils.emojis import *
 from datetime import datetime
 
 
-
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
-
 
 
 class EmptyCog(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.check_suspensions.start()
-        print("[✅] Suspension loop started")
-    
+        client.Tasks.add("Suspension")
+
     @tasks.loop(minutes=5, reconnect=True)
     async def check_suspensions(self):
 
@@ -102,12 +100,18 @@ class EmptyCog(commands.Cog):
                         )
                         continue
                 if request.get("msg_id"):
-                    config = await self.client.db["Config"].find_one({"_id": request.get("guild_id")})
+                    config = await self.client.db["Config"].find_one(
+                        {"_id": request.get("guild_id")}
+                    )
                     if not config:
                         return
                     if not config.get("Suspensions", {}):
                         return
-                    if not self.client.db["Config"].get("Suspensions", {}).get("channel"):
+                    if (
+                        not self.client.db["Config"]
+                        .get("Suspensions", {})
+                        .get("channel")
+                    ):
                         return
                     channel = self.client.get_channel(
                         int(config.get("Suspensions", {}).get("channel"))
@@ -121,6 +125,7 @@ class EmptyCog(commands.Cog):
                         except (discord.NotFound, discord.HTTPException):
                             continue
         del suspension_requests
+
 
 async def setup(client):
     await client.add_cog(EmptyCog(client))

@@ -17,7 +17,7 @@ class StaffList(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.updatelist.start()
-        print("[✅] Staff List loop started")
+        client.Tasks.add("Staff List")
 
     @tasks.loop(seconds=360, reconnect=True)
     async def updatelist(self):
@@ -96,8 +96,7 @@ class StaffList(commands.Cog):
                     members = [
                         member.mention
                         for member in MemberRoles
-                        if MemberRoles[member] == role
-                        and HighestSeen[member] == role
+                        if MemberRoles[member] == role and HighestSeen[member] == role
                     ]
                     if members:
                         description += (

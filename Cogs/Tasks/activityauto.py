@@ -21,22 +21,31 @@ guildid = os.getenv("CUSTOM_GUILD")
 
 class activityauto(commands.Cog):
     def __init__(self, client: commands.Bot):
+
         self.client = client
-        self.quota_activity.start()
+        self.Task.start()
+        client.Tasks.add("Activity Expiration")
 
     @tasks.loop(minutes=3, reconnect=True)
-    async def quota_activity(self):
-        print("[INFO] Checking for quota activity")
+    async def Task(self):
+
         if environment == "custom":
-            autoactivityresult = await self.client.db["auto activity"].find({"guild_id": int(guildid)}).to_list(length=None)
+            autoactivityresult = (
+                await self.client.db["auto activity"]
+                .find({"guild_id": int(guildid)})
+                .to_list(length=None)
+            )
         else:
-            autoactivityresult = await self.client.db["auto activity"].find({}).to_list(length=None)
+            autoactivityresult = (
+                await self.client.db["auto activity"].find({}).to_list(length=None)
+            )
 
         if not autoactivityresult:
             return
 
         for data in autoactivityresult:
             try:
+                IsGod = bool(data.get("guild_id", 0) == 1092976553752789054)  # Temp
                 if not data.get("enabled", False):
                     continue
                 if not await ModuleCheck(data.get("guild_id", 0), "Quota"):
@@ -44,9 +53,19 @@ class activityauto(commands.Cog):
 
                 channel = self.client.get_channel(data.get("channel_id"))
                 if not channel:
+                    if IsGod:
+                        print("[]")
                     continue
 
-                days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+                days = [
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                    "friday",
+                    "saturday",
+                    "sunday",
+                ]
                 nextdate = data.get("nextdate")
                 day = data.get("day", "").lower()
                 CurrentDay = datetime.now().weekday()
@@ -80,8 +99,13 @@ class activityauto(commands.Cog):
 
                 print(f"[⏰] Sending Activity @{guild.name} next post is {NextDate}!")
 
-                result = await self.client.qdb["auto activity"].find({"guild_id": guild.id}).to_list(length=None)
+                result = (
+                    await self.client.qdb["messages"]
+                    .find({"guild_id": guild.id})
+                    .to_list(length=None)
+                )
                 if not result:
+                    print("e")
                     continue
 
                 passed = []
@@ -89,42 +113,50 @@ class activityauto(commands.Cog):
                 OnLOA = []
                 failedids = []
 
-                semaphore = asyncio.Semaphore(10)
+                semaphore = asyncio.Semaphore(2)
 
                 async def Process(userdata):
                     async with semaphore:
-                        try:
-                            user = await guild.fetch_member(userdata.get("user_id"))
-                            if not user or not await check_admin_and_staff(guild, user):
-                                return
+                        user = await guild.fetch_member(userdata.get("user_id"))
+                        if not user or not await check_admin_and_staff(guild, user):
+                            return
 
-                            message_data = await self.client.qdb["messages"].find_one({"guild_id": guild.id, "user_id": user.id})
-                            config = await self.client.config.find_one({"_id": guild.id})
-                            if not config or not config.get("Message Quota") or not message_data:
-                                return
+                        message_data = await self.client.qdb["messages"].find_one(
+                            {"guild_id": guild.id, "user_id": user.id}
+                        )
+                        config = await self.client.config.find_one({"_id": guild.id})
+                        if (
+                            not config
+                            or not config.get("Message Quota")
+                            or not message_data
+                        ):
+                            return
 
-                            LoaRole = config.get("LOA", {}).get("role")
-                            LoaStatus = any(role.id == LoaRole for role in user.roles) if LoaRole else False
+                        LoaRole = config.get("LOA", {}).get("role")
+                        LoaStatus = (
+                            any(role.id == LoaRole for role in user.roles)
+                            if LoaRole
+                            else False
+                        )
 
-                            quota = config.get("Message Quota", {}).get("quota", 0)
-                            Messages = message_data.get("message_count", 0)
+                        quota = config.get("Message Quota", {}).get("quota", 0)
+                        Messages = message_data.get("message_count", 0)
 
-                            entry = f"> **{user.name}** • `{Messages}` messages"
+                        entry = f"> **{user.name}** • `{Messages}` messages"
 
-                            if LoaStatus:
-                                OnLOA.append(entry)
-                            elif Messages >= quota:
-                                passed.append(entry)
-                            else:
-                                failed.append(entry)
-                                failedids.append(user.id)
-
-                        except Exception as e:
-                            print(f"[UserProcessError] {e}")
+                        if LoaStatus:
+                            OnLOA.append(entry)
+                        elif Messages >= quota:
+                            passed.append(entry)
+                        else:
+                            failed.append(entry)
+                            failedids.append(user.id)
 
                 await asyncio.gather(*(Process(userdata) for userdata in result))
 
-                await self.client.db["auto activity"].update_one({"guild_id": guild.id}, {"$set": {"failed": failedids}})
+                await self.client.db["auto activity"].update_one(
+                    {"guild_id": guild.id}, {"$set": {"failed": failedids}}
+                )
 
                 def sort_key(entry):
                     return int(entry.split("•")[-1].strip().split(" ")[0].strip("`"))
@@ -135,19 +167,29 @@ class activityauto(commands.Cog):
 
                 embeds = []
 
-                passedembed = discord.Embed(title="Passed", color=discord.Color.brand_green())
+                passedembed = discord.Embed(
+                    title="Passed", color=discord.Color.brand_green()
+                )
                 passedembed.set_image(url="https://www.astrobirb.dev/invisble.png")
-                passedembed.description = "\n".join(passed) if passed else "> No users passed the quota."
+                passedembed.description = (
+                    "\n".join(passed) if passed else "> No users passed the quota."
+                )
                 embeds.append(passedembed)
 
                 loaembed = discord.Embed(title="On LOA", color=discord.Color.purple())
                 loaembed.set_image(url="https://www.astrobirb.dev/invisble.png")
-                loaembed.description = "\n".join(OnLOA) if OnLOA else "> No users on LOA."
+                loaembed.description = (
+                    "\n".join(OnLOA) if OnLOA else "> No users on LOA."
+                )
                 embeds.append(loaembed)
 
-                failedembed = discord.Embed(title="Failed", color=discord.Color.brand_red())
+                failedembed = discord.Embed(
+                    title="Failed", color=discord.Color.brand_red()
+                )
                 failedembed.set_image(url="https://www.astrobirb.dev/invisble.png")
-                failedembed.description = "\n".join(failed) if failed else "> No users failed the quota."
+                failedembed.description = (
+                    "\n".join(failed) if failed else "> No users failed the quota."
+                )
                 embeds.append(failedembed)
 
                 if channel:

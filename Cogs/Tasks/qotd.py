@@ -5,9 +5,7 @@ import datetime
 from utils.emojis import *
 import random
 
-
 import asyncio
-import logging
 from utils.Module import ModuleCheck
 
 MONGO_URL = os.getenv("MONGO_URL")
@@ -19,14 +17,16 @@ import asyncio
 
 class qotd(commands.Cog):
     def __init__(self, client: commands.Bot):
+
         self.client = client
         self.semaphore = asyncio.Semaphore(10)
+        client.Tasks.add("QOTD")
 
-    async def fetch_question(self, used_questions, server: discord.Guild):
+    async def FetchQuestion(self, Used, server: discord.Guild):
         questionresult = (
             await self.client.db["Question Database"].find({}).to_list(length=None)
         )
-        Unusued = [q for q in questionresult if q["question"] not in used_questions]
+        Unusued = [q for q in questionresult if q["question"] not in Used]
 
         if not Unusued:
             await self.client.db["qotd"].update_one(
@@ -50,7 +50,7 @@ class qotd(commands.Cog):
                     return
 
                 messages = results.get("messages", [])
-                question = await self.fetch_question(messages, guild)
+                question = await self.FetchQuestion(messages, guild)
                 if question:
                     messages.append(question)
 
@@ -99,10 +99,10 @@ class qotd(commands.Cog):
                             "messages": messages,
                             "day": day,
                             "LastMessage": {
-                                'id': msg.id,
-                                'channel_id': msg.channel.id,
-                                'question': question
-                            }
+                                "id": msg.id,
+                                "channel_id": msg.channel.id,
+                                "question": question,
+                            },
                         }
                     },
                     upsert=True,
@@ -128,7 +128,6 @@ class qotd(commands.Cog):
 
     @tasks.loop(minutes=5, reconnect=True)
     async def sendqotd(self) -> None:
-        print("[👀] Checking QOTD")
         result = None
         filter = {"nextdate": {"$lte": datetime.datetime.utcnow()}}
         if bool(environment == "custom"):

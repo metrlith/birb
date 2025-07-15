@@ -13,6 +13,7 @@ import logging
 
 from discord.ext import commands, tasks
 from motor.motor_asyncio import AsyncIOMotorClient
+
 # import pymongo
 from Cogs.Modules.promotions import SyncCommands
 from Cogs.Events.on_suggestion import Voting as Voti
@@ -59,6 +60,7 @@ SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
 
+
 if not (TOKEN or MONGO_URL, PREFIX):
     print("[❌] Missing .env variables. [TOKEN, MONGO_URL]")
     sys.exit(1)
@@ -84,12 +86,14 @@ if os.getenv("SENTRY_URL", None):
 class Client(commands.AutoShardedBot):
     def __init__(self):
         self._initialize_databases()
+    
         self._initialize_maintenance_flags()
         self.cached_commands = {}
         intents = self._initialize_intents()
         self._initialize_super(intents)
         self.client = client
         self.cogslist = self._initialize_cogslist()
+        self.Tasks = set()
         if environment != "custom":
             self.cogslist.extend(["utils.api", "utils.dokploy"])
         if os.getenv("STAFF"):
@@ -300,6 +304,7 @@ class Client(commands.AutoShardedBot):
             if not view.get("Panels"):
                 return
             for panel_name in view.get("Panels"):
+
                 sub = await self.db["Panels"].find_one(
                     {
                         "guild": view.get("guild"),
@@ -421,6 +426,9 @@ class Client(commands.AutoShardedBot):
             print("[✅] successfully connected to MongoDB")
         except Exception as e:
             print(f"[❌] Failed to connect to MongoDB: {e}")
+        T = "\n".join(f"- {task}" for task in self.Tasks)
+        if len(self.Tasks) > 0:
+            print(f"[📝] Tasks Loaded:\n{T}")
 
     async def _set_custom_status(self):
         activity2 = discord.CustomActivity(name=f"{STATUS}")

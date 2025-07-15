@@ -13,11 +13,11 @@ guildid = os.getenv("CUSTOM_GUILD")
 class expiration(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
-        self.CheckInfractions.start()
-        print("[✅] Infraction Expiration loop started")
+        self.Task.start()
+        client.Tasks.add("Infraction Exp")
 
     @tasks.loop(minutes=30, reconnect=True)
-    async def CheckInfractions(self):
+    async def Task(self):
         if self.client.infractions_maintenance:
             return
 
@@ -43,7 +43,7 @@ class expiration(commands.Cog):
             if infraction.get("expiration") <= datetime.utcnow():
                 await self.client.db["infractions"].update_one(
                     {"_id": infraction.get("_id")}, {"$set": {"expired": True}}
-                )                
+                )
                 ActionType = await self.client.db["infractiontypeactions"].find_one(
                     {
                         "name": infraction.get("type"),
@@ -92,7 +92,6 @@ class expiration(commands.Cog):
 
                 except (discord.HTTPException, discord.NotFound):
                     pass
-
 
                 del infraction
         del infractions

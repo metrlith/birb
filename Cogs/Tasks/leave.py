@@ -5,6 +5,7 @@ from typing import Union
 from discord.ext import commands, tasks
 import os
 
+
 async def TimeLeftz(loa: dict) -> Union[int, str]:
     if not loa or not loa.get("start_time") or not loa.get("end_time"):
         return "N/A"
@@ -27,39 +28,39 @@ class Leave(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.LeaveExpiration.start()
-        self.ScheduledLOA.start()
-        print("[✅] Leave loops started")
+        self.ExpTask.start()
+        self.SchTasks.start()
+        self.client.Tasks.add("ExpTask")
+        self.client.Tasks.add("SchTask")
 
     @tasks.loop(seconds=10)
-    async def LeaveExpiration(self):
-        if os.getenv('CUSTOM_GUILD'):
-         LOAs = (
-            await self.client.db["loa"]
-            .find(
-                {
-                    "start_time": {"$exists": True},
-                    "end_time": {"$exists": True},
-                    "active": True,
-                    "guild_id": int(os.getenv('CUSTOM_GUILD'))
-                    
-                }
+    async def ExpTask(self):
+        if os.getenv("CUSTOM_GUILD"):
+            LOAs = (
+                await self.client.db["loa"]
+                .find(
+                    {
+                        "start_time": {"$exists": True},
+                        "end_time": {"$exists": True},
+                        "active": True,
+                        "guild_id": int(os.getenv("CUSTOM_GUILD")),
+                    }
+                )
+                .to_list(length=None)
             )
-            .to_list(length=None))
         else:
-            
-        
-         LOAs = (
-            await self.client.db["loa"]
-            .find(
-                {
-                    "start_time": {"$exists": True},
-                    "end_time": {"$exists": True},
-                    "active": True,
-                    
-                }
+
+            LOAs = (
+                await self.client.db["loa"]
+                .find(
+                    {
+                        "start_time": {"$exists": True},
+                        "end_time": {"$exists": True},
+                        "active": True,
+                    }
+                )
+                .to_list(length=None)
             )
-            .to_list(length=None))
         semaphore = asyncio.Semaphore(3)
 
         async def Process(loa):
@@ -77,36 +78,36 @@ class Leave(commands.Cog):
         await asyncio.gather(*(Process(loa) for loa in LOAs))
 
     @tasks.loop(seconds=10)
-    async def ScheduledLOA(self):
-        if os.getenv('CUSTOM_GUILD'):
-         LOAs = (
-            await self.client.db["loa"]
-            .find(
-                {
-                    "start_time": {"$exists": True},
-                    "end_time": {"$exists": True},
-                    "scheduled": True,
-                    "active": False,
-                    "request": False,
-                    "guild_id": int(os.getenv('CUSTOM_GUILD'))
-                }
+    async def SchTasks(self):
+        if os.getenv("CUSTOM_GUILD"):
+            LOAs = (
+                await self.client.db["loa"]
+                .find(
+                    {
+                        "start_time": {"$exists": True},
+                        "end_time": {"$exists": True},
+                        "scheduled": True,
+                        "active": False,
+                        "request": False,
+                        "guild_id": int(os.getenv("CUSTOM_GUILD")),
+                    }
+                )
+                .to_list(length=None)
             )
-            .to_list(length=None))
         else:
             LOAs = (
-            await self.client.db["loa"]
-            .find(
-                {
-                    "start_time": {"$exists": True},
-                    "end_time": {"$exists": True},
-                    "scheduled": True,
-                    "active": False,
-                    "request": False,
-                }
+                await self.client.db["loa"]
+                .find(
+                    {
+                        "start_time": {"$exists": True},
+                        "end_time": {"$exists": True},
+                        "scheduled": True,
+                        "active": False,
+                        "request": False,
+                    }
+                )
+                .to_list(length=None)
             )
-            .to_list(length=None)
-        )
-        
 
         semaphore = asyncio.Semaphore(3)
 
