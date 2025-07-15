@@ -2,6 +2,7 @@ import os
 import random
 import string
 import re
+import asyncio
 
 import discord
 from discord.ext import commands, tasks
@@ -27,229 +28,143 @@ class activityauto(commands.Cog):
     async def quota_activity(self):
         print("[INFO] Checking for quota activity")
         if environment == "custom":
-            autoactivityresult = (
-                await self.client.db["auto activity"]
-                .find({"guild_id": int(guildid)})
-                .to_list(length=None)
-            )
+            autoactivityresult = await self.client.db["auto activity"].find({"guild_id": int(guildid)}).to_list(length=None)
         else:
-            autoactivityresult = (
-                await self.client.db["auto activity"].find({}).to_list(length=None)
-            )
-        if autoactivityresult:
+            autoactivityresult = await self.client.db["auto activity"].find({}).to_list(length=None)
 
-            for data in autoactivityresult:
-                try:
-                    if data.get("enabled", False) is False:
-                        continue
-                    if not await ModuleCheck(data.get("guild_id", 0), "Quota"):
-                        continue
-                    try:
-                        channel = self.client.get_channel(data.get("channel_id", None))
-                    except (discord.HTTPException, discord.NotFound):
-                        print(
-                            f"[ERROR] Channel {data.get('channel_id', None)} not found."
-                        )
-                        pass
-                    if not channel:
-                        continue
-                    days = [
-                        "monday",
-                        "tuesday",
-                        "wednesday",
-                        "thursday",
-                        "friday",
-                        "saturday",
-                        "sunday",
-                    ]
-                    nextdate = data.get("nextdate", None)
-                    day = data.get("day", "").lower()
-                    current_day_index = datetime.now().weekday()
-                    if day not in days:
-                        continue
-                    Specified = days.index(day)
-                    Days = (Specified - current_day_index) % 7
-                    if Days == 0:
-                        if datetime.now() < nextdate:
-                            next_occurrence_date = datetime.now()
-                        else:
-                            next_occurrence_date = datetime.now() + timedelta(days=7)
-                    else:
-                        next_occurrence_date = datetime.now() + timedelta(days=Days)
+        if not autoactivityresult:
+            return
 
-                    if next_occurrence_date < datetime.now():
-                        next_occurrence_date = datetime.now() + timedelta(days=7)
-
-                    if not datetime.now() >= nextdate:
-                        continue
-
-                    if datetime.now() >= nextdate:
-
-                        try:
-                            guild = await self.client.fetch_guild(
-                                data.get("guild_id", None)
-                            )
-                        except (discord.HTTPException, discord.NotFound):
-                            continue
-                        if not guild:
-                            continue
-                        await self.client.db["auto activity"].update_one(
-                            {"guild_id": guild.id},
-                            {
-                                "$set": {
-                                    "nextdate": next_occurrence_date,
-                                    "lastposted": datetime.now(),
-                                }
-                            },
-                        )
-
-                        print(
-                            f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!"
-                        )
-                        if guild:
-                            result = (
-                                await self.client.qdb["auto activity"]
-                                .find({"guild_id": guild.id})
-                                .to_list(length=None)
-                            )
-                            passed = []
-                            failed = []
-                            on_loa = []
-                            failedids = []
-                            if result:
-                                for data in result:
-                                    OnLOA = False
-
-                                    try:
-                                        user = await guild.fetch_member(
-                                            data.get("user_id", None)
-                                        )
-                                    except (discord.HTTPException, discord.NotFound):
-                                        continue
-                                    if not user:
-                                        continue
-                                    if user:
-                                        if not await check_admin_and_staff(guild, user):
-                                            continue
-                                        result = await self.client.qdb[
-                                            "messages"
-                                        ].find_one(
-                                            {"guild_id": guild.id, "user_id": user.id}
-                                        )
-                                        Config = await self.client.config.find_one(
-                                            {"_id": guild.id}
-                                        )
-                                        if Config is None:
-                                            continue
-                                        if not Config.get("Message Quota"):
-                                            return
-
-                                        if not result:
-                                            continue
-
-                                        if Config.get("LOA", {}).get("role"):
-                                            OnLOA = any(
-                                                role.id
-                                                == Config.get("LOA", {}).get("role")
-                                                for role in user.roles
-                                            )
-
-                                        Quota = Config.get("Message Quota", {}).get(
-                                            "quota", 0
-                                        )
-                                        MessageCount = result.get("message_count", 0)
-                                        if OnLOA:
-                                            on_loa.append(
-                                                f"> **{user.name}** • `{MessageCount}` messages"
-                                            )
-                                            continue
-
-                                        if int(MessageCount) >= int(Quota):
-                                            passed.append(
-                                                f"> **{user.name}** • `{MessageCount}` messages"
-                                            )
-                                        else:
-                                            failed.append(
-                                                f"> **{user.name}** • `{MessageCount}` messages"
-                                            )
-                                            failedids.append(user.id)
-
-                            else:
-                                continue
-                            await self.client.AutoActivity.update_one(
-                                {"guild_id": guild.id}, {"$set": {"failed": failedids}}
-                            )
-                            passed.sort(
-                                key=lambda x: int(
-                                    x.split("•")[-1].strip().split(" ")[0].strip("`")
-                                ),
-                                reverse=True,
-                            )
-                            failed.sort(
-                                key=lambda x: int(
-                                    x.split("•")[-1].strip().split(" ")[0].strip("`")
-                                ),
-                                reverse=True,
-                            )
-                            on_loa.sort(
-                                key=lambda x: int(
-                                    x.split("•")[-1].strip().split(" ")[0].strip("`")
-                                ),
-                                reverse=True,
-                            )
-                            passedembed = discord.Embed(
-                                title="Passed", color=discord.Color.brand_green()
-                            )
-                            passedembed.set_image(
-                                url="https://www.astrobirb.dev/invisble.png"
-                            )
-                            if passed:
-                                passedembed.description = "\n".join(passed)
-                            else:
-                                passedembed.description = "> No users passed the quota."
-
-                            loaembed = discord.Embed(
-                                title="On LOA", color=discord.Color.purple()
-                            )
-                            loaembed.set_image(
-                                url="https://www.astrobirb.dev/invisble.png"
-                            )
-                            if on_loa:
-                                loaembed.description = "\n".join(on_loa)
-                            else:
-                                loaembed.description = "> No users on LOA."
-
-                            failedembed = discord.Embed(
-                                title="Failed", color=discord.Color.brand_red()
-                            )
-                            failedembed.set_image(
-                                url="https://www.astrobirb.dev/invisble.png"
-                            )
-                            if failed:
-                                failedembed.description = "\n".join(failed)
-                            else:
-                                failedembed.description = "> No users failed the quota."
-                            if channel:
-                                view = ResetLeaderboard(failedids)
-                                try:
-                                    await channel.send(
-                                        embeds=[passedembed, loaembed, failedembed],
-                                        view=view,
-                                    )
-                                    print(
-                                        f"[Activity Auto] succesfully sent @{guild.name}"
-                                    )
-                                except discord.Forbidden:
-                                    print("[ERROR] Channel not found")
-                                    return
-                            else:
-                                print("[NOTFOUND] Channel not found")
-                                continue
-                except Exception as e:
-                    print(f"[QUOTA ERROR] {e}")
+        for data in autoactivityresult:
+            try:
+                if not data.get("enabled", False):
+                    continue
+                if not await ModuleCheck(data.get("guild_id", 0), "Quota"):
                     continue
 
-                del autoactivityresult
+                channel = self.client.get_channel(data.get("channel_id"))
+                if not channel:
+                    continue
+
+                days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+                nextdate = data.get("nextdate")
+                day = data.get("day", "").lower()
+                current_day_index = datetime.now().weekday()
+                if day not in days:
+                    continue
+
+                specified = days.index(day)
+                days_until = (specified - current_day_index) % 7
+                if days_until == 0:
+                    if datetime.now() < nextdate:
+                        next_occurrence_date = datetime.now()
+                    else:
+                        next_occurrence_date = datetime.now() + timedelta(days=7)
+                else:
+                    next_occurrence_date = datetime.now() + timedelta(days=days_until)
+
+                if next_occurrence_date < datetime.now():
+                    next_occurrence_date = datetime.now() + timedelta(days=7)
+
+                if datetime.now() < nextdate:
+                    continue
+
+                guild = await self.client.fetch_guild(data.get("guild_id"))
+                if not guild:
+                    continue
+
+                await self.client.db["auto activity"].update_one(
+                    {"guild_id": guild.id},
+                    {"$set": {"nextdate": next_occurrence_date, "lastposted": datetime.now()}},
+                )
+
+                print(f"[⏰] Sending Activity @{guild.name} next post is {next_occurrence_date}!")
+
+                result = await self.client.qdb["auto activity"].find({"guild_id": guild.id}).to_list(length=None)
+                if not result:
+                    continue
+
+                passed = []
+                failed = []
+                on_loa = []
+                failedids = []
+
+                semaphore = asyncio.Semaphore(10)
+
+                async def process_user(userdata):
+                    async with semaphore:
+                        try:
+                            user = await guild.fetch_member(userdata.get("user_id"))
+                            if not user or not await check_admin_and_staff(guild, user):
+                                return
+
+                            message_data = await self.client.qdb["messages"].find_one({"guild_id": guild.id, "user_id": user.id})
+                            config = await self.client.config.find_one({"_id": guild.id})
+                            if not config or not config.get("Message Quota") or not message_data:
+                                return
+
+                            loa_role_id = config.get("LOA", {}).get("role")
+                            on_loa_status = any(role.id == loa_role_id for role in user.roles) if loa_role_id else False
+
+                            quota = config.get("Message Quota", {}).get("quota", 0)
+                            message_count = message_data.get("message_count", 0)
+
+                            entry = f"> **{user.name}** • `{message_count}` messages"
+
+                            if on_loa_status:
+                                on_loa.append(entry)
+                            elif message_count >= quota:
+                                passed.append(entry)
+                            else:
+                                failed.append(entry)
+                                failedids.append(user.id)
+
+                        except Exception as e:
+                            print(f"[UserProcessError] {e}")
+
+                await asyncio.gather(*(process_user(userdata) for userdata in result))
+
+                await self.client.db["auto activity"].update_one({"guild_id": guild.id}, {"$set": {"failed": failedids}})
+
+                def sort_key(entry):
+                    return int(entry.split("•")[-1].strip().split(" ")[0].strip("`"))
+
+                passed.sort(key=sort_key, reverse=True)
+                failed.sort(key=sort_key, reverse=True)
+                on_loa.sort(key=sort_key, reverse=True)
+
+                embeds = []
+
+                passedembed = discord.Embed(title="Passed", color=discord.Color.brand_green())
+                passedembed.set_image(url="https://www.astrobirb.dev/invisble.png")
+                passedembed.description = "\n".join(passed) if passed else "> No users passed the quota."
+                embeds.append(passedembed)
+
+                loaembed = discord.Embed(title="On LOA", color=discord.Color.purple())
+                loaembed.set_image(url="https://www.astrobirb.dev/invisble.png")
+                loaembed.description = "\n".join(on_loa) if on_loa else "> No users on LOA."
+                embeds.append(loaembed)
+
+                failedembed = discord.Embed(title="Failed", color=discord.Color.brand_red())
+                failedembed.set_image(url="https://www.astrobirb.dev/invisble.png")
+                failedembed.description = "\n".join(failed) if failed else "> No users failed the quota."
+                embeds.append(failedembed)
+
+                if channel:
+                    view = ResetLeaderboard(failedids)
+                    try:
+                        await channel.send(embeds=embeds, view=view)
+                        print(f"[Activity Auto] successfully sent @{guild.name}")
+                    except discord.Forbidden:
+                        print("[ERROR] Cannot send to channel.")
+                else:
+                    print("[NOTFOUND] Channel not found")
+
+            except Exception as e:
+                print(f"[QUOTA ERROR] {e}")
+                continue
+
+        del autoactivityresult
 
 
 class ResetLeaderboard(discord.ui.View):
