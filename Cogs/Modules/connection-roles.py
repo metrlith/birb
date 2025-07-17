@@ -31,37 +31,35 @@ class ConnectionRoles(commands.Cog):
             return
 
         await ctx.defer()
-        roleresult = await self.client.db['connectionroles'].find({"guild": ctx.guild.id}).to_list(
+        Roles = await self.client.db['connectionroles'].find({"guild": ctx.guild.id}).to_list(
             length=100000
         )
-        if len(roleresult) == 0:
+        if len(Roles) == 0:
             await ctx.send(
-                f"{no} **{ctx.author.display_name}**, There are no connection roles.",
+                f"{no} **{ctx.author.display_name}**, there are no connection roles.",
             )
             return
         if not ctx.guild.chunked:
             await ctx.guild.chunk()
 
-        total_members = len(ctx.guild.members)
-        updated_members = 0
+        Total = len(ctx.guild.members)
+        Updated = 0
         msg = await ctx.send(
             "<a:astroloading:1245681595546079285> Syncing connection roles..."
         )
 
-        for role in roleresult:
-            child_id = role["child"]
-            parent_id = role["parent"]
-            child_role = ctx.guild.get_role(child_id)
-            parent_role = ctx.guild.get_role(parent_id)
-            if child_role and parent_role:
-                for i, member in enumerate(ctx.guild.members):
-                    if parent_role in member.roles:
-                        if child_role not in member.roles:
+        for role in Roles:
+            Child = ctx.guild.get_role(role["child"])
+            Parent = ctx.guild.get_role(role["parent"])
+            if Child and Parent:
+                for member in ctx.guild.members:
+                    if Parent in member.roles:
+                        if Child not in member.roles:
                             try:
-                                await member.add_roles(child_role)
-                                updated_members += 1
+                                await member.add_roles(Child)
+                                Updated += 1
                                 print(
-                                    f"[Connection Roles] Added {child_role.name} to {member.display_name}."
+                                    f"[Connection Roles] Added {Child.name} to {member.display_name}."
                                 )
                             except discord.Forbidden:
                                 await ctx.send(
@@ -74,14 +72,10 @@ class ConnectionRoles(commands.Cog):
                                 )
                                 return
 
-                    if i % 10 == 0:
-                        await msg.edit(
-                            content=f"<a:astroloading:1245681595546079285> Syncing connection roles... {i}/{total_members} members processed."
-                        )
-                break
-        await msg.edit(
-            content=f"{tick} **{ctx.author.display_name}**, Connection roles have been synced. {updated_members}/{total_members} members updated."
-        )
+                await msg.edit(
+                    content=f"<a:astroloading:1245681595546079285> Syncing connection roles... {len(ctx.guild.members)}/{Total} members processed."
+                )
+
 
     @connectionrole.command(
         name="add", description="Add a connection role to your server"
