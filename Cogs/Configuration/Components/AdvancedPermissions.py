@@ -116,11 +116,8 @@ class ManagePermissions(discord.ui.View):
                     emoji="<:command1:1223062616872583289>",
                 )
             )
-
-        chunks = [commands[i : i + 25] for i in range(0, len(commands), 25)]
-        view = PaginateViews(chunks)
+        view = PaginateViews(Commands, self.author, commands)
         view.Previous.disabled = True
-        view.add_item(Commands(self.author, commands))
         embed = discord.Embed(color=discord.Color.dark_embed())
         embed.set_author(
             name="Select the commands you want to add permissions to.",
@@ -143,23 +140,20 @@ class ManagePermissions(discord.ui.View):
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None or "Advanced Permissions" not in config:
             return await interaction.followup.send(
-                content=f"{redx} There are no advanced permissions set.", ephemeral=True
+                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.", ephemeral=True
             )
         commands = list(config["Advanced Permissions"].keys())
         if not commands:
             return await interaction.followup.send(
-                content=f"{redx} There are no advanced permissions set.", ephemeral=True
+                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.", ephemeral=True
             )
-
-        view = discord.ui.View()
-        view.add_item(RemoveCommands(self.author, commands))
+        view = PaginateViews(RemoveCommands, self.author, commands)
         await interaction.followup.send(view=view, ephemeral=True)
 
 
 class RemoveCommands(discord.ui.Select):
     def __init__(self, author: discord.Member, commands: list):
         super().__init__(
-            placeholder="Select Permissions To Reset",
             min_values=0,
             max_values=len(commands),
             options=[
@@ -195,7 +189,7 @@ class RemoveCommands(discord.ui.Select):
             {"_id": interaction.guild.id}, {"$set": config}
         )
         await interaction.edit_original_response(
-            content=f"{tick} Successfully reset advanced permissions.",
+            content=f"{tick} **{interaction.user.display_name},** I've successfully reset advanced permissions.",
             view=None,
             embed=None,
         )
@@ -236,44 +230,41 @@ class Commands(discord.ui.Select):
 
 
 class PaginateViews(discord.ui.View):
-    def __init__(self, options: list):
+    def __init__(self, Clas: type[discord.ui.Select], author: discord.Member, Options: list, *Args):
         super().__init__()
         self.current = 0
-        self.options = options
+        self.author = author
+        self.Class = Clas
+        self.Args = Args
+        self.chunks = [Options[i:i + 25] for i in range(0, len(Options), 25)]
 
-    async def PaginateView(self, interaction: discord.Interaction):
+        self.add_item(self.Class(self.author, *self.Args, self.chunks[self.current]))
 
-        view = PaginateViews(self.options)
-        view.current = self.current
-        if self.current == 0:
-            view.children[0].disabled = True
-        else:
-            view.children[0].disabled = False
-        if self.current == len(self.options) - 1:
-            view.children[1].disabled = True
-        else:
-            view.children[1].disabled = False
+    async def update_view(self, interaction: discord.Interaction):
+        self.clear_items()
+        self.add_item(self.Class(self.author, *self.Args, self.chunks[self.current]))
 
-        view.add_item(Commands(interaction.user, self.options[self.current]))
-        await interaction.response.edit_message(view=view, content="")
+        self.Previous.disabled = self.current == 0
+        self.Next.disabled = self.current == len(self.chunks) - 1
+
+        self.add_item(self.Previous)
+        self.add_item(self.Next)
+
+        await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="<", style=discord.ButtonStyle.gray, row=2)
-    async def Previous(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ):
-        if self.current == 0:
+    async def Previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author.id or self.current == 0:
             return
         self.current -= 1
-        await self.PaginateView(interaction)
+        await self.update_view(interaction)
 
     @discord.ui.button(label=">", style=discord.ButtonStyle.gray, row=2)
     async def Next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.current == len(self.options) - 1:
-            print(f"{self.current} == {len(self.options) - 1} k")
+        if interaction.user.id != self.author.id or self.current >= len(self.chunks) - 1:
             return
-        print(bool(self.current == len(self.options) - 1))
         self.current += 1
-        await self.PaginateView(interaction)
+        await self.update_view(interaction)
 
 
 class Roles(discord.ui.View):
@@ -322,7 +313,7 @@ class RoleSelect(discord.ui.RoleSelect):
             {"_id": interaction.guild.id}, {"$set": config}
         )
         await interaction.response.edit_message(
-            content=f"{tick} Successfully updated advanced permissions.",
+            content=f"{tick} **{interaction.user.display_name},** I've successfully updated advanced permissions.",
             view=None,
             embed=None,
         )
