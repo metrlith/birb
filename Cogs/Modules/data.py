@@ -184,7 +184,7 @@ class ClearData(discord.ui.View):
         Embed = discord.Embed(color=discord.Color.dark_embed())
         if self.Type == "suspensions":
             await interaction.client.config.update_one(
-                {"_id": interaction.guild.id}, {"$unset": {"Modmail": 1}}
+                {"_id": interaction.guild.id}, {"$unset": {"Suspension": 1}}
             )
             config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
@@ -217,7 +217,7 @@ class ClearData(discord.ui.View):
             )
             embed = await LOAEmbed(interaction, config, Embed)
 
-        elif self.Type == "modmail":
+        elif self.Type == "Modmail":
             await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$unset": {"Modmail": 1}}
             )
