@@ -974,7 +974,7 @@ class WebhookDesign(discord.ui.Modal):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         if not await premium(interaction.guild.id):
             return await interaction.response.send_message(
-                embed=NoPremium, view=Support()
+                embed=NoPremium(), view=Support()
             )
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if Config is None:
