@@ -3,8 +3,9 @@ import discord
 from discord.ext import commands, tasks
 import datetime
 from utils.emojis import *
+from utils.permissions import premium
 import random
-
+import aiohttp
 import asyncio
 from utils.Module import ModuleCheck
 
@@ -83,13 +84,89 @@ class qotd(commands.Cog):
                     text=f"Day #{day}",
                     icon_url="https://cdn.discordapp.com/emojis/1231270156647403630.webp?size=96&quality=lossless",
                 )
+                msg = None
+                hook = None
+                Status = await premium(guild.id)
+                QOTDSettings = {}
+                WebhookSettings = {}
 
-                msg = await channel.send(
-                    content=pingmsg,
-                    embed=embed,
-                    allowed_mentions=discord.AllowedMentions(roles=True),
-                )
+                Config = await self.client.config.find_one({"_id": guild.id}) or {}
 
+                if isinstance(Config, dict):
+                    QOTDSettings = Config.get("QOTD", {})
+                    if not isinstance(QOTDSettings, dict):
+                        QOTDSettings = {}
+
+                    WebhookSettings = QOTDSettings.get("Webhook", {})
+                    if not isinstance(WebhookSettings, dict):
+                        WebhookSettings = {}
+
+                if (
+                    WebhookSettings
+                    and Status
+                    and WebhookSettings.get("Enabled") is True
+                ):
+
+                    WebhookDoc = await self.client.db["Webhooks"].find_one(
+                        {"Type": "QOTD", "Channel": channel.id, "Guild": guild.id}
+                    )
+
+                    async def CreateHook(channel: discord.TextChannel):
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(
+                                self.client.user.display_avatar.url
+                            ) as resp:
+                                if resp.status != 200:
+                                    return None
+                                Btyes = await resp.read()
+                        try:
+                            hook = await channel.create_webhook(
+                                name="Birb", avatar=Btyes
+                            )
+
+                            await self.client.db["Webhooks"].update_one(
+                                {
+                                    "Type": "QOTD",
+                                    "Channel": channel.id,
+                                    "Guild": guild.id,
+                                },
+                                {"$set": {"Id": hook.id}},
+                                upsert=True,
+                            )
+                            return hook
+                        except discord.Forbidden:
+                            return
+
+                    if not WebhookDoc or not WebhookDoc.get("Id"):
+                        hook = await CreateHook(channel)
+
+                    hook = (
+                        hook
+                        or await self.client.fetch_webhook(
+                            webhook_id=WebhookDoc.get("Id")
+                        )
+                        or await CreateHook(channel)
+                    )
+
+                    if not hook:
+                        return
+
+                    hook: discord.Webhook
+                    msg = await hook.send(
+                        content=pingmsg,
+                        embed=embed,
+                        allowed_mentions=discord.AllowedMentions(roles=True),
+                        avatar_url=WebhookSettings.get("Avatar") or None,
+                        username=WebhookSettings.get("Username") or "Birb",
+                        wait=True,
+                    )
+
+                else:
+                    msg = await channel.send(
+                        content=pingmsg,
+                        embed=embed,
+                        allowed_mentions=discord.AllowedMentions(roles=True),
+                    )
                 await self.client.db["qotd"].update_one(
                     {"guild_id": guild_id},
                     {
@@ -135,7 +212,6 @@ class qotd(commands.Cog):
         result = await self.client.db["qotd"].find(filter).to_list(length=None)
         if not result:
             return
-
         tasks = [self.ProcesssQOTD(results) for results in result]
         await asyncio.gather(*tasks)
 

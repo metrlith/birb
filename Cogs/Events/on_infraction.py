@@ -2,11 +2,12 @@ import discord
 from discord.ext import commands
 import os
 from bson import ObjectId
-
+import aiohttp
 import logging
 from utils.erm import voidShift
 import asyncio
 import datetime
+from utils.permissions import premium
 import random
 import string
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
@@ -234,16 +235,84 @@ class on_infractions(commands.Cog):
                 N = None
             if N:
                 channel = N
+        msg = None
+        hook = None
+        Status = await premium(guild.id)
 
-        try:
-            msg = await channel.send(
-                staff.mention,
-                embed=embed,
-                view=view,
-                allowed_mentions=discord.AllowedMentions(users=True),
+        if (
+            Settings.get("Infraction", {}).get("Webhook", None)
+            and Status
+            and Settings.get("Infraction", {}).get("Webhook", {}).get("Enabled") is True
+        ):
+            Webhook = await self.client.db["Webhooks"].find_one(
+                {"Type": "IF", "Channel": channel.id, "Guild": guild.id}
             )
-        except (discord.Forbidden, discord.HTTPException, discord.NotFound):
-            return
+
+            async def CreateHook(channel: discord.TextChannel):
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(self.client.user.display_avatar.url) as resp:
+                        if resp.status != 200:
+                            return None
+                        Btyes = await resp.read()
+                try:
+                    hook = await channel.create_webhook(name="Birb", avatar=Btyes)
+
+                    await self.client.db["Webhooks"].update_one(
+                        {"Type": "IF", "Channel": channel.id, "Guild": guild.id},
+                        {"$set": {"Id": hook.id}},
+                        upsert=True,
+                    )
+                    return hook
+                except discord.Forbidden:
+                    return
+
+            if not Webhook or Webhook.get("Id"):
+                hook = await CreateHook(channel)
+
+            hook = (
+                hook
+                or await self.client.fetch_webhook(webhook_id=Webhook.get("Id"))
+                or await CreateHook(channel)
+            )
+
+            if not hook:
+                return
+
+            hook: discord.Webhook
+
+            WS = Settings.get("Infraction").get("Webhook", {})
+            if view is not None:
+                msg = await hook.send(
+                    staff.mention,
+                    embed=embed,
+                    view=view,
+                    allowed_mentions=discord.AllowedMentions(users=True),
+                    avatar_url=WS.get("Avatar") or None,
+                    username=WS.get("Username") or "Birb",
+                    wait=True,
+                )
+            else:
+                msg: discord.WebhookMessage = await hook.send(
+                    staff.mention,
+                    embed=embed,
+                    allowed_mentions=discord.AllowedMentions(users=True),
+                    avatar_url=WS.get("Avatar") or None,
+                    username=WS.get("Username") or "Birb",
+                    wait=True,
+                )
+
+        else:
+            try:
+                msg: discord.Message = await channel.send(
+                    staff.mention,
+                    embed=embed,
+                    view=view,
+                    allowed_mentions=discord.AllowedMentions(users=True),
+                )
+
+            except (discord.Forbidden, discord.HTTPException, discord.NotFound):
+                return None
+
         if Type is None:
             await self.client.db["infractions"].update_one(
                 {"_id": objectid},

@@ -1,6 +1,9 @@
 import discord
 from utils.emojis import *
 from datetime import datetime, timedelta
+import re
+from utils.permissions import premium
+from utils.HelpEmbeds import NoPremium, Support
 
 
 class QOTDOptions(discord.ui.Select):
@@ -43,6 +46,11 @@ class QOTDOptions(discord.ui.Select):
                 discord.SelectOption(
                     label="Channel", emoji="<:tag:1234998802948034721>"
                 ),
+                discord.SelectOption(
+                    label="Webhook",
+                    description="Send it as a webhook.",
+                    emoji="<:Webhook:1400197752339824821>",
+                ),
                 discord.SelectOption(label="Ping", emoji="<:Ping:1298301862906298378>"),
                 discord.SelectOption(
                     label="Preferences", emoji="<:leaf:1160541147320553562>"
@@ -66,6 +74,21 @@ class QOTDOptions(discord.ui.Select):
                 ),
                 view=view,
             )
+        elif option == "Webhook":
+            if not await premium(interaction.guild.id):
+                return await interaction.followup.send(embed=NoPremium, view=Support())
+
+            Config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
+
+            embed = await WebhookEmbed(interaction, Config)
+            view = WebButton(interaction.user)
+            view.add_item(WebhookToggle(interaction.user))
+            return await interaction.followup.send(
+                embed=embed, view=view, ephemeral=True
+            )
+
         elif option == "Stop QOTD":
 
             await interaction.client.db["qotd"].update_one(
@@ -87,6 +110,11 @@ class QOTDOptions(discord.ui.Select):
                 ),
                 discord.SelectOption(
                     label="Channel", emoji="<:tag:1234998802948034721>"
+                ),
+                discord.SelectOption(
+                    label="Webhook",
+                    description="Send it as a webhook.",
+                    emoji="<:Webhook:1400197752339824821>",
                 ),
                 discord.SelectOption(label="Ping", emoji="<:Ping:1298301862906298378>"),
                 discord.SelectOption(
@@ -285,6 +313,152 @@ class Preferences(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         await self.ToggleOption(interaction, button, "qotdthread")
+
+
+class WebhookDesign(discord.ui.Modal):
+    def __init__(self, author: discord.Member):
+        super().__init__(title="Webhook Design")
+        self.author = author
+        self.username = discord.ui.TextInput(
+            label="Username", placeholder="The username of the webhook"
+        )
+        self.AvatarURL = discord.ui.TextInput(
+            label="Avatar Link",
+            placeholder="A avatar link, I recommend using something like Imgur.",
+        )
+        self.add_item(self.username)
+        self.add_item(self.AvatarURL)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        if not await premium(interaction.guild.id):
+            return await interaction.response.send_message(
+                embed=NoPremium, view=Support()
+            )
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if Config is None:
+            Config = {"_id": interaction.guild.id, "QOTD": {"Webhook": {}}}
+
+        if "QOTD" not in Config:
+            Config["QOTD"] = {}
+        if "Webhook" not in Config["QOTD"]:
+            Config["QOTD"]["Webhook"] = {}
+
+        if self.AvatarURL is None:
+            self.AvatarURL = interaction.client.user.display_avatar.url
+        AV = self.AvatarURL.value.strip()
+        pattern = r"^https?://.*\.(png|jpg|jpeg|gif|webp)(\?.*)?$"
+        if not re.match(pattern, AV, re.IGNORECASE):
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** the avatar link provided is not a valid image URL!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config["QOTD"]["Webhook"] = {
+            "Username": self.username.value,
+            "Avatar": self.AvatarURL.value,
+        }
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
+        await interaction.response.edit_message(
+            embed=await WebhookEmbed(interaction, Config)
+        )
+
+
+class WebhookToggle(discord.ui.Select):
+    def __init__(self, author: discord.Member):
+        options = [
+            discord.SelectOption(
+                label="Enable",
+                value="enable",
+            ),
+            discord.SelectOption(label="Disable", value="disable"),
+        ]
+        super().__init__(
+            placeholder="Select", min_values=1, max_values=1, options=options
+        )
+        self.author = author
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not Config:
+            Config = {"QOTD": {}, "_id": interaction.guild.id}
+        if "QOTD" not in Config:
+            Config["QOTD"] = {}
+        if "Webhook" not in Config["QOTD"]:
+            Config["QOTD"]["Webhook"] = {}
+        if "Enabled" not in Config["QOTD"]["Webhook"]:
+            Config["QOTD"]["Webhook"]["Enabled"] = False
+        selection = self.values[0]
+        if selection == "enable":
+            if "Webhook" not in Config["QOTD"]:
+                Config["QOTD"]["Webhook"] = {}
+            Config["QOTD"]["Webhook"]["Enabled"] = True
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+        elif selection == "disable":
+            if "Webhook" not in Config["QOTD"]:
+                Config["QOTD"]["Webhook"] = {}
+            Config["QOTD"]["Webhook"]["Enabled"] = False
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+
+class WebButton(discord.ui.View):
+    def __init__(self, author: discord.Member):
+        super().__init__(timeout=None)
+        self.author = author
+
+    @discord.ui.button(
+        label="Customise Webhook", style=discord.ButtonStyle.blurple, row=3
+    )
+    async def B(self, I: discord.Interaction, B: discord.ui.Button):
+        await I.response.send_modal(WebhookDesign(self.author))
+
+
+async def WebhookEmbed(interaction: discord.Interaction, Config: dict):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+    if not Config:
+        Config = {"QOTD": {}, "_id": interaction.guild.id}
+
+    embed = discord.Embed()
+    embed.set_author(
+        name="Webhook",
+        icon_url="https://cdn.discordapp.com/emojis/1400197752339824821.webp?size=96",
+    )
+    WebhookSettings = Config.get("QOTD", {}).get("Webhook", {})
+    enabled = WebhookSettings.get("Enabled", False)
+    username = WebhookSettings.get("Username", None) or "Not Set"
+    avatar = WebhookSettings.get("Avatar", None) or "Not Set"
+    embed.add_field(
+        name="<:Webhook:1400197752339824821> Webhook Settings",
+        value=f"> {replytop} **Enabled:** {'True' if enabled else 'False'}\n> {replymiddle} **Username:** {username}\n> {replybottom} **Avatar:** {avatar}",
+    )
+    return embed
 
 
 async def QOTDEMbed(interaction: discord.Interaction, embed: discord.Embed):

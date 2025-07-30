@@ -3,6 +3,7 @@ import discord.http
 import traceback
 
 from utils.emojis import *
+import re
 
 
 from utils.format import IsSeperateBot
@@ -30,6 +31,11 @@ class InfractionOption(discord.ui.Select):
                     label="Infraction Approval",
                     description="Make infractions go through an approval system.",
                     emoji="<:Approval:1340271794694914058>",
+                ),
+                discord.SelectOption(
+                    label="Webhook",
+                    description="Send it as a webhook.",
+                    emoji="<:Webhook:1400197752339824821>",
                 ),
                 discord.SelectOption(
                     label="Preferences", emoji="<:leaf:1160541147320553562>"
@@ -87,6 +93,15 @@ class InfractionOption(discord.ui.Select):
                     interaction.message,
                 )
             )
+        elif selection == "Webhook":
+            if not await premium(interaction.guild.id):
+                return await interaction.followup.send(embed=NoPremium, view=Support())
+            
+            embed = await WebhookEmbed(interaction, Config)
+            view = WebButton(interaction.user)
+            view.add_item(WebhookToggle(interaction.user))
+            return await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+
         elif selection == "Infraction Types":
             view.add_item(ManageTypes(author=self.author, message=interaction.message))
         elif selection == "Preferences":
@@ -874,6 +889,124 @@ class RequiredRoles(discord.ui.RoleSelect):
         )
 
 
+class WebhookToggle(discord.ui.Select):
+    def __init__(self, author: discord.Member):
+        options = [
+            discord.SelectOption(
+                label="Enable",
+                value="enable",
+            ),
+            discord.SelectOption(label="Disable", value="disable"),
+        ]
+        super().__init__(
+            placeholder="Select", min_values=1, max_values=1, options=options
+        )
+        self.author = author
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not Config:
+            Config = {"Infraction": {}, "_id": interaction.guild.id}
+
+        if "Infraction" not in Config:
+            Config["Infraction"] = {}
+        if "Webhook" not in Config["Infraction"]:
+            Config["Infraction"]["Webhook"] = {}
+
+        if "Enabled" not in Config["Infraction"]["Webhook"]:
+            Config["Infraction"]["Webhook"]["Enabled"] = False      
+
+        selection = self.values[0]
+        if selection == "enable":
+            Config["Infraction"]["Webhook"]["Enabled"] = True
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+        elif selection == "disable":
+            Config["Infraction"]["Webhook"]["Enabled"] = False
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+class WebButton(discord.ui.View):
+    def __init__(self, author: discord.Member):
+        super().__init__(timeout=None)
+        self.author = author
+
+    @discord.ui.button(label="Customise Webhook", style=discord.ButtonStyle.blurple, row=3)
+    async def B(self, I: discord.Interaction, B: discord.ui.Button):
+        await I.response.send_modal(WebhookDesign(self.author))
+
+class WebhookDesign(discord.ui.Modal):
+    def __init__(self, author: discord.Member):
+        super().__init__(title="Webhook Design")
+        self.author = author
+        self.username = discord.ui.TextInput(
+            label="Username", placeholder="The username of the webhook"
+        )
+        self.AvatarURL = discord.ui.TextInput(
+            label="Avatar Link",
+            placeholder="A avatar link, I recommend using something like Imgur.",
+        )
+        self.add_item(self.username)
+        self.add_item(self.AvatarURL)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        if not await premium(interaction.guild.id):
+            return await interaction.response.send_message(
+                embed=NoPremium, view=Support()
+            )
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if Config is None:
+            Config = {"_id": interaction.guild.id, "Infraction": {"Webhook": {}}}
+        if "Infraction" not in Config:
+            Config["Infraction"] = {}
+        if "Webhook" not in Config["Infraction"]:
+            Config["Infraction"]["Webhook"] = {}
+        if self.AvatarURL is None:
+            self.AvatarURL = interaction.client.user.display_avatar.url
+        AV = self.AvatarURL.value.strip()
+        pattern = r"^https?://.*\.(png|jpg|jpeg|gif|webp)(\?.*)?$"
+        if not re.match(pattern, AV, re.IGNORECASE):
+            embed = discord.Embed(
+            description=f"{redx} **{interaction.user.display_name},** the avatar link provided is not a valid image URL!",
+            color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config["Infraction"]["Webhook"] = {
+            "Username": self.username.value,
+            "Avatar": self.AvatarURL.value,
+        }
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
+        await interaction.response.edit_message(
+            embed=await WebhookEmbed(interaction, Config)
+        )
+
+
 class LogChannel(discord.ui.ChannelSelect):
     def __init__(
         self,
@@ -900,9 +1033,7 @@ class LogChannel(discord.ui.ChannelSelect):
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        config = await interaction.client.config.find_one(
-            {"_id": interaction.guild.id}
-        )
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 
         config["Infraction"]["LogChannel"] = self.values[0].id
         await interaction.client.config.update_one(
@@ -1032,7 +1163,7 @@ class InfractionTypesAction(discord.ui.Select):
             )
             await interaction.response.edit_message(
                 content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
-                view=None
+                view=None,
             )
 
 
@@ -1216,6 +1347,28 @@ class ChangeGroupRole(discord.ui.Select):
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )
+
+
+async def WebhookEmbed(interaction: discord.Interaction, Config: dict):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+    if not Config:
+        Config = {"Infraction": {}, "_id": interaction.guild.id}
+
+    embed = discord.Embed()
+    embed.set_author(
+        name="Webhook",
+        icon_url="https://cdn.discordapp.com/emojis/1400197752339824821.webp?size=96"
+    )
+    WebhookSettings = Config.get('Infraction', {}).get('Webhook', {})
+    enabled = WebhookSettings.get('Enabled', False)
+    username = WebhookSettings.get('Username', None) or 'Not Set'
+    avatar = WebhookSettings.get('Avatar', None) or 'Not Set'
+    embed.add_field(
+        name="<:Webhook:1400197752339824821> Webhook Settings",
+        value=f"> {replytop} **Enabled:** {'True' if enabled else 'False'}\n> {replymiddle} **Username:** {username}\n> {replybottom} **Avatar:** {avatar}"
+    )
+    return embed
+
 
 
 async def InfractionEmbed(

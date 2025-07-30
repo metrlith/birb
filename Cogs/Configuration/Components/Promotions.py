@@ -1,8 +1,10 @@
 import discord
 import traceback
 from utils.emojis import *
-
+import re
 import typing
+from utils.permissions import premium
+from utils.HelpEmbeds import NoPremium, Support
 
 
 class PSelect(discord.ui.Select):
@@ -20,11 +22,16 @@ class PSelect(discord.ui.Select):
                 description="Choose which promotions system you want to use.",
                 emoji="<:system:1341493634733703300>",
             ),
-                discord.SelectOption(
-                    label="Promotion Audit Log",
-                    emoji="<:Log:1349431938926252115>",
-                    description="Logs for creation/void/modify.",
-                ),            
+            discord.SelectOption(
+                label="Webhook",
+                description="Send it as a webhook.",
+                emoji="<:Webhook:1400197752339824821>",
+            ),
+            discord.SelectOption(
+                label="Promotion Audit Log",
+                emoji="<:Log:1349431938926252115>",
+                description="Logs for creation/void/modify.",
+            ),
             discord.SelectOption(
                 label="Customise Embed", emoji="<:Customisation:1223063306131210322>"
             ),
@@ -33,11 +40,13 @@ class PSelect(discord.ui.Select):
             ),
         ]
         if system == "single":
-            options.append(discord.SelectOption(
-                label="Hierarchy",
-                value="Single Hierarchy",
-                emoji="<:hierarchy:1341493421503676517>",
-            ))
+            options.append(
+                discord.SelectOption(
+                    label="Hierarchy",
+                    value="Single Hierarchy",
+                    emoji="<:hierarchy:1341493421503676517>",
+                )
+            )
         elif system == "multi":
             options.append(
                 discord.SelectOption(
@@ -84,6 +93,16 @@ class PSelect(discord.ui.Select):
                 view=view,
                 ephemeral=True,
             )
+        if Selected == "Webhook":
+            if not await premium(interaction.guild.id):
+                return await interaction.followup.send(embed=NoPremium, view=Support())
+
+            embed = await WebhookEmbed(interaction, Config)
+            view = WebButton(interaction.user)
+            view.add_item(WebhookToggle(interaction.user))
+            return await interaction.followup.send(
+                embed=embed, view=view, ephemeral=True
+            )
         if Selected == "Promotion Audit Log":
             view = discord.ui.View()
 
@@ -95,11 +114,11 @@ class PSelect(discord.ui.Select):
                     ),
                     interaction.message,
                 )
-            )       
+            )
             return await interaction.followup.send(
                 view=view,
                 ephemeral=True,
-            )             
+            )
         elif Selected == "Preferences":
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(
@@ -136,10 +155,12 @@ class PSelect(discord.ui.Select):
             view.children[2].label = (
                 f"Show Issuer ({'Enabled' if Config.get('Module Options', {}).get('pshowissuer', False) else 'Disabled'})"
             )
-            return await interaction.followup.send(embed=embed, view=view, ephemeral=True)
+            return await interaction.followup.send(
+                embed=embed, view=view, ephemeral=True
+            )
         elif Selected == "Customise Embed":
             try:
-                custom = await interaction.client.db['Customisation'].find_one(
+                custom = await interaction.client.db["Customisation"].find_one(
                     {"guild_id": interaction.guild.id, "type": "Promotions"}
                 )
                 embed = None
@@ -231,7 +252,9 @@ class PSelect(discord.ui.Select):
             except Exception as e:
                 traceback.print_exc(e)
         elif Selected == "Promotions System":
-            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
             system_type = config.get("Promo", {}).get("System", {}).get("type", "og")
             view = discord.ui.View()
             view.add_item(
@@ -318,7 +341,9 @@ class PSelect(discord.ui.Select):
                 ephemeral=True,
                 embed=embed,
             )
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
         await interaction.response.edit_message(view=self, content=None)
 
 
@@ -351,7 +376,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
             },
         }
 
-    await interaction.client.db['Customisation'].update_one(
+    await interaction.client.db["Customisation"].update_one(
         {"guild_id": interaction.guild.id, "type": "Promotions"},
         {"$set": data},
         upsert=True,
@@ -372,6 +397,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
         ),
         view=view,
     )
+
 
 class LogChannel(discord.ui.ChannelSelect):
     def __init__(
@@ -426,6 +452,8 @@ class LogChannel(discord.ui.ChannelSelect):
             )
         except:
             pass
+
+
 class Preferences(discord.ui.View):
     def __init__(self, author: discord.Member):
         super().__init__()
@@ -463,7 +491,9 @@ class Preferences(discord.ui.View):
             elif Option == "autorole":
                 button.label = f"Auto Role ({'Enabled' if Config.get('Module Options', {}).get('autorole', True) else 'Disabled'})"
 
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
         await interaction.response.edit_message(content=None, view=self)
 
     @discord.ui.button(label="Auto Role (Enabled)", style=discord.ButtonStyle.green)
@@ -522,7 +552,9 @@ class CreateAndDelete(discord.ui.Select):
                 CreateDeleteDepartment(interaction.user, "create")
             )
         elif self.values[0] == "modify":
-            config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+            config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
             if not config:
                 config = {
                     "_id": interaction.guild.id,
@@ -530,7 +562,7 @@ class CreateAndDelete(discord.ui.Select):
                 }
             if "multi" not in config["Promo"]["System"]:
                 config["Promo"]["System"]["multi"] = {"Departments": []}
-            
+
             IsEmpty = (
                 not config.get("Promo", {})
                 .get("System", {})
@@ -558,13 +590,15 @@ class CreateAndDelete(discord.ui.Select):
             await interaction.response.edit_message(
                 content=f"{tick} **{interaction.user.display_name}**, select the department to modify.",
                 view=view,
-                embed=None
+                embed=None,
             )
         elif self.values[0] == "delete":
             return await interaction.response.send_modal(
                 CreateDeleteDepartment(interaction.user, "delete")
             )
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
         await interaction.response.edit_message(view=self, content=None)
 
 
@@ -593,18 +627,19 @@ class SingleHierarchy(discord.ui.RoleSelect):
                 "_id": interaction.guild.id,
                 "Promo": {"System": {"single": {"Hierarchy": []}}},
             }
-        
 
         if "single" not in config["Promo"]["System"]:
             config["Promo"]["System"]["single"] = {"Hierarchy": []}
 
         config["Promo"]["System"]["single"]["Hierarchy"] = Selected
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
 
         await interaction.response.edit_message(
             view=None,
             content=f"{tick} **{interaction.user.display_name}**, the hierarchy has been updated!",
-            embed=None
+            embed=None,
         )
 
 
@@ -641,7 +676,9 @@ class ModmailSystem(discord.ui.Select):
                 content=f"{crisis} **{interaction.user.display_name}**, no system type selected.",
                 ephemeral=True,
             )
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
 
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name}**, the promotions system has been updated to {self.values[0]}!",
@@ -735,7 +772,9 @@ class ModifyDepartment(discord.ui.Select):
 
 
 class MultiHierarchy(discord.ui.RoleSelect):
-    def __init__(self, author: discord.Member, department: str, roles: list[discord.Role]):
+    def __init__(
+        self, author: discord.Member, department: str, roles: list[discord.Role]
+    ):
         super().__init__(
             placeholder="Select department roles",
             min_values=0,
@@ -761,8 +800,8 @@ class MultiHierarchy(discord.ui.RoleSelect):
                 "Promo": {"System": {"multi": {"Departments": []}}},
             }
         if "multi" not in config["Promo"]["System"]:
-            config["Promo"]["System"]["multi"] = {"Departments":
-                [{"name": self.department, "ranks": []}]
+            config["Promo"]["System"]["multi"] = {
+                "Departments": [{"name": self.department, "ranks": []}]
             }
 
         for departments_group in config["Promo"]["System"]["multi"]["Departments"]:
@@ -771,18 +810,18 @@ class MultiHierarchy(discord.ui.RoleSelect):
                     department["ranks"] = Selected
                     break
 
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
         await interaction.response.edit_message(
             view=None,
             content=f"{tick} **{interaction.user.display_name}**, the hierarchy for the department `{self.department}` has been updated!",
-            embed=None
+            embed=None,
         )
 
 
 class CreateDeleteDepartment(discord.ui.Modal):
-    def __init__(
-        self, author: discord.Member, action: str
-    ):
+    def __init__(self, author: discord.Member, action: str):
         super().__init__(title="Create/Delete Department", timeout=None)
         self.author = author
         self.action = action
@@ -804,17 +843,19 @@ class CreateDeleteDepartment(discord.ui.Modal):
 
         if "multi" not in config["Promo"]["System"]:
             config["Promo"]["System"]["multi"] = {"Departments": []}
-        
 
         DepartmentName = self.name.value
         if self.action == "create":
             if any(
                 department["name"] == DepartmentName
-                for departments_group in config["Promo"]["System"]["multi"]["Departments"]
+                for departments_group in config["Promo"]["System"]["multi"][
+                    "Departments"
+                ]
                 for department in departments_group
             ):
                 return await interaction.response.send_message(
-                    f"{no} **{interaction.user.display_name},** I couldn't find the department.", ephemeral=True
+                    f"{no} **{interaction.user.display_name},** I couldn't find the department.",
+                    ephemeral=True,
                 )
 
             config["Promo"]["System"]["multi"]["Departments"].append(
@@ -840,7 +881,9 @@ class CreateDeleteDepartment(discord.ui.Modal):
                     for department in departments_group
                     if department["name"] != DepartmentName
                 ]
-                for departments_group in config["Promo"]["System"]["multi"]["Departments"]
+                for departments_group in config["Promo"]["System"]["multi"][
+                    "Departments"
+                ]
             ]
 
             await interaction.client.config.update_one(
@@ -886,11 +929,14 @@ class PromotionChannel(discord.ui.ChannelSelect):
             config = {"_id": interaction.guild.id, "Promo": {}}
         elif "Promo" not in config:
             config["Promo"] = {}
-    
 
-        config["Promo"]["channel"] = self.values[0].id if self.values else None 
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        config["Promo"]["channel"] = self.values[0].id if self.values else None
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
 
         await interaction.response.edit_message(content=None)
         try:
@@ -903,6 +949,148 @@ class PromotionChannel(discord.ui.ChannelSelect):
             )
         except:
             pass
+
+
+class WebhookDesign(discord.ui.Modal):
+    def __init__(self, author: discord.Member):
+        super().__init__(title="Webhook Design")
+        self.author = author
+        self.username = discord.ui.TextInput(
+            label="Username", placeholder="The username of the webhook"
+        )
+        self.AvatarURL = discord.ui.TextInput(
+            label="Avatar Link",
+            placeholder="A avatar link, I recommend using something like Imgur.",
+        )
+        self.add_item(self.username)
+        self.add_item(self.AvatarURL)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        if not await premium(interaction.guild.id):
+            return await interaction.response.send_message(
+                embed=NoPremium, view=Support()
+            )
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if Config is None:
+            Config = {"_id": interaction.guild.id, "Promo": {"Webhook": {}}}
+        if "Promo" not in Config:
+            Config["Promo"] = {}
+        if "Webhook" not in Config["Promo"]:
+            Config["Promo"]["Webhook"] = {}
+        if not self.AvatarURL.value.strip():
+            self.AvatarURL.value = interaction.client.user.display_avatar.url
+        AV = self.AvatarURL.value.strip()
+        pattern = r"^https?://.*\.(png|jpg|jpeg|gif|webp)(\?.*)?$"
+        if not re.match(pattern, AV, re.IGNORECASE):
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** the avatar link provided is not a valid image URL!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config["Promo"]["Webhook"] = {
+            "Username": self.username.value,
+            "Avatar": self.AvatarURL.value,
+        }
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
+        await interaction.response.edit_message(
+            embed=await WebhookEmbed(interaction, Config)
+        )
+
+
+class WebhookToggle(discord.ui.Select):
+    def __init__(self, author: discord.Member):
+        options = [
+            discord.SelectOption(
+                label="Enable",
+                value="enable",
+            ),
+            discord.SelectOption(label="Disable", value="disable"),
+        ]
+        super().__init__(
+            placeholder="Select", min_values=1, max_values=1, options=options
+        )
+        self.author = author
+
+    async def callback(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not Config:
+            Config = {"Promo": {}, "_id": interaction.guild.id}
+        if "Promo" not in Config:
+            Config["Promo"] = {}
+        if "Webhook" not in Config["Promo"]:
+            Config["Promo"]["Webhook"] = {}
+        if "Enabled" not in Config["Promo"]["Webhook"]:
+            Config["Promo"]["Webhook"]["Enabled"] = False
+
+        selection = self.values[0]
+        if selection == "enable":
+
+            Config["Promo"]["Webhook"]["Enabled"] = True
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+        elif selection == "disable":
+            Config["Promo"]["Webhook"]["Enabled"] = False
+            await interaction.client.config.update_one(
+                {"_id": interaction.guild.id}, {"$set": Config}
+            )
+
+            await interaction.response.edit_message(
+                embed=await WebhookEmbed(interaction, Config)
+            )
+
+
+class WebButton(discord.ui.View):
+    def __init__(self, author: discord.Member):
+        super().__init__(timeout=None)
+        self.author = author
+
+    @discord.ui.button(
+        label="Customise Webhook", style=discord.ButtonStyle.blurple, row=3
+    )
+    async def B(self, I: discord.Interaction, B: discord.ui.Button):
+        await I.response.send_modal(WebhookDesign(self.author))
+
+
+async def WebhookEmbed(interaction: discord.Interaction, Config: dict):
+    Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+    if not Config:
+        Config = {"Promo": {}, "_id": interaction.guild.id}
+
+    embed = discord.Embed()
+    embed.set_author(
+        name="Webhook",
+        icon_url="https://cdn.discordapp.com/emojis/1400197752339824821.webp?size=96",
+    )
+    WebhookSettings = Config.get("Promo", {}).get("Webhook", {})
+    enabled = WebhookSettings.get("Enabled", False)
+    username = WebhookSettings.get("Username", None) or "Not Set"
+    avatar = WebhookSettings.get("Avatar", None) or "Not Set"
+    embed.add_field(
+        name="<:Webhook:1400197752339824821> Webhook Settings",
+        value=f"> {replytop} **Enabled:** {'True' if enabled else 'False'}\n> {replymiddle} **Username:** {username}\n> {replybottom} **Avatar:** {avatar}",
+    )
+    return embed
 
 
 async def PromotionEmbed(

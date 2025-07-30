@@ -251,6 +251,11 @@ class ConfigMenu(discord.ui.Select):
                         label="Channel", emoji="<:tag:1234998802948034721>"
                     ),
                     discord.SelectOption(
+                        label="Webhook",
+                        description="Send it as a webhook.",
+                        emoji="<:Webhook:1400197752339824821>",
+                    ),
+                    discord.SelectOption(
                         label="Ping", emoji="<:Ping:1298301862906298378>"
                     ),
                     discord.SelectOption(
@@ -266,6 +271,11 @@ class ConfigMenu(discord.ui.Select):
                     ),
                     discord.SelectOption(
                         label="Channel", emoji="<:tag:1234998802948034721>"
+                    ),
+                    discord.SelectOption(
+                        label="Webhook",
+                        description="Send it as a webhook.",
+                        emoji="<:Webhook:1400197752339824821>",
                     ),
                     discord.SelectOption(
                         label="Ping", emoji="<:Ping:1298301862906298378>"
