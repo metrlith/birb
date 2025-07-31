@@ -1,6 +1,7 @@
 import discord
 from utils.emojis import *
 from utils.format import IsSeperateBot
+from utils.ui import BasicPaginator
 
 
 class PermissionsDropdown(discord.ui.Select):
@@ -11,7 +12,11 @@ class PermissionsDropdown(discord.ui.Select):
                 discord.SelectOption(
                     label="Manage Permissions",
                     value="Manage Permissions",
-                    emoji="<:Permissions:1207365901956026368>" if IsSeperateBot() else None,
+                    emoji=(
+                        "<:Permissions:1207365901956026368>"
+                        if IsSeperateBot()
+                        else None
+                    ),
                 )
             ],
         )
@@ -24,12 +29,56 @@ class PermissionsDropdown(discord.ui.Select):
                 color=discord.Colour.brand_red(),
             )
             return await interaction.followup.send(embed=embed, ephemeral=True)
-        view = ManagePermissions(interaction.user)
+        Config = await interaction.client.db["Config"].find_one(
+            {"_id": interaction.guild.id}
+        )
+
+        def Embed():
+            embed = discord.Embed()
+            embed.set_author(
+                name="Advanced Permissions",
+                icon_url="https://cdn.discordapp.com/emojis/1207365901956026368.webp?size=96",
+            )
+            embed.set_thumbnail(url=interaction.client.user.display_avatar)
+            return embed
+
+        embed = Embed()
+        embeds = []
+        manage = ManagePermissions(interaction.user)  # Here bc disable button
+
+        if (
+            Config
+            and Config.get("Advanced Permissions")
+            and len(Config.get("Advanced Permissions")) > 0
+        ):
+
+            for i, (Perm, Roles) in enumerate(
+                Config.get("Advanced Permissions").items()
+            ):
+                Roles = [f"<@&{r}>" for r in Roles]
+                embed.add_field(
+                    name=f"`{Perm}`", value=", ".join(Roles) or "None", inline=False
+                )
+                if (i + 1) % 5 == 0:
+                    embeds.append(embed)
+                    embed = Embed()
+        else:
+            embed.description = "-# No advanced permissions, manage them below."
+            manage.Remove.disabled = True
+
+        embeds.append(embed)
+
+        view = BasicPaginator(author=interaction.user, embeds=embeds)
+
         if IsSeperateBot():
-            view.Add.label = "Add"
-            view.Remove.label = "Remove"
+            manage.Add.label = "Add"
+            manage.Remove.label = "Remove"
+
+        for item in manage.children:
+            view.add_item(item)
+
         await interaction.response.send_message(
-            view=view, ephemeral=True
+            embed=embeds[0], view=view, ephemeral=True
         )
 
 
@@ -140,15 +189,17 @@ class ManagePermissions(discord.ui.View):
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None or "Advanced Permissions" not in config:
             return await interaction.followup.send(
-                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.", ephemeral=True
+                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.",
+                ephemeral=True,
             )
         commands = list(config["Advanced Permissions"].keys())
         if not commands:
             return await interaction.followup.send(
-                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.", ephemeral=True
+                content=f"{no} **{interaction.user.display_name},** there are no advanced permissions set.",
+                ephemeral=True,
             )
         view = PaginateViews(RemoveCommands, self.author, commands)
-        await interaction.followup.send(view=view, ephemeral=True)
+        await interaction.edit_original_response(view=view, embed=None)
 
 
 class RemoveCommands(discord.ui.Select):
@@ -230,13 +281,19 @@ class Commands(discord.ui.Select):
 
 
 class PaginateViews(discord.ui.View):
-    def __init__(self, Clas: type[discord.ui.Select], author: discord.Member, Options: list, *Args):
+    def __init__(
+        self,
+        Clas: type[discord.ui.Select],
+        author: discord.Member,
+        Options: list,
+        *Args,
+    ):
         super().__init__()
         self.current = 0
         self.author = author
         self.Class = Clas
         self.Args = Args
-        self.chunks = [Options[i:i + 25] for i in range(0, len(Options), 25)]
+        self.chunks = [Options[i : i + 25] for i in range(0, len(Options), 25)]
 
         self.add_item(self.Class(self.author, *self.Args, self.chunks[self.current]))
 
@@ -253,7 +310,9 @@ class PaginateViews(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(label="<", style=discord.ButtonStyle.gray, row=2)
-    async def Previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def Previous(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         if interaction.user.id != self.author.id or self.current == 0:
             return
         self.current -= 1
@@ -261,7 +320,10 @@ class PaginateViews(discord.ui.View):
 
     @discord.ui.button(label=">", style=discord.ButtonStyle.gray, row=2)
     async def Next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.author.id or self.current >= len(self.chunks) - 1:
+        if (
+            interaction.user.id != self.author.id
+            or self.current >= len(self.chunks) - 1
+        ):
             return
         self.current += 1
         await self.update_view(interaction)
