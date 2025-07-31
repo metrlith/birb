@@ -60,7 +60,6 @@ SupportVariables = db["Support Variables"]
 staffdb = db["staff database"]
 
 
-
 if not (TOKEN or MONGO_URL, PREFIX):
     print("[❌] Missing .env variables. [TOKEN, MONGO_URL]")
     sys.exit(1)
@@ -86,7 +85,7 @@ if os.getenv("SENTRY_URL", None):
 class Client(commands.AutoShardedBot):
     def __init__(self):
         self._initialize_databases()
-    
+
         self._initialize_maintenance_flags()
         self.cached_commands = {}
         intents = self._initialize_intents()
@@ -174,6 +173,7 @@ class Client(commands.AutoShardedBot):
             "Cogs.Modules.Utilities.ping",
             "Cogs.Modules.Utilities.info",
             "Cogs.Modules.Utilities.premium",
+            "Cogs.Modules.Utilities.memberships",
             "Cogs.Modules.Developer.astro",
             # Configuration
             "Cogs.Configuration.Configuration",

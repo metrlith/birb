@@ -300,7 +300,6 @@ async def MultiHireachy(
     CallDown, LastPromoted = await CheckCooldown(
         interaction, user, Config.get("Promo", {}).get("Cooldown", None)
     )
-    print(CallDown, LastPromoted)
     if CallDown:
         Time = int(Config.get("Promo", {}).get("Cooldown", 1))
         Timestamp = int((LastPromoted + datetime.timedelta(days=Time)).timestamp())
