@@ -24,7 +24,6 @@ from utils.HelpEmbeds import (
 )
 
 
-MONGO_URL = os.getenv("MONGO_URL")
 environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 

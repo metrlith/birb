@@ -4,6 +4,7 @@ import os
 from utils.permissions import premium
 from bson import ObjectId
 import aiohttp
+from datetime import datetime
 import logging
 from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed
 
@@ -318,6 +319,11 @@ class on_promotion(commands.Cog):
                 f"[🏠 on_promotion] @{guild.name} staff member {Infraction.staff} can't be found."
             )
             return
+        await self.client.db["Cooldown"].update_one(
+            {"User": staff.id, "Guild": guild.id},
+            {"$set": {"LastPromoted": datetime.now()}},
+            upsert=True,
+        )
 
         try:
             manager = await guild.fetch_member(int(Infraction.management))

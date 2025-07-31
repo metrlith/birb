@@ -15,28 +15,45 @@ class PSelect(discord.ui.Select):
     ):
         options = [
             discord.SelectOption(
-                label="Promotion Channel", emoji="<:tag:1234998802948034721>"
+                label="Promotion Channel",
+                value="Promotion Channel",
+                emoji="<:tag:1234998802948034721>",
+                description="Set the channel for promotion messages.",
             ),
             discord.SelectOption(
                 label="Promotions System",
-                description="Choose which promotions system you want to use.",
+                value="Promotions System",
                 emoji="<:system:1341493634733703300>",
+                description="Choose which promotions system you want to use.",
             ),
             discord.SelectOption(
                 label="Webhook",
-                description="Send it as a webhook.",
+                value="Webhook",
                 emoji="<:Webhook:1400197752339824821>",
+                description="Send promotion messages as a webhook.",
+            ),
+            discord.SelectOption(
+                label="Cooldown",
+                value="Cooldown",
+                emoji="<:Cooldown:1400468324671819786>",
+                description="Set a cooldown for promoting users.",
             ),
             discord.SelectOption(
                 label="Promotion Audit Log",
+                value="Promotion Audit Log",
                 emoji="<:Log:1349431938926252115>",
-                description="Logs for creation/void/modify.",
+                description="Logs for creation, void, and modification.",
             ),
             discord.SelectOption(
-                label="Customise Embed", emoji="<:Customisation:1223063306131210322>"
+                label="Customise Embed",
+                value="Customise Embed",
+                emoji="<:Customisation:1223063306131210322>",
             ),
             discord.SelectOption(
-                label="Preferences", emoji="<:leaf:1160541147320553562>"
+                label="Preferences",
+                value="Preferences",
+                emoji="<:leaf:1160541147320553562>",
+                description="Set preferences for promotion behaviour.",
             ),
         ]
         if system == "single":
@@ -62,14 +79,20 @@ class PSelect(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
-        await interaction.response.defer()
         if interaction.user.id != self.author.id:
             embed = discord.Embed(
                 description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        Selected = self.values[0]
 
+        if Selected == "Cooldown":
+            await interaction.response.send_modal(
+                CoolDown(author=interaction.user, message=interaction.message)
+            )
+            return
+        await interaction.response.defer()
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
@@ -77,7 +100,6 @@ class PSelect(discord.ui.Select):
                 "Module Options": {},
                 "_id": interaction.guild.id,
             }
-        Selected = self.values[0]
         if Selected == "Promotion Channel":
             view = discord.ui.View()
             view.add_item(
@@ -93,6 +115,7 @@ class PSelect(discord.ui.Select):
                 view=view,
                 ephemeral=True,
             )
+
         if Selected == "Webhook":
             if not await premium(interaction.guild.id):
                 return await interaction.followup.send(embed=NoPremium, view=Support())
@@ -434,6 +457,54 @@ class LogChannel(discord.ui.ChannelSelect):
             config["Promo"]["LogChannel"] = None
 
         config["Promo"]["LogChannel"] = self.values[0].id if self.values else None
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
+
+        await interaction.response.edit_message(content=None)
+        try:
+            await self.message.edit(
+                embed=await PromotionEmbed(
+                    interaction,
+                    Updated,
+                    discord.Embed(color=discord.Color.dark_embed()),
+                ),
+            )
+        except:
+            pass
+
+
+class CoolDown(discord.ui.Modal):
+    def __init__(self, author: discord.Member, message: discord.Message):
+        super().__init__(title="Promotion Cooldown")
+        self.author = author
+        self.message = message
+        self.Days = discord.ui.TextInput(
+            label="How many days is this cooldown?",
+            placeholder="Eg. 2. Type 0 if you don't want a cooldown.",
+            required=False,
+        )
+
+        self.add_item(self.Days)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if interaction.user.id != self.author.id:
+            embed = discord.Embed(
+                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
+                color=discord.Colour.brand_red(),
+            )
+            return await interaction.followup.send(embed=embed, ephemeral=True)
+        config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if config is None:
+            config = {"_id": interaction.guild.id, "Promo": {}}
+        elif "Promo" not in config:
+            config["Promo"] = {}
+        elif "Cooldown" not in config.get("Promo", {}):
+            config["Promo"]["Cooldown"] = None
+        config["Promo"]["Cooldown"] = self.Days.value if self.Days else None
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}
         )
@@ -1103,6 +1174,10 @@ async def PromotionEmbed(
         interaction.guild.get_channel(Config.get("Promo", {}).get("channel"))
         or "Not Configured"
     )
+    Promo = Config.get('Promo', {})
+    Cooldown = Promo.get('Cooldown')
+    Days = f"{Cooldown} Days" if Cooldown is not None else "Not Set"
+    System = Promo.get('System', {}).get('type', 'Default')
     if isinstance(Channel, discord.TextChannel):
         Channel = Channel.mention
 
@@ -1111,7 +1186,7 @@ async def PromotionEmbed(
     embed.description = "> This is where you can manage your server's promotion settings! Promotions are a way to give staff members more power. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
         name="<:settings:1207368347931516928> Promotions",
-        value=f"> `Promotion Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"> {replytop} `System:` {System}\n> {replymiddle} `Promotion Channel:` {Channel}\n> {replybottom} `Cooldown:` {Days}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )
     return embed
