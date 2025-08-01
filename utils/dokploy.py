@@ -408,6 +408,8 @@ class Depl(commands.Cog):
             Z = await SubscriptionUser(
                 UserID=P.get("user"), Tiers=["22733636", "22855340"]
             )
+            if Z is None:
+                continue            
             _, _, HasPremium = Z
             if not HasPremium:
                 print(f"Premium expired for user {P.get('user')}")
@@ -445,6 +447,8 @@ class Depl(commands.Cog):
 
         for B in Bots:
             Z = await SubscriptionUser(UserID=B.get("user"), Sub="22733636")
+            if Z is None:
+                continue
             _, HasBranding, _ = Z
             if not HasBranding:
                 if guild:
