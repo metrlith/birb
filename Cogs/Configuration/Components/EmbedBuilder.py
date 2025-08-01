@@ -1024,7 +1024,7 @@ class Title(discord.ui.Modal, title="Title"):
         self.Titles = discord.ui.TextInput(
             label="Title",
             placeholder="What is the title?",
-            required=True,
+            required=False,
             max_length=256,
             default=self.titled if self.titled else None,
         )
