@@ -6,7 +6,7 @@ import asyncio
 
 import discord
 from discord.ext import commands, tasks
-
+from Cogs.Modules.staff import quota as QUOTA
 
 from utils.format import strtotime
 from utils.emojis import *
@@ -117,7 +117,10 @@ class activityauto(commands.Cog):
 
                 async def Process(userdata):
                     async with semaphore:
-                        user = await guild.fetch_member(userdata.get("user_id"))
+                        try:
+                         user = await guild.fetch_member(userdata.get("user_id"))
+                        except:
+                            return
                         if not user or not await check_admin_and_staff(guild, user):
                             return
 
@@ -139,10 +142,10 @@ class activityauto(commands.Cog):
                             else False
                         )
 
-                        quota = config.get("Message Quota", {}).get("quota", 0)
+                        quota, Name = QUOTA.GetQuota(self, user, config)
                         Messages = message_data.get("message_count", 0)
 
-                        entry = f"> **{user.name}** • `{Messages}` messages"
+                        entry = f"> **{user.mention}** • `{Messages}` messages{Name}"
 
                         if LoaStatus:
                             OnLOA.append(entry)

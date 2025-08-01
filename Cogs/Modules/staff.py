@@ -452,7 +452,6 @@ class quota(commands.Cog):
             reverse=True,
         )
 
-        quota = int(Config.get("Message Quota", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
         for user in Users:
@@ -464,11 +463,12 @@ class quota(commands.Cog):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
+            quota, Name = self.GetQuota(member, Config)
 
             MessageCount = user.get("message_count", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
 
-            entry = f"> **{member.name}** {Messages}".strip()
+            entry = f"> **{member.mention}** {Messages}{Name}".strip()
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
@@ -504,6 +504,7 @@ class quota(commands.Cog):
 
         if not Types or len(Types) == 0:
             from utils.format import DefaultTypes
+
             Types = DefaultTypes()
 
         options = [
@@ -572,7 +573,6 @@ class quota(commands.Cog):
             reverse=True,
         )
 
-        quota = int(Config.get("Message Quota", {}).get("quota", 0))
         loa_role_id = Config.get("LOA", {}).get("role")
 
         for user in Users:
@@ -584,11 +584,12 @@ class quota(commands.Cog):
                     continue
             if not member or not await check_admin_and_staff(ctx.guild, member):
                 continue
+            quota, Name = self.GetQuota(member, Config)
 
             MessageCount = user.get("message_count", 0)
             Messages = f"• `{MessageCount}` messages" if MessageCount else ""
 
-            entry = f"> **{member.name}** {Messages}".strip()
+            entry = f"> **{member.mention}** {Messages}{Name}".strip()
 
             if loa_role_id and any(role.id == loa_role_id for role in member.roles):
                 on_loa.append(entry)
@@ -638,6 +639,21 @@ class quota(commands.Cog):
 
         await msg.edit(embeds=[passedembed, loaembed, failedembed])
 
+    def GetQuota(self, member: discord.Member, config: dict) -> int:
+        Roles = config.get("Message Quota", {}).get("Roles", [])
+        Map = {
+            entry.get("ID"): int(entry.get("Quota", 0))
+            for entry in Roles
+            if entry.get("ID") and entry.get("Quota") is not None
+        }
+
+        WithQuota = [role for role in member.roles if role.id in Map]
+        if not WithQuota:
+            return int(config.get("Message Quota", {}).get("quota", 0)), ""
+
+        Highest = max(WithQuota, key=lambda r: r.position)
+        return Map[Highest.id], f" *#{Highest.name}*"
+
     @quota.command(name="manage", description="Manage a staffs messages count.")
     async def manage(self, ctx: commands.Context, staff: discord.Member):
         await ctx.defer()
@@ -664,7 +680,7 @@ class quota(commands.Cog):
         view = StaffManage(staff.id, ctx.author)
         YouPlace = None
         if MessageData:
-            Quota = Config.get("Message Quota", {}).get("quota", 0)
+            Quota, Name = self.GetQuota(staff, Config)
             OnLOA = False
             if Config.get("LOA", {}).get("role"):
                 OnLOA = any(
@@ -701,7 +717,7 @@ class quota(commands.Cog):
         )
         embed.add_field(
             name="<:tablerprogressbolt:1330500442551091210> Manage Messages",
-            value=f"> **Messages:** {MessageData.get('message_count', 0) if MessageData else 0} messages\n> **Passed:** {YourEmoji if YourEmoji else 'N/A'}\n> **Place:** {ordinal(YouPlace) if MessageData else 'N/A' if YouPlace else 'N/A'}",
+            value=f"> **Messages:** {MessageData.get('message_count', 0) if MessageData else 0} messages\n> **Passed:** {YourEmoji if YourEmoji else 'N/A'}{Name}\n> **Place:** {ordinal(YouPlace) if MessageData else 'N/A' if YouPlace else 'N/A'}",
         )
         embed.set_author(name=f"@{staff.name}", icon_url=staff.display_avatar)
         embed.set_thumbnail(url=staff.display_avatar)
@@ -734,7 +750,7 @@ class quota(commands.Cog):
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if not Config.get("Message Quota"):
             return await ctx.send(embed=ModuleNotEnabled(), view=Support())
-        Quota = Config.get("Message Quota", {}).get("quota", 0)
+        Quota, Name = self.GetQuota(staff, Config)
         YourEmoji = None
         YouPlace = None
         OnLOA = False
@@ -777,7 +793,7 @@ class quota(commands.Cog):
         )
         embed.add_field(
             name="<:tablerprogressbolt:1330500442551091210> Progress",
-            value=f"> **Messages:** {MessageData.get('message_count')} messages\n> **Passed:** {YourEmoji if YourEmoji else 'N/A'}\n> **Place:** {ordinal(YouPlace) if YouPlace else 'N/A'}",
+            value=f"> **Messages:** {MessageData.get('message_count')} messages\n> **Passed:** {YourEmoji if YourEmoji else 'N/A'}{Name}\n> **Place:** {ordinal(YouPlace) if YouPlace else 'N/A'}",
         )
         await ctx.send(embed=embed)
 
@@ -804,7 +820,6 @@ class quota(commands.Cog):
             return await ctx.send(embed=BotNotConfigured(), view=Support())
         if not Config.get("Message Quota"):
             return await ctx.send(embed=ModuleNotEnabled(), view=Support())
-        Quota = Config.get("Message Quota", {}).get("quota", 0)
 
         if not users:
             return await ctx.send(
@@ -824,6 +839,7 @@ class quota(commands.Cog):
                     continue
 
             if member and await check_admin_and_staff(ctx.guild, member):
+                Quota, _ = self.GetQuota(member, Config)
                 passed = (
                     "True"
                     if user.get("message_count") >= Quota
@@ -872,11 +888,6 @@ class quota(commands.Cog):
         Config = await self.client.config.find_one({"_id": ctx.guild.id})
         if Config is None:
             return await msg.edit(embed=BotNotConfigured(), view=Support())
-        if not Config.get("Message Quota"):
-            return await msg.edit(
-                embed=ModuleNotEnabled(),
-                view=Support(),
-            )
         message_users = (
             await self.client.qdb["messages"]
             .find({"guild_id": ctx.guild.id})
@@ -940,6 +951,7 @@ class quota(commands.Cog):
                     role.id == Config.get("LOA", {}).get("role")
                     for role in member.roles
                 )
+            Quota, Name = self.GetQuota(member, Config)
 
             emoji = (
                 "`LOA`"
@@ -950,8 +962,7 @@ class quota(commands.Cog):
                         if environment == "custom"
                         else "<:status_green:1227365520857104405>"
                     )
-                    if int(staff.get("message_count", 0))
-                    >= int(Config.get("Message Quota", {}).get("quota", 0))
+                    if int(staff.get("message_count", 0)) >= int(Quota)
                     else (
                         "Not Met"
                         if environment == "custom"
@@ -960,9 +971,8 @@ class quota(commands.Cog):
                 )
             )
             Description += f"* `{i}` {member.display_name} • {staff.get('message_count', 0)} messages\n"
-            if Config.get("Message Quota", {}).get("quota", 0) != 0:
-                Description += f"{replybottom} **Status:** {emoji}\n"
-
+            if Quota != 0:
+                Description += f"{replybottom} **Status:** {emoji}{Name}\n"
 
             if i % 9 == 0:
                 embed = discord.Embed(
