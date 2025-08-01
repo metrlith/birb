@@ -10,7 +10,8 @@ import string
 from utils.permissions import has_admin_role, has_staff_role
 from utils.Module import ModuleCheck
 from utils.autocompletes import DepartmentAutocomplete, RoleAutocomplete
-import re
+
+# TODO: Merge the 3 commands together some how, extremely inefficient, and it's hard to update.
 
 
 environment = os.getenv("ENVIRONMENT")

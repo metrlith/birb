@@ -826,10 +826,7 @@ class quota(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, there are no users in the leaderboard."
             )
 
-        CSV = "User,Messages"
-        if Quota:
-            CSV += ",Passed"
-
+        CSV = "User,Messages,Passed"
         for user in users:
             member = ctx.guild.get_member(user.get("user_id"))
             if not member:
