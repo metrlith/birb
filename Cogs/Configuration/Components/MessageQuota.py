@@ -44,7 +44,7 @@ class QuotaOptions(discord.ui.Select):
                 )
             )
             return
-        if selection == "Role By Quota":
+        if selection == "Role Quota":
             embeds = []
             config = await interaction.client.db["Config"].find_one(
                 {"_id": interaction.guild.id}
