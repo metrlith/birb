@@ -115,7 +115,12 @@ class Button(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
 
         AlreadyOpen = await interaction.client.db["Tickets"].count_documents(
-            {"UserID": interaction.user.id, "closed": None, "panel": {"$exists": True}}
+            {
+                "UserID": interaction.user.id,
+                "GuildID": interaction.guild.id,
+                "closed": None,
+                "panel": {"$exists": True},
+            }
         )
         Blacklisted = await interaction.client.db["Ticket Blacklists"].find_one(
             {"user": interaction.user.id, "guild": interaction.guild.id}
@@ -131,9 +136,9 @@ class Button(discord.ui.Button):
                 content=f"{no} **{interaction.user.display_name}**, I don't have permission to manage channels.",
                 ephemeral=True,
             )
-        if AlreadyOpen > 3:
+        if AlreadyOpen > 5:
             return await interaction.response.send_message(
-                content=f"{no} **{interaction.user.display_name}**, you already have a max of 3 tickets open! If this is a mistake contact a developer.\n-# If this is a mistake (actually a mistake) press the debug button. (Abusing it'll can lead to a blacklist)",
+                content=f"{no} **{interaction.user.display_name}**, you already have a max of 5 tickets open! If this is a mistake contact a developer.\n-# If this is a mistake (actually a mistake) press the debug button. (Abusing it'll can lead to a blacklist)",
                 ephemeral=True,
                 view=Debug(),
             )
@@ -271,7 +276,7 @@ class Debug(discord.ui.View):
             "Ticket Opener hit the debug button",
             interaction.user,
         )
-        await asyncio.sleep(3)
+        await asyncio.sleep(10)
         New = await interaction.client.db["Tickets"].find_one(
             {"UserID": interaction.user.id, "closed": None}
         )
@@ -628,7 +633,6 @@ class TicketsPub(commands.Cog):
             if quota != 0:
                 Description += f"{replybottom} **Status:** {emoji}\n"
                 Description += "\n"
-
 
             if i % 9 == 0:
                 embed = discord.Embed(
