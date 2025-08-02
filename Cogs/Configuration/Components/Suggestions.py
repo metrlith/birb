@@ -3,7 +3,6 @@ from utils.emojis import *
 import traceback
 
 
-
 class Suggestions(discord.ui.Select):
     def __init__(self, author: discord.User):
         super().__init__(
@@ -15,6 +14,9 @@ class Suggestions(discord.ui.Select):
                 discord.SelectOption(
                     label="Customise Embeds",
                     emoji="<:Customisation:1223063306131210322>",
+                ),
+                discord.SelectOption(
+                    label="Preferences", emoji="<:leaf:1160541147320553562>"
                 ),
             ]
         )
@@ -45,6 +47,7 @@ class Suggestions(discord.ui.Select):
                 )
             )
             await interaction.response.send_message(view=view, ephemeral=True)
+            return
         if option == "Customise Embeds":
             view = discord.ui.View()
             view.add_item(EmbedSelection(self.author))
@@ -53,6 +56,76 @@ class Suggestions(discord.ui.Select):
                 view=view,
                 content="<:List:1223063187063308328> Select which embed you want to edit.",
             )
+            return
+        if option == "Preferences":
+            Config = await interaction.client.config.find_one(
+                {"_id": interaction.guild.id}
+            )
+            if not Config:
+                Config = {"Suggestions": {}, "_id": interaction.guild.id}            
+            view = Preferences(author=self.author)
+            if not Config.get("Module Options"):
+                Config["Module Options"] = {}
+            view.children[0].style = (
+                discord.ButtonStyle.green
+                if Config.get("Module Options", {}).get("Suggestion Thread", False)
+                else discord.ButtonStyle.red
+            )
+            view.children[0].label = (
+                "uggestion Thread (Enabled)"
+                if Config.get("Module Options", {}).get("Suggestion Thread", False)
+                else "Suggestion Thread (Disabled)"
+            )
+            embed = discord.Embed(color=discord.Color.dark_embed())
+            embed.description = f"> - **Suggestion Thread** - Automatically creates a thread when a suggestion is made."
+
+            embed.set_author(
+                name="Preferences",
+                icon_url="https://cdn.discordapp.com/emojis/1160541147320553562.webp?size=96&quality=lossless",
+            )
+            return await interaction.response.send_message(
+                view=view, embed=embed, ephemeral=True
+            )
+
+
+class Preferences(discord.ui.View):
+    def __init__(self, author: discord.Member):
+        super().__init__()
+        self.author = author
+
+    async def ToggleOption(
+        self, interaction: discord.Interaction, button: discord.ui.Button, Option: str
+    ):
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not Config:
+            Config = {
+                "Infraction": {},
+                "Module Options": {},
+                "_id": interaction.guild.id,
+            }
+        if not Config.get("Module Options"):
+            Config["Module Options"] = {}
+        if Config["Module Options"].get(Option, False):
+            Config["Module Options"][Option] = False
+            button.style = discord.ButtonStyle.red
+            button.label = button.label.replace("(Enabled)", "(Disabled)")
+        else:
+            Config["Module Options"][Option] = True
+            button.style = discord.ButtonStyle.green
+            button.label = button.label.replace("(Disabled)", "(Enabled)")
+
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
+        await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(
+        label="Suggestion Thread (Disabled)", style=discord.ButtonStyle.red
+    )
+    async def IssuerButton(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await self.ToggleOption(interaction, button, "Suggestion Thread")
 
 
 class SuggestionsChannel(discord.ui.ChannelSelect):

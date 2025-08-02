@@ -90,7 +90,19 @@ class On_suggestions(commands.Cog):
         view = Voting()
         if IsSeperateBot():
             view.settings.label = "Settings"
-        msg = await channel.send(embed=embed, view=view)
+        try:
+            msg: discord.Message = await channel.send(embed=embed, view=view)
+        except (discord.Forbidden, discord.HTTPException):
+            return
+        if settings.get("Module Options", {}).get("Suggestion Thread", False):
+            try:
+                await msg.create_thread(
+                    name=(str(back.get("suggestion") or "Discussion")[:23] + "...")
+                )
+
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
         await self.client.db["suggestions"].update_one(
             {"_id": objectID}, {"$set": {"message_id": msg.id}}
         )
