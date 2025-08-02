@@ -79,8 +79,10 @@ class on_leave(commands.Cog):
             return
         if not C.get("LOA", None):
             return
-
-        Member = G.get_member(L.get("user"))
+        try:
+            Member = await G.fetch_member(L.get("user"))
+        except (discord.NotFound, discord.HTTPException):
+            Member = None
         if not Member:
             return
 
@@ -148,7 +150,10 @@ class on_leave(commands.Cog):
             await CM.reply(embed=embed)
         except (discord.HTTPException, discord.Forbidden, discord.NotFound):
             return
-        member = G.get_member(L.get("user"))
+        try:
+            member = await G.fetch_member(L.get("user"))
+        except (discord.NotFound, discord.HTTPException):
+            member = None
         if member:
             try:
 
@@ -327,7 +332,10 @@ class on_leave(commands.Cog):
         embed.set_thumbnail(url=L.get("ExtendedUser", {}).get("thumbnail"))
         embed.set_footer(text=L.get("LoaID"))
         view = None
-        member = G.get_member(L.get("user"))
+        try:
+            member = await G.fetch_member(L.get("user"))
+        except (discord.NotFound, discord.HTTPException):
+            member = None
         if status == "Accepted":
             view = discord.ui.View().add_item(
                 discord.ui.Button(
@@ -516,7 +524,10 @@ class on_leave(commands.Cog):
 
         embed.set_footer(text=L.get("LoaID"))
         view = None
-        member = G.get_member(L.get("user"))
+        try:
+            member = await G.fetch_member(L.get("user"))
+        except (discord.HTTPException, discord.NotFound):
+            member = None
         if status == "Accepted":
             view = discord.ui.View().add_item(
                 discord.ui.Button(
