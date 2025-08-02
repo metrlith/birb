@@ -118,7 +118,7 @@ class PSelect(discord.ui.Select):
 
         if Selected == "Webhook":
             if not await premium(interaction.guild.id):
-                return await interaction.followup.send(embed=NoPremium, view=Support())
+                return await interaction.followup.send(embed=NoPremium(), view=Support())
 
             embed = await WebhookEmbed(interaction, Config)
             view = WebButton(interaction.user)

@@ -76,7 +76,7 @@ class QOTDOptions(discord.ui.Select):
             )
         elif option == "Webhook":
             if not await premium(interaction.guild.id):
-                return await interaction.followup.send(embed=NoPremium, view=Support())
+                return await interaction.followup.send(embed=NoPremium(), view=Support())
 
             Config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
