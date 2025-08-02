@@ -244,6 +244,7 @@ class Infractions(commands.Cog):
         Org = action
         CheckedActions = []
         isEscalated = False
+        NextType = None
 
         Max = 30
         Min = 0
