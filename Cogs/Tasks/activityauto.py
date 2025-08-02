@@ -336,37 +336,36 @@ class ActionModal(discord.ui.Modal, title="Action"):
         if expiration:
             expiration = await strtotime(expiration)
 
-        isEscalated = False
-        NextType = None
-        if TypeActions and TypeActions.get("Escalation", None):
-            Escalation = TypeActions.get("Escalation")
-            Threshold = Escalation.get("Threshold", None)
-            NextType = Escalation.get("Next Type")
-            if Threshold and NextType:
-                for user_id in self.failures:
+        for Ids in self.failures:
+            user = await interaction.guild.fetch_member(Ids)
+            if user is None:
+                await interaction.followup.send(
+                    f"{no} **{interaction.user.display_name}**, user {Ids} not found.",
+                    ephemeral=True,
+                )
+                continue
+
+            Org = action
+            action = Org
+            escalated = False
+
+            if TypeActions and TypeActions.get("Escalation", None):
+                Escalation = TypeActions.get("Escalation")
+                Threshold = Escalation.get("Threshold", None)
+                NextType = Escalation.get("Next Type")
+                if Threshold and NextType:
                     count = await interaction.client.db["infractions"].count_documents(
                         {
                             "guild_id": interaction.guild.id,
-                            "staff": user_id,
-                            "action": action,
+                            "staff": Ids,
+                            "action": Org,
                             "Upscaled": {"$exists": False},
                         }
                     )
                     if isinstance(Threshold, str):
                         if count + 1 >= int(Threshold):
-                            isEscalated = True
-                            Org = action
+                            escalated = True
                             action = NextType
-                            break
-
-        for user_id in self.failures:
-            user = await interaction.guild.fetch_member(user_id)
-            if user is None:
-                await interaction.followup.send(
-                    f"{no} **{interaction.user.display_name}**, user {user_id} not found.",
-                    ephemeral=True,
-                )
-                continue
 
             random_string = "".join(
                 random.choices(string.ascii_uppercase + string.digits, k=10)
@@ -383,7 +382,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 "annonymous": anonymous,
                 "timestamp": datetime.now(),
             }
-            if isEscalated:
+            if escalated:
                 FormeData[
                     "reason"
                 ] += f"\n-# Automatically escalated to **{action}** from **{Org}**"
@@ -404,7 +403,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 is not None
             ):
                 try:
-                    approval_channel = await interaction.client.fetch_channel(
+                    ApprovChannel = await interaction.client.fetch_channel(
                         int(
                             Config.get("Infraction", {})
                             .get("Approval", {})
@@ -416,7 +415,7 @@ class ActionModal(discord.ui.Modal, title="Action"):
                         embed=ChannelNotFound(), ephemeral=True
                     )
                     continue
-                if not approval_channel:
+                if not ApprovChannel:
                     await interaction.followup.send(
                         embed=ChannelNotFound(), ephemeral=True
                     )
@@ -434,10 +433,16 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 "infraction", InfractionResult.inserted_id, Config, TypeActions
             )
 
-        await interaction.edit_original_response(
-            content=f"{tick} **{interaction.user.display_name},** successfully infracted users.",
-            view=None,
-        )
+            if escalated:
+                await interaction.client.db["infractions"].update_many(
+                    {
+                        "guild_id": interaction.guild.id,
+                        "staff": user.id,
+                        "action": Org,
+                        "Upscaled": {"$exists": False},
+                    },
+                    {"$set": {"Upscaled": True}},
+                )
 
 
 async def setup(client: commands.Bot) -> None:

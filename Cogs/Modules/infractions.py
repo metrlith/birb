@@ -260,7 +260,6 @@ class Infractions(commands.Cog):
                 )
                 if isinstance(Threshold, str):
                     if InfractionsWithType + 1 >= int(Threshold):
-                        print("t")
                         isEscalated = True
                         Org = action
                         action = NextType
@@ -281,6 +280,16 @@ class Infractions(commands.Cog):
             FormeData[
                 "reason"
             ] += f"\n-# Automatically escalated to **{action}** from **{Org}**"
+        if NextType and isEscalated:
+                await self.client.db["infractions"].update_many(
+                    {
+                        "guild_id": ctx.guild.id,
+                        "staff": staff.id,
+                        "action": Org,
+                        "Upscaled": {"$exists": False},
+                    },
+                    {"$set": {"Upscaled": True}},
+                )            
         if Config.get("Module Options", {}).get("Infraction Confirmation", False):
             custom = await self.client.db["Customisation"].find_one(
                 {"guild_id": ctx.guild.id, "type": "Infractions"}
