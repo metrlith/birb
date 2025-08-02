@@ -241,18 +241,7 @@ class Infractions(commands.Cog):
             Roblox = await GetValidToken(user=ctx.author)
             if not Roblox:
                 return await msg.edit(embed=NotRobloxLinked())
-        FormeData = {
-            "guild_id": ctx.guild.id,
-            "staff": staff.id,
-            "management": ctx.author.id,
-            "action": action,
-            "reason": reason,
-            "notes": notes if notes else "`N/A`",
-            "expiration": expiration,
-            "random_string": random_string,
-            "annonymous": anonymous,
-            "timestamp": datetime.now(),
-        }
+        NextType = None
         if TypeActions and TypeActions.get("Escalation", None):
 
             Escalation = TypeActions.get("Escalation")
@@ -269,9 +258,29 @@ class Infractions(commands.Cog):
                         "Upscaled": {"$exists": False},
                     }
                 )
-                if len(Threshold) + 1 < InfractionsWithType:
-                    isEscalated = True
+                if isinstance(Threshold, str):
+                    if InfractionsWithType + 1 >= int(Threshold):
+                        print("t")
+                        isEscalated = True
+                        Org = action
+                        action = NextType
 
+        FormeData = {
+            "guild_id": ctx.guild.id,
+            "staff": staff.id,
+            "management": ctx.author.id,
+            "action": action,
+            "reason": reason,
+            "notes": notes if notes else "`N/A`",
+            "expiration": expiration,
+            "random_string": random_string,
+            "annonymous": anonymous,
+            "timestamp": datetime.now(),
+        }
+        if isEscalated:
+            FormeData[
+                "reason"
+            ] += f"\n-# Automatically escalated to **{action}** from **{Org}**"
         if Config.get("Module Options", {}).get("Infraction Confirmation", False):
             custom = await self.client.db["Customisation"].find_one(
                 {"guild_id": ctx.guild.id, "type": "Infractions"}
@@ -339,14 +348,13 @@ class Infractions(commands.Cog):
                 embed=None,
                 view=None,
             )
-        
 
         self.client.dispatch(
             "infraction", InfractionResult.inserted_id, Config, TypeActions
         )
 
         await msg.edit(
-            content=f"{tick} **{ctx.author.display_name},** I've successfully infracted **@{staff.display_name}**! {'(Escalated)' if isEscalated else ''}",
+            content=f"{tick} **{ctx.author.display_name},** I've successfully infracted **@{staff.display_name}**! {f'(Escalated to {NextType})' if isEscalated else ''}",
             embed=None,
             view=None,
         )
@@ -556,77 +564,123 @@ class InfractionMultiple(discord.ui.UserSelect):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
+
         action = self.action
         reason = self.reason
         notes = self.notes
         expiration = self.expiration
         anonymous = self.anonymous
+        isEscalated = False
+
         TypeActions = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": action}
         )
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
-        if not Config:
+        if Config is None:
             return await interaction.followup.send(
-                embed=BotNotConfigured(),
+                embed=BotNotConfigured(), ephemeral=True
             )
         if Config.get("Infraction", None) is None:
             return await interaction.followup.send(
-                embed=ModuleNotSetup(),
+                embed=ModuleNotSetup(), ephemeral=True
             )
-        if not Config.get("Infraction", {}).get("channel"):
-            return await interaction.followup.send(
-                embed=NoChannelSet(),
-            )
+        if Config.get("Infraction", {}).get("channel") is None:
+            return await interaction.followup.send(embed=NoChannelSet(), ephemeral=True)
 
-        if TypeActions and TypeActions.get("channel_id"):
-            channel = interaction.client.get_channel(TypeActions.get("channel_id"))
-        else:
-            channel = interaction.client.get_channel(
+        if Config.get("group", {}).get("id", None):
+            from utils.roblox import GetValidToken
+            from utils.HelpEmbeds import NotRobloxLinked
+
+            Roblox = await GetValidToken(user=interaction.user)
+            if not Roblox:
+                return await interaction.followup.send(
+                    embed=NotRobloxLinked(), ephemeral=True
+                )
+
+        try:
+            channel = await interaction.client.fetch_channel(
                 int(Config.get("Infraction", {}).get("channel"))
             )
-        if channel is None:
+        except (discord.Forbidden, discord.NotFound):
             return await interaction.followup.send(
-                embed=ChannelNotFound(),
+                embed=ChannelNotFound(), ephemeral=True
             )
+        if not channel:
+            return await interaction.followup.send(
+                embed=ChannelNotFound(), ephemeral=True
+            )
+
         client = await interaction.guild.fetch_member(interaction.client.user.id)
-        if channel.permissions_for(client).send_messages is False:
-            return await interaction.response.edit_message(
-                embed=NoPermissionChannel(channel),
-                view=Support(),
+        if (
+            channel.permissions_for(client).send_messages is False
+            or channel.permissions_for(client).view_channel is None
+        ):
+            return await interaction.followup.send(
+                embed=NoPermissionChannel(channel), ephemeral=True
             )
+
         if expiration and not re.match(r"^\d+[mhdws]$", expiration):
-            await interaction.response.edit_message(
+            return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name}**, invalid duration format. Please use a valid format like '1d' (1 day), '2h' (2 hours), etc.",
-                view=None,
-                embed=None,
+                ephemeral=True,
             )
-            return
         if expiration:
             expiration = await strtotime(expiration)
-        for user in self.values:
-            if user is None:
+
+        for staff in self.values:
+            if staff is None:
                 await interaction.followup.send(
                     f"{no} **{interaction.user.display_name}**, this user can not be found.",
                     ephemeral=True,
                 )
                 return
+
+            NextType = None
+            if TypeActions and TypeActions.get("Escalation", None):
+                Escalation = TypeActions.get("Escalation")
+                Threshold = Escalation.get("Threshold", None)
+                NextType = Escalation.get("Next Type")
+                if Threshold and NextType:
+                    InfractionsWithType = await interaction.client.db[
+                        "infractions"
+                    ].count_documents(
+                        {
+                            "guild_id": interaction.guild.id,
+                            "staff": staff.id,
+                            "action": action,
+                            "Upscaled": {"$exists": False},
+                        }
+                    )
+                    if isinstance(Threshold, str):
+                        if InfractionsWithType + 1 >= int(Threshold):
+                            isEscalated = True
+                            Org = action
+                            action = NextType
+
             random_string = "".join(
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
 
+            FormeData = {
+                "guild_id": interaction.guild.id,
+                "staff": staff.id,
+                "management": interaction.user.id,
+                "action": action,
+                "reason": reason,
+                "notes": notes if notes else "`N/A`",
+                "expiration": expiration,
+                "random_string": random_string,
+                "annonymous": anonymous,
+                "timestamp": datetime.now(),
+            }
+
+            if isEscalated:
+                FormeData[
+                    "reason"
+                ] += f"\n-# Automatically escalated to **{action}** from **{Org}**"
+
             InfractionResult = await interaction.client.db["infractions"].insert_one(
-                {
-                    "guild_id": interaction.guild.id,
-                    "staff": user.id,
-                    "management": interaction.user.id,
-                    "action": action,
-                    "reason": reason,
-                    "notes": notes if notes else "`N/A`",
-                    "expiration": expiration,
-                    "random_string": random_string,
-                    "annonymous": anonymous,
-                    "timestamp": datetime.now(),
-                }
+                FormeData
             )
             if not InfractionResult.inserted_id:
                 await interaction.edit_original_response(
@@ -635,11 +689,28 @@ class InfractionMultiple(discord.ui.UserSelect):
                     view=None,
                 )
                 return
+
+            if NextType and isEscalated:
+                await interaction.client.db["infractions"].update_many(
+                    {
+                        "guild_id": interaction.guild.id,
+                        "staff": staff.id,
+                        "action": Org,
+                        "Upscaled": {"$exists": False},
+                    },
+                    {"$set": {"Upscaled": True}},
+                )
+
+            TypeActions = await interaction.client.db["infractiontypeactions"].find_one(
+                {"guild_id": interaction.guild.id, "name": action}
+            )
+
             interaction.client.dispatch(
                 "infraction", InfractionResult.inserted_id, Config, TypeActions
             )
+
         await interaction.edit_original_response(
-            content=f"{tick} **{interaction.user.display_name}**, I have infracted all the staff members!",
+            content=f"{tick} **{interaction.user.display_name},** I have infracted all the staff members!",
             view=None,
         )
 

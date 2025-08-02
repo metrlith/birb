@@ -3,7 +3,7 @@ import random
 import string
 import re
 import asyncio
-
+from utils.HelpEmbeds import *
 import discord
 from discord.ext import commands, tasks
 from Cogs.Modules.staff import quota as QUOTA
@@ -118,7 +118,7 @@ class activityauto(commands.Cog):
                 async def Process(userdata):
                     async with semaphore:
                         try:
-                         user = await guild.fetch_member(userdata.get("user_id"))
+                            user = await guild.fetch_member(userdata.get("user_id"))
                         except:
                             return
                         if not user or not await check_admin_and_staff(guild, user):
@@ -265,7 +265,6 @@ class ActionModal(discord.ui.Modal, title="Action"):
     def __init__(self, failures: list = None):
         super().__init__(timeout=None)
         self.failures = failures
-
         self.action = discord.ui.TextInput(
             label="Action",
             placeholder="What action would you like to take?",
@@ -295,76 +294,150 @@ class ActionModal(discord.ui.Modal, title="Action"):
                 f"{no} **{interaction.user.display_name}**, the infraction module is not setup you can do that in /config.",
                 ephemeral=True,
             )
+
+        if Config.get("group", {}).get("id", None):
+            from utils.roblox import GetValidToken
+            from utils.HelpEmbeds import NotRobloxLinked
+
+            Roblox = await GetValidToken(user=interaction.user)
+            if not Roblox:
+                return await interaction.followup.send(
+                    embed=NotRobloxLinked(),
+                    ephemeral=True,
+                )
         try:
             channel = await interaction.client.fetch_channel(
-                Config.get("Infraction", {}).get("channel", None)
+                int(Config.get("Infraction", {}).get("channel", 0))
             )
-        except (discord.NotFound, discord.HTTPException):
-            return await interaction.response.send_message(
-                content=f"{crisis} **{interaction.user.display_name},** hey I can't find your infraction channel it is configured but I can't find it?",
+        except (discord.NotFound, discord.HTTPException, discord.Forbidden):
+            return await interaction.followup.send(
+                content=f"{crisis} **{interaction.user.display_name},** I can't find your infraction channel.",
                 ephemeral=True,
             )
         if not channel:
-            return await interaction.response.send_message(
-                content=f"{crisis} **{interaction.user.display_name},** hey I can't find your infraction channel it is configured but I can't find it?",
+            return await interaction.followup.send(
+                content=f"{crisis} **{interaction.user.display_name},** I can't find your infraction channel.",
                 ephemeral=True,
             )
         client = await interaction.guild.fetch_member(interaction.client.user.id)
-        if channel.permissions_for(client).send_messages is False:
-            return await interaction.response.send_message(
-                content=f"{crisis} **{interaction.user.display_name},** oi I can't send messages in the infraction channel!!",
+        if (
+            channel.permissions_for(client).send_messages is False
+            or channel.permissions_for(client).view_channel is False
+        ):
+            return await interaction.followup.send(
+                content=f"{crisis} **{interaction.user.display_name},** I don't have permissions to send messages in the infraction channel.",
                 ephemeral=True,
             )
         if expiration and not re.match(r"^\d+[mhdws]$", expiration):
-            await interaction.response.send_message(
-                f"{no} **{interaction.user.display_name}**, invalid duration format. Please use a valid format like '1d' (1 day), '2h' (2 hours), etc.",
+            return await interaction.followup.send(
+                f"{no} **{interaction.user.display_name}**, invalid duration format. Use e.g. '1d', '2h'.",
                 ephemeral=True,
             )
-            return
         if expiration:
             expiration = await strtotime(expiration)
-        for user in self.failures:
-            user = await interaction.guild.fetch_member(user)
+
+        isEscalated = False
+        NextType = None
+        if TypeActions and TypeActions.get("Escalation", None):
+            Escalation = TypeActions.get("Escalation")
+            Threshold = Escalation.get("Threshold", None)
+            NextType = Escalation.get("Next Type")
+            if Threshold and NextType:
+                for user_id in self.failures:
+                    count = await interaction.client.db["infractions"].count_documents(
+                        {
+                            "guild_id": interaction.guild.id,
+                            "staff": user_id,
+                            "action": action,
+                            "Upscaled": {"$exists": False},
+                        }
+                    )
+                    if isinstance(Threshold, str):
+                        if count + 1 >= int(Threshold):
+                            isEscalated = True
+                            Org = action
+                            action = NextType
+                            break
+
+        for user_id in self.failures:
+            user = await interaction.guild.fetch_member(user_id)
             if user is None:
                 await interaction.followup.send(
-                    f"{no} **{interaction.user.display_name}**, this user can not be found.",
+                    f"{no} **{interaction.user.display_name}**, user {user_id} not found.",
                     ephemeral=True,
                 )
-                return
+                continue
 
             random_string = "".join(
                 random.choices(string.ascii_uppercase + string.digits, k=10)
             )
+            FormeData = {
+                "guild_id": interaction.guild.id,
+                "staff": user.id,
+                "management": interaction.user.id,
+                "action": action,
+                "reason": reason,
+                "notes": notes if notes else "`N/A`",
+                "expiration": expiration,
+                "random_string": random_string,
+                "annonymous": anonymous,
+                "timestamp": datetime.now(),
+            }
+            if isEscalated:
+                FormeData[
+                    "reason"
+                ] += f"\n-# Automatically escalated to **{action}** from **{Org}**"
 
-            InfractionResult = await self.client.db["infractions"].insert_one(
-                {
-                    "guild_id": interaction.guild.id,
-                    "staff": user.id,
-                    "management": interaction.user.id,
-                    "action": action,
-                    "reason": reason,
-                    "notes": notes,
-                    "expiration": expiration,
-                    "random_string": random_string,
-                    "annonymous": anonymous,
-                    "timestamp": datetime.now(),
-                }
+            InfractionResult = await interaction.client.db["infractions"].insert_one(
+                FormeData
             )
             if not InfractionResult.inserted_id:
-                await interaction.response.send_message(
-                    content=f"{crisis} **{interaction.user.display_name},** hi I had a issue submitting this infraction please head to support!",
+                await interaction.followup.send(
+                    f"{crisis} **{interaction.user.display_name},** error submitting infraction.",
                     ephemeral=True,
                 )
-                return
+                continue
+
+            if (
+                Config.get("Infraction", {}).get("Approval", None)
+                and Config.get("Infraction", {}).get("Approval", {}).get("channel")
+                is not None
+            ):
+                try:
+                    approval_channel = await interaction.client.fetch_channel(
+                        int(
+                            Config.get("Infraction", {})
+                            .get("Approval", {})
+                            .get("channel")
+                        )
+                    )
+                except (discord.Forbidden, discord.NotFound):
+                    await interaction.followup.send(
+                        embed=ChannelNotFound(), ephemeral=True
+                    )
+                    continue
+                if not approval_channel:
+                    await interaction.followup.send(
+                        embed=ChannelNotFound(), ephemeral=True
+                    )
+                    continue
+                interaction.client.dispatch(
+                    "infraction_approval", InfractionResult.inserted_id, Config
+                )
+                await interaction.followup.send(
+                    f"{tick} **{interaction.user.display_name},** sent infraction to approval.",
+                    ephemeral=True,
+                )
+                continue
+
             interaction.client.dispatch(
                 "infraction", InfractionResult.inserted_id, Config, TypeActions
             )
-        view = ResetLeaderboard()
-        view.punishfailures.label = "Punished"
-        view.punishfailures.style = discord.ButtonStyle.success
-        view.punishfailures.emoji = tick
-        view.punishfailures.disabled = True
-        await interaction.edit_original_response(view=view)
+
+        await interaction.edit_original_response(
+            content=f"{tick} **{interaction.user.display_name},** successfully infracted users.",
+            view=None,
+        )
 
 
 async def setup(client: commands.Bot) -> None:

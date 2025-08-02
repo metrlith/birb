@@ -1201,13 +1201,8 @@ class Escalate(discord.ui.Modal, title="Escalate"):
             label="Escalated To",
             placeholder="What type is added after reaching the threshold",
         )
-        self.reason = discord.ui.TextInput(
-            label="Reason",
-            placeholder="The infraction reason after hitting the threshold.",
-        )
         self.add_item(self.threshold)
         self.add_item(self.nexttype)
-        self.add_item(self.reason)
         self.type = type
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -1222,7 +1217,6 @@ class Escalate(discord.ui.Modal, title="Escalate"):
 
         Result["Escalation"]["Threshold"] = self.threshold.value
         Result["Escalation"]["Next Type"] = self.nexttype.value
-        Result["Escalation"]["Reason"] = self.reason.value
         if "_id" in Result:
             del Result["_id"]
         await interaction.client.db["infractiontypeactions"].update_one(
