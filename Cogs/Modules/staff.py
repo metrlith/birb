@@ -679,6 +679,7 @@ class quota(commands.Cog):
         YourEmoji = None
         view = StaffManage(staff.id, ctx.author)
         YouPlace = None
+        Name = ""
         if MessageData:
             Quota, Name = self.GetQuota(staff, Config)
             OnLOA = False
