@@ -55,7 +55,7 @@ class Suggestions(discord.ui.Select):
         if option == "Customise Embeds":
             view = discord.ui.View()
             view.add_item(EmbedSelection(self.author))
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 embed=None,
                 view=view,
                 content="<:List:1223063187063308328> Select which embed you want to edit.",
