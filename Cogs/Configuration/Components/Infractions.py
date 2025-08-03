@@ -783,7 +783,6 @@ class NoThanks(discord.ui.View):
         await interaction.response.defer()
         await interaction.followup.send(
             content=f"{tick} **{interaction.user.display_name},** No problem! I've created the infraction type for you!",
-            view=None,
         )
 
 
