@@ -33,12 +33,6 @@ class suggestions(commands.Cog):
         image: discord.Attachment = None,
     ):
         await ctx.defer(ephemeral=True)
-        if self.client.suggestions_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the suggestion module is currently under maintenance. Please try again later.",
-            )
-            return
-
         if not await ModuleCheck(ctx.guild.id, "suggestions"):
 
             await ctx.send(

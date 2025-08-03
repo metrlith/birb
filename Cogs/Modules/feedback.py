@@ -37,11 +37,7 @@ class Feedback(commands.Cog):
     @feedback.command(description="Remove feedback from a staff member")
     @app_commands.describe(id="The ID of the feedback you want to remove.")
     async def remove(self, ctx: commands.Context, id: int):
-        if self.client.feedback_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the feedback module is currently under maintenance. Please try again later.",
-            )
-            return
+
 
         if not await ModuleCheck(ctx.guild.id, "Feedback"):
             await ctx.send(
@@ -93,11 +89,6 @@ class Feedback(commands.Cog):
         *,
         feedback: discord.ext.commands.Range[str, 1, 2000],
     ):
-        if self.client.feedback_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the feedback module is currently under maintenance. Please try again later.",
-            )
-            return
         await ctx.defer(ephemeral=True)
         if not await ctx.guild.fetch_member(ctx.author.id):
             return await ctx.send(
@@ -209,11 +200,7 @@ class Feedback(commands.Cog):
         staff: discord.Member,
         scope: Literal["global", "server"],
     ):
-        if self.client.feedback_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the feedback module is currently under maintenance. Please try again later.",
-            )
-            return
+
         if not await ModuleCheck(ctx.guild.id, "Feedback"):
             await ctx.send(
                 embed=ModuleNotEnabled(),

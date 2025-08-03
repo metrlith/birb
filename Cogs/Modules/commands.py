@@ -23,13 +23,6 @@ async def run(
     await ctx.response.defer(ephemeral=True)
     client = ctx.client
 
-    if client.customcommands_maintenance:
-        await ctx.followup.send(
-            f"{no} **{ctx.user.display_name}**, the custom commands module is currently under maintenance. Please try again later.",
-            ephemeral=True,
-        )
-        return
-
     if not await ModuleCheck(ctx.guild.id, "customcommands"):
         await ctx.followup.send(
             f"{no} **{ctx.user.display_name}**, the custom commands module isn't enabled.",

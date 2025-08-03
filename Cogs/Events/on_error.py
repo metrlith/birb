@@ -10,6 +10,14 @@ import traceback
 
 
 class Tree(app_commands.CommandTree):
+    async def interaction_check(self, interaction: discord.Interaction):
+        if self.client.maintenance is True:
+            await interaction.response.send_message(
+                embed=GlobalMaintenance(self.client.maintenanceReason), view=Support()
+            )
+            return False
+        return True
+
     async def on_error(
         self,
         interaction: discord.Interaction,
@@ -41,8 +49,19 @@ class On_error(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
         self.Start = datetime.now()
+        self.client.add_check(self.CheckStatus)
+
+    async def CheckStatus(self, ctx: commands.Context):
+        if self.client.maintenance:
+            await ctx.send(
+                embed=GlobalMaintenance(self.client.maintenanceReason), view=Support()
+            )
+            return False
+        return True
 
     async def ErrorResponse(self, ctx_or_interaction, error: Exception):
+        if self.client.maintenance:
+            return
         try:
             if isinstance(ctx_or_interaction, commands.Context):
                 author = ctx_or_interaction.author

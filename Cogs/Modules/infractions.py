@@ -156,11 +156,6 @@ class Infractions(commands.Cog):
         expiration: Optional[str] = None,
         anonymous: Optional[Literal["True"]] = None,
     ):
-        if self.client.infractions_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the infractions module is currently under maintenance. Please try again later.",
-            )
-            return
         if not await has_admin_role(ctx, "Infraction Permissions"):
             return
         if not await ModuleCheck(ctx.guild.id, "infractions"):
@@ -435,11 +430,6 @@ class Infractions(commands.Cog):
         scope: Literal["Voided", "Expired", "All"] = None,
     ):
         await ctx.defer()
-        if self.client.infractions_maintenance:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the infractions module is currently under maintenance. Please try again later.",
-            )
-            return
         if not await ModuleCheck(ctx.guild.id, "infractions"):
             await ctx.send(
                 embed=ModuleNotEnabled(),
@@ -570,11 +560,6 @@ class Infractions(commands.Cog):
         voided="Show a hidden infraction",
     )
     async def view(self, ctx: commands.Context, id: str, voided: bool = False):
-        if self.client.infractions_maintenance is True:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the infractions module is currently under maintenance. Please try again later.",
-            )
-            return
         if not await ModuleCheck(ctx.guild.id, "infractions"):
             await ctx.send(
                 embed=ModuleNotEnabled(),

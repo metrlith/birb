@@ -64,12 +64,7 @@ async def SingleHierarchy(
     reason: str,
     rank: str = None,
 ):
-    if interaction.client.promotions_maintenance is True:
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, the promotions module is currently under maintenance. Please try again later.",
-            ephemeral=True,
-        )
-        return
+
     if not await has_admin_role(interaction, "Promotion Permissions"):
         return
     await interaction.response.defer()
@@ -228,12 +223,7 @@ async def MultiHireachy(
     department: str,
     rank: str = None,
 ):
-    if interaction.client.promotions_maintenance is True:
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, the promotions module is currently under maintenance. Please try again later.",
-            ephemeral=True,
-        )
-        return
+
     if not await has_admin_role(interaction, "Promotion Permissions"):
         return
     await interaction.response.defer()
@@ -393,12 +383,6 @@ async def issue(
     new: discord.Role,
     reason: str,
 ):
-    if interaction.client.promotions_maintenance is True:
-        await interaction.response.send_message(
-            f"{no} **{interaction.user.display_name}**, the promotions module is currently under maintenance. Please try again later.",
-            ephemeral=True,
-        )
-        return
     if not await has_admin_role(interaction, "Promotion Permissions"):
         return
     await interaction.response.defer()

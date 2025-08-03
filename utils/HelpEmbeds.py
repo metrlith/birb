@@ -74,6 +74,15 @@ def NotYourPanel():
         color=discord.Color.brand_red(),
     )
 
+def GlobalMaintenance(reason: str):
+    return discord.Embed(
+        description=f"```\nBirb is currently undergoing maintenance.\n```",
+        color=discord.Color.brand_red(),
+    ).add_field(
+        name="Reason",
+        value=f"> {reason}"
+    )
+
 def NoChannelSet():
     return discord.Embed(
         description="```\nNo channel has been set for this module.\n```",

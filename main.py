@@ -86,8 +86,8 @@ if os.getenv("SENTRY_URL", None):
 class Client(commands.AutoShardedBot):
     def __init__(self):
         self._initialize_databases()
-
-        self._initialize_maintenance_flags()
+        self.maintenance = False
+        self.maintenanceReason = ""
         self.cached_commands = {}
         intents = self._initialize_intents()
         self._initialize_super(intents)
@@ -105,13 +105,6 @@ class Client(commands.AutoShardedBot):
         self.config = Config
         self.customcommands = db["customcommands"]
 
-    def _initialize_maintenance_flags(self):
-        self.infractions_maintenance = False
-        self.promotions_maintenance = False
-        self.feedback_maintenance = False
-        self.loa_maintenance = False
-        self.suggestions_maintenance = False
-        self.customcommands_maintenance = False
 
     def _initialize_intents(self):
         intents = discord.Intents.default()

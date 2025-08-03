@@ -18,7 +18,7 @@ class expiration(commands.Cog):
 
     @tasks.loop(minutes=30, reconnect=True)
     async def Task(self):
-        if self.client.infractions_maintenance:
+        if self.client.maintenance:
             return
 
         filter = {
