@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from utils.emojis import *
-
+from utils.HelpEmbeds import NotYourPanel
 
 class Data(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -60,11 +60,8 @@ class DataManage(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         from Cogs.Configuration.Components.Infractions import InfractionEmbed
         from Cogs.Configuration.Components.Promotions import PromotionEmbed
@@ -162,11 +159,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         from Cogs.Configuration.Components.Infractions import InfractionEmbed
         from Cogs.Configuration.Components.Promotions import PromotionEmbed
         from Cogs.Configuration.Components.LOA import LOAEmbed
@@ -294,11 +288,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["infractions"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -311,11 +302,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["promotions"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -328,11 +316,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["suggestions"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -345,11 +330,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["Custom Commands"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -362,11 +344,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["loa"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -381,11 +360,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["Forum Configuration"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -398,11 +374,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["staff database"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -415,11 +388,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["feedback"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -432,11 +402,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["Auto Responders"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -449,11 +416,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["Suspensions"].delete_many(
             {"guild_id": interaction.guild.id}
         )
@@ -466,11 +430,8 @@ class ClearData(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["connectionroles"].delete_many(
             {"guild_id": interaction.guild.id}
         )

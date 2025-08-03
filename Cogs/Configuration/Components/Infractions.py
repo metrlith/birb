@@ -5,6 +5,7 @@ import traceback
 from utils.emojis import *
 import re
 
+from utils.HelpEmbeds import NotYourPanel
 
 from utils.format import IsSeperateBot
 from utils.permissions import premium
@@ -52,13 +53,11 @@ class InfractionOption(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-
         await interaction.response.defer()
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
@@ -67,6 +66,11 @@ class InfractionOption(discord.ui.Select):
                 "Module Options": {},
                 "_id": interaction.guild.id,
             }
+        await Reset(
+            interaction,
+            lambda: InfractionOption(interaction.user),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )
 
         view = discord.ui.View()
 
@@ -361,11 +365,10 @@ class ApprovalChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -417,11 +420,10 @@ class ApprovalRole(discord.ui.RoleSelect):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -465,11 +467,10 @@ class ManageReasons(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.send_modal(
             AddAndRemove(self.author, "add", self.message)
         )
@@ -479,11 +480,10 @@ class ManageReasons(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
@@ -518,11 +518,10 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
@@ -652,11 +651,10 @@ class ManageTypes(discord.ui.Select):  # Infraction Types
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         selection = self.values[0]
         if selection == "Add":
@@ -708,11 +706,10 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -826,11 +823,10 @@ class InfractionChannel(discord.ui.ChannelSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -872,11 +868,10 @@ class RequiredRoles(discord.ui.RoleSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": self.Ty}
@@ -909,11 +904,10 @@ class WebhookToggle(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
@@ -976,11 +970,10 @@ class WebhookDesign(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         if not await premium(interaction.guild.id):
             return await interaction.response.send_message(
                 embed=NoPremium(), view=Support()
@@ -1035,11 +1028,10 @@ class LogChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 

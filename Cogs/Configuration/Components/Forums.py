@@ -1,11 +1,7 @@
 import discord
-import discord.http
 from utils.emojis import *
 from utils.format import IsSeperateBot
-
-
-
-
+from utils.HelpEmbeds import NotYourPanel
 
 
 class ForumsOptions(discord.ui.Select):
@@ -21,11 +17,8 @@ class ForumsOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         await interaction.response.defer()
         option = interaction.data["values"][0]
         if option == "Manage Forums":
@@ -35,9 +28,11 @@ class ForumsOptions(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1223062562782838815.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            Forums = await interaction.client.db["Forum Configuration"].find(
-                {"guild_id": interaction.guild.id}
-            ).to_list(length=None)
+            Forums = (
+                await interaction.client.db["Forum Configuration"]
+                .find({"guild_id": interaction.guild.id})
+                .to_list(length=None)
+            )
             for form in Forums:
                 embed.add_field(
                     name=f"<:forum:1223062562782838815> {form.get('name')}",
@@ -65,24 +60,20 @@ class ForumManagent(discord.ui.View):
     @discord.ui.button(emoji="<:Add:1163095623600447558>")
     async def add(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)        
+
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         await interaction.response.send_modal(CreateForum(interaction.user))
 
     @discord.ui.button(emoji="<:Pen:1235001839036923996>")
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)        
+
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         view = discord.ui.View()
-        Forums = await interaction.client.db["Forum Configuration"].find({"guild_id": interaction.guild.id}).to_list(
-            length=None
+        Forums = (
+            await interaction.client.db["Forum Configuration"]
+            .find({"guild_id": interaction.guild.id})
+            .to_list(length=None)
         )
         Options = []
         for form in Forums:
@@ -106,14 +97,13 @@ class ForumManagent(discord.ui.View):
     @discord.ui.button(emoji="<:Subtract:1229040262161109003>")
     async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)        
+
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         view = discord.ui.View()
-        Forums = await interaction.client.db["Forum Configuration"].find({"guild_id": interaction.guild.id}).to_list(
-            length=None
+        Forums = (
+            await interaction.client.db["Forum Configuration"]
+            .find({"guild_id": interaction.guild.id})
+            .to_list(length=None)
         )
         Options = []
         for form in Forums:
@@ -142,11 +132,8 @@ class ForumSelection(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         await interaction.response.defer()
         from Cogs.Configuration.Components.EmbedBuilder import DisplayEmbed, Embed

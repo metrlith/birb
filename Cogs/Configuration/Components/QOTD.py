@@ -3,7 +3,7 @@ from utils.emojis import *
 from datetime import datetime, timedelta
 import re
 from utils.permissions import premium
-from utils.HelpEmbeds import NoPremium, Support
+from utils.HelpEmbeds import NoPremium, Support, NotYourPanel
 
 
 class QOTDOptions(discord.ui.Select):
@@ -13,15 +13,18 @@ class QOTDOptions(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
-        if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
-        option = interaction.data["values"][0]
-        from Cogs.Configuration.Configuration import ConfigMenu, Options
+
+        if interaction.user.id != self.author.id:
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
+        option = self.values[0]
+        from Cogs.Configuration.Configuration import ConfigMenu, Options, Reset
+
+        await Reset(
+            interaction,
+            lambda: QOTDOptions(interaction.user, self.options),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )
 
         if option == "Start QOTD":
             await interaction.client.db["qotd"].update_one(
@@ -76,7 +79,9 @@ class QOTDOptions(discord.ui.Select):
             )
         elif option == "Webhook":
             if not await premium(interaction.guild.id):
-                return await interaction.followup.send(embed=NoPremium(), view=Support())
+                return await interaction.followup.send(
+                    embed=NoPremium(), view=Support()
+                )
 
             Config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
@@ -207,11 +212,10 @@ class PingRole(discord.ui.RoleSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         await interaction.client.db["qotd"].update_one(
             {"guild_id": interaction.guild.id},
@@ -250,11 +254,10 @@ class QOTDChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.client.db["qotd"].update_one(
             {"guild_id": interaction.guild.id},
             {
@@ -331,11 +334,10 @@ class WebhookDesign(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         if not await premium(interaction.guild.id):
             return await interaction.response.send_message(
                 embed=NoPremium(), view=Support()
@@ -388,11 +390,10 @@ class WebhookToggle(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:

@@ -24,7 +24,13 @@ environment = os.getenv("ENVIRONMENT")
 guildid = os.getenv("CUSTOM_GUILD")
 
 
-from utils.HelpEmbeds import BotNotConfigured, ModuleNotEnabled, Support, ModuleNotSetup
+from utils.HelpEmbeds import (
+    BotNotConfigured,
+    ModuleNotEnabled,
+    Support,
+    ModuleNotSetup,
+    NotYourPanel,
+)
 
 
 class SetMessages(discord.ui.Modal, title="Set Message Count"):
@@ -165,11 +171,10 @@ class StaffManage(discord.ui.View):
     )
     async def add(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.send_modal(AddMessage(self.staff_id))
 
     @discord.ui.button(
@@ -182,11 +187,10 @@ class StaffManage(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.send_modal(RemovedMessage(self.staff_id))
 
     @discord.ui.button(
@@ -197,11 +201,10 @@ class StaffManage(discord.ui.View):
     )
     async def set(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.send_modal(SetMessages(self.staff_id))
 
     @discord.ui.button(
@@ -213,11 +216,10 @@ class StaffManage(discord.ui.View):
     async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
         staff_id = self.staff_id
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         filter = {"guild_id": interaction.guild.id, "user_id": staff_id}
         update = {"$set": {"message_count": 0}}
         await interaction.client.qdb["messages"].update_one(filter, update)
@@ -1543,11 +1545,10 @@ class ArmFire(discord.ui.View):
     @discord.ui.button(label="Arm", disabled=False)
     async def Arm(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         self.Arm.disabled = True
         self.Fire.disabled = False
         self.Arm.label = "Armed"
@@ -1557,11 +1558,10 @@ class ArmFire(discord.ui.View):
     @discord.ui.button(label="Reset", disabled=True, style=discord.ButtonStyle.red)
     async def Fire(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+             
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         if self.action == "Messages":
             await interaction.client.qdb["messages"].update_many(
                 {"guild_id": interaction.guild.id},

@@ -1,5 +1,6 @@
 import discord
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
 
 
 class PermissionsUpdate(discord.ui.RoleSelect):
@@ -22,13 +23,10 @@ class PermissionsUpdate(discord.ui.RoleSelect):
         from Cogs.Configuration.Components.AdvancedPermissions import (
             PermissionsDropdown,
         )
-
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:

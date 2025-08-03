@@ -201,7 +201,8 @@ class on_leave(commands.Cog):
         }
         embed.color = color.get(action, discord.Color.dark_embed())
         embed.timestamp = discord.utils.utcnow()
-        embed.set_footer(text=f"@{author.name}", icon_url=author.display_avatar)
+        if author:
+         embed.set_footer(text=f"@{author.name}", icon_url=author.display_avatar)
         if action == "modify":
             embed.title = "Leave Modified"
             embed.add_field(

@@ -1,6 +1,7 @@
 import discord
 from utils.emojis import *
 import traceback
+from utils.HelpEmbeds import NotYourPanel
 
 
 class Suggestions(discord.ui.Select):
@@ -23,19 +24,22 @@ class Suggestions(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
+
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
-        option = interaction.data["values"][0]
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
+        option = self.values[0]
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        if not Config:
+            Config = {"Suggestions": {}, "_id": interaction.guild.id}
+        await Reset(
+            interaction,
+            lambda: Suggestions(interaction.user),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )
         if option == "Suggestions Channel":
-            Config = await interaction.client.config.find_one(
-                {"_id": interaction.guild.id}
-            )
-            if not Config:
-                Config = {"Suggestions": {}, "_id": interaction.guild.id}
+
             view = discord.ui.View()
             view.add_item(
                 SuggestionsChannel(
@@ -46,7 +50,7 @@ class Suggestions(discord.ui.Select):
                     interaction.message,
                 )
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
             return
         if option == "Customise Embeds":
             view = discord.ui.View()
@@ -58,11 +62,7 @@ class Suggestions(discord.ui.Select):
             )
             return
         if option == "Preferences":
-            Config = await interaction.client.config.find_one(
-                {"_id": interaction.guild.id}
-            )
-            if not Config:
-                Config = {"Suggestions": {}, "_id": interaction.guild.id}            
+
             view = Preferences(author=self.author)
             if not Config.get("Module Options"):
                 Config["Module Options"] = {}
@@ -83,7 +83,7 @@ class Suggestions(discord.ui.Select):
                 name="Preferences",
                 icon_url="https://cdn.discordapp.com/emojis/1160541147320553562.webp?size=96&quality=lossless",
             )
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 view=view, embed=embed, ephemeral=True
             )
 
@@ -148,11 +148,10 @@ class SuggestionsChannel(discord.ui.ChannelSelect):
     async def callback(self, interaction):
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -352,11 +351,10 @@ class EmbedSelection(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         option = self.values[0]
         await CustomiseEmbed(interaction, option)

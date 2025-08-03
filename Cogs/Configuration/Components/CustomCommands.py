@@ -1,12 +1,11 @@
 import discord
-import discord.http
 
 from utils.emojis import *
 
 
 from utils.permissions import premium
 from Cogs.Modules.commands import SyncCommand, Unsync
-from utils.HelpEmbeds import NoPremium, Support
+from utils.HelpEmbeds import NoPremium, Support, NotYourPanel
 
 
 class CustomCommands(discord.ui.Select):
@@ -22,11 +21,8 @@ class CustomCommands(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
         IsPremium = await premium(interaction.guild.id)
@@ -37,8 +33,10 @@ class CustomCommands(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1223062616872583289.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
-                length=None
+            commands = (
+                await interaction.client.db["Custom Commands"]
+                .find({"guild_id": interaction.guild.id})
+                .to_list(length=None)
             )
             for commands in commands:
                 Required = commands.get("permissionroles")
@@ -61,10 +59,14 @@ class CustomCommands(discord.ui.Select):
                     break
             if len(embed.fields) == 0:
                 embed.description == "> There are no custom commands!"
-            
-            embed.set_footer(text=f"{len(commands)}/{10 if not IsPremium else '∞'} Commands")
+
+            embed.set_footer(
+                text=f"{len(commands)}/{10 if not IsPremium else '∞'} Commands"
+            )
             view = ManageCommands(self.author)
-            view.CreateCommand.label = f"Create ({len(commands)}/{10 if not IsPremium else '∞'})"
+            view.CreateCommand.label = (
+                f"Create ({len(commands)}/{10 if not IsPremium else '∞'})"
+            )
             await interaction.followup.send(view=view, embed=embed)
             del commands
 
@@ -79,17 +81,20 @@ class ManageCommands(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-        
-        CustomCommands = await interaction.client.db['Custom Commands'].count_documents({"guild_id": interaction.guild.id})
+
+        CustomCommands = await interaction.client.db["Custom Commands"].count_documents(
+            {"guild_id": interaction.guild.id}
+        )
         IsPremium = await premium(interaction.guild.id)
 
-        if CustomCommands > (10 if not IsPremium else float('inf')):
-            return await interaction.response.send_message(embed=NoPremium, view=Support())
+        if CustomCommands > (10 if not IsPremium else float("inf")):
+            return await interaction.response.send_message(
+                embed=NoPremium, view=Support()
+            )
 
         await interaction.response.send_modal(CreateCommand(interaction.user))
 
@@ -99,14 +104,15 @@ class ManageCommands(discord.ui.View):
     ):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
-            length=None
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
+
+        commands = (
+            await interaction.client.db["Custom Commands"]
+            .find({"guild_id": interaction.guild.id})
+            .to_list(length=None)
         )
         Options = []
         Added = set()
@@ -141,14 +147,14 @@ class ManageCommands(discord.ui.View):
     ):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
-        commands = await interaction.client.db['Custom Commands'].find({"guild_id": interaction.guild.id}).to_list(
-            length=None
+        commands = (
+            await interaction.client.db["Custom Commands"]
+            .find({"guild_id": interaction.guild.id})
+            .to_list(length=None)
         )
         Options = []
         Added = set()
@@ -190,7 +196,7 @@ class CommandSelection(discord.ui.Select):
                 DisplayEmbed,
             )
 
-            command = await interaction.client.db['Custom Commands'].find_one(
+            command = await interaction.client.db["Custom Commands"].find_one(
                 {"name": self.values[0], "guild_id": interaction.guild.id}
             )
             data = {
@@ -238,7 +244,7 @@ class CommandSelection(discord.ui.Select):
                 )
 
         if self.typed == "delete":
-            await interaction.client.db['Custom Commands'].delete_one(
+            await interaction.client.db["Custom Commands"].delete_one(
                 {"name": self.values[0], "guild_id": interaction.guild.id}
             )
             await Unsync(interaction.client, self.values[0], interaction.guild.id)
@@ -258,7 +264,7 @@ class CreateCommand(discord.ui.Modal, title="Create Command"):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
-        command = await interaction.client.db['Custom Commands'].find_one(
+        command = await interaction.client.db["Custom Commands"].find_one(
             {"guild_id": interaction.guild.id, "name": self.name.value}
         )
         if command:
@@ -324,7 +330,7 @@ async def FinalFunc(interaction: discord.Interaction, datad: dict):
         if datad.get("permissionroles"):
             data["permissionroles"] = datad.get("permissionroles")
 
-    result = await interaction.client.db['Custom Commands'].update_one(
+    result = await interaction.client.db["Custom Commands"].update_one(
         {"name": datad.get("name"), "guild_id": interaction.guild.id},
         {"$set": data},
         upsert=True,

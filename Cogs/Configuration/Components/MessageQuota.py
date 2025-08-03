@@ -3,6 +3,7 @@ from utils.emojis import *
 from datetime import datetime, timedelta
 from utils.ui import BasicPaginator
 from utils.format import IsSeperateBot
+from utils.HelpEmbeds import NotYourPanel
 
 
 class QuotaOptions(discord.ui.Select):
@@ -26,6 +27,8 @@ class QuotaOptions(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
+
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(
                 embed=discord.Embed(
@@ -44,11 +47,19 @@ class QuotaOptions(discord.ui.Select):
                 )
             )
             return
+
+        await interaction.response.defer()
+        config = await interaction.client.db["Config"].find_one(
+            {"_id": interaction.guild.id}
+        )
+        await Reset(
+            interaction,
+            lambda: QuotaOptions(interaction.user),
+            lambda: ConfigMenu(Options(config), interaction.user),
+        )
         if selection == "Role Quota":
             embeds = []
-            config = await interaction.client.db["Config"].find_one(
-                {"_id": interaction.guild.id}
-            )
+
             roles = config.get("Message Quota", {}).get("Roles", [])
             pages = [roles[i : i + 5] for i in range(0, len(roles), 5)]
 
@@ -82,9 +93,7 @@ class QuotaOptions(discord.ui.Select):
             for item in RoleManage.children:
                 view.add_item(item)
 
-            await interaction.response.send_message(
-                view=view, embed=embeds[0], ephemeral=True
-            )
+            await interaction.followup.send(view=view, embed=embeds[0], ephemeral=True)
 
             return
         if selection == "Ignored Channels":
@@ -105,10 +114,10 @@ class QuotaOptions(discord.ui.Select):
                     message=interaction.message,
                 ),
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
         if selection == "Auto Activity":
             view.add_item(AutoActivity(interaction.user))
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
 
 
 class IgnoredChannels(discord.ui.ChannelSelect):
@@ -380,11 +389,10 @@ class MessageQuota(discord.ui.Modal, title="Message Quota"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         try:
             Config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
@@ -437,11 +445,10 @@ class AutoActivity(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         selection = self.values[0]
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         view = discord.ui.View()
         if selection == "Toggle":
@@ -514,11 +521,10 @@ class PostChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer(ephemeral=True)
 
         filter = {"guild_id": interaction.guild.id}
@@ -548,11 +554,10 @@ class ActivityToggle(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         color = self.values[0]
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         if color == "Enabled":
             await interaction.response.send_message(

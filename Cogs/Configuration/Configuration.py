@@ -3,8 +3,15 @@ from discord.ext import commands
 from utils.emojis import *
 
 from utils.permissions import premium
-from utils.HelpEmbeds import NoPremium, Support
+from utils.HelpEmbeds import NoPremium, Support, NotYourPanel
 from utils.ui import PMButton
+
+
+async def Reset(i: discord.Interaction, *F):
+    view = discord.ui.View()
+    for E in F:
+        view.add_item(E())
+    await i.edit_original_response(view=view)
 
 
 class ConfigMenu(discord.ui.Select):
@@ -15,11 +22,7 @@ class ConfigMenu(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         from Cogs.Configuration.Components.Modules import ModuleToggle, ModuleOptions
 
@@ -35,12 +38,10 @@ class ConfigMenu(discord.ui.Select):
 
         selection = self.values[0]
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
             return await interaction.followup.send(embed=embed, ephemeral=True)
         embed = discord.Embed(color=discord.Colour.dark_embed())
+
+        await Reset(interaction, lambda: ConfigMenu(Options(Config), interaction.user))
 
         if selection == "Permissions":
             from Cogs.Configuration.Components.Permissions import (

@@ -1,9 +1,7 @@
 import discord
 from utils.emojis import *
-
+from utils.HelpEmbeds import NotYourPanel
 import traceback
-
-
 
 
 class StaffFeedback(discord.ui.Select):
@@ -25,15 +23,20 @@ class StaffFeedback(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
+
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
-        option = interaction.data["values"][0]
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
+        option = self.values[0]
+        Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        await Reset(
+            interaction,
+            lambda: StaffFeedback(interaction.user),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )
+
         if option == "Feedback Channel":
-            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {"Feedback": {}, "_id": interaction.guild.id}
             view = discord.ui.View()
@@ -46,9 +49,8 @@ class StaffFeedback(discord.ui.Select):
                     interaction.message,
                 )
             )
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
         elif option == "Preferences":
-            Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
             if not Config:
                 Config = {
                     "Infraction": {},
@@ -71,13 +73,10 @@ class StaffFeedback(discord.ui.Select):
                 name="Preferences",
                 icon_url="https://cdn.discordapp.com/emojis/1160541147320553562.webp?size=96&quality=lossless",
             )
-            await interaction.response.send_message(
-                embed=embed, view=view, ephemeral=True
-            )
+            await interaction.followup.send(embed=embed, view=view, ephemeral=True)
         elif option == "Customise Embed":
             try:
-                await interaction.response.defer()
-                custom = await interaction.client.db['Customisation'].find_one(
+                custom = await interaction.client.db["Customisation"].find_one(
                     {"guild_id": interaction.guild.id, "type": "Feedback"}
                 )
                 embed = None
@@ -199,7 +198,7 @@ async def FinalFunction(interaction: discord.Interaction, d={}):
                 ],
             },
         }
-    await interaction.client.db['Customisation'].update_one(
+    await interaction.client.db["Customisation"].update_one(
         {"guild_id": interaction.guild.id, "type": "Feedback"},
         {"$set": data},
         upsert=True,
@@ -244,7 +243,9 @@ class Preferences(discord.ui.View):
                 button.label = "Multiple Feedback (Enabled)"
                 button.style = discord.ButtonStyle.green
 
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": Config})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": Config}
+        )
         await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
@@ -275,11 +276,10 @@ class FeedbackChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -288,8 +288,12 @@ class FeedbackChannel(discord.ui.ChannelSelect):
             config["Feedback"] = {}
 
         config["Feedback"]["channel"] = self.values[0].id if self.values else None
-        await interaction.client.config.update_one({"_id": interaction.guild.id}, {"$set": config})
-        Updated = await interaction.client.config.find_one({"_id": interaction.guild.id})
+        await interaction.client.config.update_one(
+            {"_id": interaction.guild.id}, {"$set": config}
+        )
+        Updated = await interaction.client.config.find_one(
+            {"_id": interaction.guild.id}
+        )
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(

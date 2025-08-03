@@ -1,6 +1,7 @@
 import discord
 from utils.erm import GetIdentifier
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
 
 class Integrations(discord.ui.Select):
     def __init__(self, author: discord.Member):
@@ -19,11 +20,8 @@ class Integrations(discord.ui.Select):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.response.defer()
         if self.values[0] == "ERM":
 
@@ -76,11 +74,8 @@ class GroupOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         modal = EnterGroup(self.author)
         await interaction.response.send_modal(modal)
@@ -98,11 +93,8 @@ class EnterGroup(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
@@ -167,11 +159,8 @@ class KeyButton(discord.ui.View):
     )
     async def apikey(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db['integrations'].update_one(
             {"server": interaction.guild.id},
             {"$set": {"erm": self.key}},

@@ -1,5 +1,6 @@
 import discord
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
 
 
 class PremiumButtons(discord.ui.View):
@@ -15,11 +16,10 @@ class PremiumButtons(discord.ui.View):
     )
     async def enable(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
@@ -73,11 +73,10 @@ class PremiumButtons(discord.ui.View):
     )
     async def disable(self, interaction: discord.Interaction, button: discord.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -108,8 +107,12 @@ async def SubscriptionsEmbed(Interaction: discord.Interaction):
     Embed.set_author(name=Interaction.guild.name, icon_url=Interaction.guild.icon)
     Embed.set_thumbnail(url=Interaction.guild.icon)
 
-    GuildHasPremium = await Interaction.client.db["Subscriptions"].find_one({"guilds": {"$in": [Interaction.guild.id]}})
-    UserDoc = await Interaction.client.db["Subscriptions"].find_one({"user": Interaction.user.id})
+    GuildHasPremium = await Interaction.client.db["Subscriptions"].find_one(
+        {"guilds": {"$in": [Interaction.guild.id]}}
+    )
+    UserDoc = await Interaction.client.db["Subscriptions"].find_one(
+        {"user": Interaction.user.id}
+    )
 
     Tokens = UserDoc.get("Tokens", 0) if UserDoc else 0
     Guilds = UserDoc.get("guilds", []) if UserDoc else []
@@ -133,9 +136,7 @@ async def SubscriptionsEmbed(Interaction: discord.Interaction):
             "> If you no longer want this server to have premium, deactivate it below."
         )
     elif GuildHasPremium and not UserDoc:
-        Embed.description = (
-            "> This server is premium, but you do not have any active subscriptions associated with your account."
-        )
+        Embed.description = "> This server is premium, but you do not have any active subscriptions associated with your account."
 
     if UserDoc:
         Embed.add_field(

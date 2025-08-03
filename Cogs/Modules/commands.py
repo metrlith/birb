@@ -156,7 +156,7 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
             name=Stripped, description="[Custom CMD]", callback=command_callback
         )
 
-        result = await self.db["Custom Commands"].update_one(
+        await self.db["Custom Commands"].update_one(
             {"name": name, "guild_id": guild},
             {
                 "$set": {
@@ -164,11 +164,6 @@ async def SyncCommand(self: commands.Bot, name: str, guild: int):
                 }
             },
         )
-        if result.matched_count == 0:
-            print(f"No matching document found for name '{name}' and guild '{guild}'.")
-        else:
-            print("Error: 'self.customcommands' collection is not initialized.")
-
         self.tree.add_command(Command, guild=discord.Object(id=guild))
         await self.tree.sync(guild=discord.Object(id=guild))
 

@@ -1,4 +1,3 @@
-# cog
 import discord
 from discord.ext import commands, tasks
 import os
@@ -9,6 +8,8 @@ import re
 from utils.patreon import SubscriptionUser
 from utils.format import IsSeperateBot
 from datetime import datetime
+from utils.HelpEmbeds import NotYourPanel
+
 
 MONGO_URL = os.getenv("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
@@ -727,11 +728,8 @@ class Setup(discord.ui.View):
     @discord.ui.button(label="Begin Setup", style=discord.ButtonStyle.green)
     async def begin(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         result = await bots.find_one({"user_id": self.author.id})
         if result:
@@ -744,7 +742,7 @@ class Setup(discord.ui.View):
         embed.description = (
             "**Welcome to the bot setup!**\n\n"
             "This guide will help you create and launch your own Discord bot.\n\n"
-            "📌 **Follow this step-by-step guide:**\n"
+            "📌 **Follow this step-by-step guide**\n"
             "[Discord.py Documentation](https://discordpy.readthedocs.io/en/stable/discord.html)\n\n"
             "Click **Next** to continue."
         )
@@ -763,11 +761,8 @@ class Next(discord.ui.View):
     @discord.ui.button(label="Next Step", style=discord.ButtonStyle.green)
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         result = await bots.find_one({"user_id": interaction.user.id})
         if result:
             return await interaction.response.send_message(
@@ -778,7 +773,7 @@ class Next(discord.ui.View):
         embed.set_author(name="Setting Up Your Bot", icon_url=interaction.guild.icon)
         embed.description = (
             "Now it's time to **power up your bot!**\n\n"
-            "You'll need to gather the following information:\n"
+            "You'll need to gather the following information\n"
             "🔹 **Bot Token** (Found in the [Discord Developer Portal](https://discord.com/developers/applications))\n"
             "🔹 **Bot Invite Link** (Used to add your bot to a server)\n"
             "🔹 **Server ID** (Where the bot will be used)\n\n"
@@ -798,11 +793,8 @@ class Continue(discord.ui.View):
     @discord.ui.button(label="Continue", style=discord.ButtonStyle.green)
     async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.response.send_modal(SetUP(interaction.user.display_name))
 
 

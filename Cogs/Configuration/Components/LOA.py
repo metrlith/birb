@@ -1,5 +1,6 @@
 import discord
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
 
 
 class LOAOptions(discord.ui.Select):
@@ -22,12 +23,12 @@ class LOAOptions(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
+
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -37,16 +38,45 @@ class LOAOptions(discord.ui.Select):
                 "Module Options": {},
                 "_id": interaction.guild.id,
             }
+        await Reset(
+            interaction,
+            lambda: LOAOptions(interaction.user),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )
         Selection = self.values[0]
         view = discord.ui.View()
         if Selection == "LOA Role":
-            view.add_item(LOARole(self.author, message=interaction.message))
+            view.add_item(
+                LOARole(
+                    self.author,
+                    role=interaction.guild.get_role(
+                        Config.get("LOA", {}).get("role"),
+                    ),
+                    message=interaction.message,
+                )
+            )
 
         if Selection == "LOA Channel":
-            view.add_item(LOAChannel(self.author, message=interaction.message))
+            view.add_item(
+                LOAChannel(
+                    author=self.author,
+                    channel=interaction.guild.get_channel(
+                        Config.get("LOA", {}).get("channel"),
+                    ),
+                    message=interaction.message,
+                )
+            )
 
         if Selection == "LOA Audit Log":
-            view.add_item(LogChannel(self.author, message=interaction.message))
+            view.add_item(
+                LogChannel(
+                    author=self.author,
+                    channel=interaction.guild.get_channel(
+                        Config.get("LOA", {}).get("LogChannel"),
+                    ),
+                    message=interaction.message,
+                )
+            )
 
         await interaction.followup.send(view=view, ephemeral=True)
 
@@ -71,11 +101,10 @@ class LogChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -127,11 +156,10 @@ class LOAChannel(discord.ui.ChannelSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -180,11 +208,10 @@ class LOARole(discord.ui.RoleSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -223,6 +250,10 @@ async def LOAEmbed(
         interaction.guild.get_channel(config.get("LOA", {}).get("channel"))
         or "Not Configured"
     )
+    LogChannel = (
+        interaction.guild.get_channel(config.get("LOA", {}).get("LogChannel"))
+        or "Not Configured"
+    )
 
     Role = (
         interaction.guild.get_role(config.get("LOA", {}).get("role"))
@@ -233,13 +264,15 @@ async def LOAEmbed(
 
     if isinstance(Channel, discord.TextChannel):
         Channel = Channel.mention
+    if isinstance(LogChannel, discord.TextChannel):
+        LogChannel = LogChannel.mention
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
     embed.description = "> This is where you can manage your server's LOA settings! LOA is a way for staff members to take a break from their duties. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
     embed.add_field(
         name="<:settings:1207368347931516928> LOA",
-        value=f"{replytop} `LOA Channel:` {Channel}\n{replybottom} `LOA Role:` {Role}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"{replytop} `LOA Channel:` {Channel}\n{replymiddle} `LOA Audit Channel`: {LogChannel}\n{replybottom} `LOA Role:` {Role}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
         inline=False,
     )
     return embed

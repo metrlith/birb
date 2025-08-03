@@ -1,5 +1,7 @@
 import discord
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
+
 
 class AutoResponderOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):
@@ -15,11 +17,8 @@ class AutoResponderOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await interaction.response.defer()
         if self.values[0] == "Manage Responses":
@@ -29,9 +28,11 @@ class AutoResponderOptions(discord.ui.Select):
                 icon_url="https://cdn.discordapp.com/emojis/1250481563615887391.webp?size=96&quality=lossless",
             )
             embed.set_thumbnail(url=interaction.guild.icon)
-            Responses = await interaction.client.db["Auto Responders"].find(
-                {"guild_id": interaction.guild.id}
-            ).to_list(length=None)
+            Responses = (
+                await interaction.client.db["Auto Responders"]
+                .find({"guild_id": interaction.guild.id})
+                .to_list(length=None)
+            )
             for response in Responses:
                 embed.add_field(
                     name=f"{response.get('trigger')}",
@@ -52,21 +53,17 @@ class AutoResponder(discord.ui.View):
     @discord.ui.button(label="Create", style=discord.ButtonStyle.green, row=1)
     async def create(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.send_modal(Create())
 
     @discord.ui.button(label="Delete", style=discord.ButtonStyle.red, row=1)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await interaction.response.send_modal(DeleteByTrigger2())
 
@@ -171,11 +168,9 @@ class DeleteByTrigger(discord.ui.View):
     @discord.ui.button(label="Delete By Text", row=2, style=discord.ButtonStyle.danger)
     async def delete(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.send_modal(DeleteByTrigger2())
 
 

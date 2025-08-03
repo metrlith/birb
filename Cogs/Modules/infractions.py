@@ -21,6 +21,7 @@ from utils.HelpEmbeds import (
     Support,
     ModuleNotSetup,
     NoPremium,
+    NotYourPanel
 )
 
 
@@ -798,11 +799,8 @@ class ManageInfraction(discord.ui.View):
     )
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         view = ImDone(interaction.user, self.infraction)
         view.add_item(EditInfraction(self.infraction, self.author))
         await interaction.response.edit_message(
@@ -816,11 +814,8 @@ class ManageInfraction(discord.ui.View):
     )
     async def void(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         infraction = self.infraction
         if infraction.get("voided", False):
@@ -865,11 +860,8 @@ class EditInfraction(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         value = self.values[0]
         if value == "action":
@@ -995,11 +987,8 @@ class ImDone(discord.ui.View):
     )
     async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         view = ManageInfraction(self.infraction, self.author)
         if self.infraction.get("voided"):
             view.void.label = "Delete"
@@ -1026,11 +1015,8 @@ class UpdateAction(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         self.infraction["action"] = self.values[0]
         await interaction.client.db["infractions"].update_one(
             {"_id": self.infraction["_id"]},

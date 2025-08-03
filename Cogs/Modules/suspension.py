@@ -21,6 +21,7 @@ from utils.HelpEmbeds import (
     ChannelNotFound,
     ModuleNotEnabled,
     Support,
+    NotYourPanel
 )
 
 
@@ -322,11 +323,8 @@ class RoleTakeAwayYesOrNo(discord.ui.View):
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
     async def Yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         view = RoleTakeAwayView(
             self.user,
             self.author,

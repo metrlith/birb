@@ -1,6 +1,7 @@
 import discord
 import traceback
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
 
 
 class SuspensionOptions(discord.ui.Select):
@@ -20,11 +21,10 @@ class SuspensionOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {"Suspension": {}, "_id": interaction.guild.id}
@@ -219,11 +219,10 @@ class SuspensionChannel(discord.ui.ChannelSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:

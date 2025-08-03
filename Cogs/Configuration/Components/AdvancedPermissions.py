@@ -2,6 +2,7 @@ import discord
 from utils.emojis import *
 from utils.format import IsSeperateBot
 from utils.ui import BasicPaginator
+from utils.HelpEmbeds import NotYourPanel
 
 
 class PermissionsDropdown(discord.ui.Select):
@@ -24,11 +25,8 @@ class PermissionsDropdown(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
         Config = await interaction.client.db["Config"].find_one(
             {"_id": interaction.guild.id}
         )
@@ -92,10 +90,7 @@ class ManagePermissions(discord.ui.View):
     )
     async def Add(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
+
             return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
@@ -179,11 +174,10 @@ class ManagePermissions(discord.ui.View):
     )
     async def Remove(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -220,11 +214,10 @@ class RemoveCommands(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -258,11 +251,8 @@ class Commands(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
         await interaction.response.defer()
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -351,11 +341,9 @@ class RoleSelect(discord.ui.RoleSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
 

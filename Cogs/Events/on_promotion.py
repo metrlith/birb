@@ -118,7 +118,6 @@ async def PromotionSystem(
             return
         try:
             newrole = guild.get_role(int(PromotionData.get("new")))
-
         except discord.DiscordException as e:
             logger.error(f"Error fetching new role: {e}")
             return
@@ -126,11 +125,13 @@ async def PromotionSystem(
             return
         try:
             await member.add_roles(newrole, reason="Staff Promotion")
-        except (discord.Forbidden, discord.NotFound, discord.HTTPException) as e:
+        except (discord.Forbidden, discord.NotFound, discord.HTTPException):
             pass
+
     FirstRole = None
     NextRole = None
     SkipRole = None
+
     if PromoSystemType == "multi":
         Department = PromotionData.get("multi", {}).get("Department")
         SkipTo = PromotionData.get("multi", {}).get("SkipTo")
@@ -169,9 +170,13 @@ async def PromotionSystem(
         if SkipTo:
             SkipRole = guild.get_role(int(SkipTo))
             if SkipRole and SkipRole in SortedRoles:
-                await member.add_roles(
-                    SkipRole, reason=f"Staff Promotion (Skipped) in {Department}"
-                )
+                try:
+                    await member.add_roles(
+                        SkipRole, reason=f"Staff Promotion (Skipped) in {Department}"
+                    )
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+
                 for Role in SortedRoles:
                     if Role in MemberRoles and Role != SkipRole:
                         try:
@@ -180,6 +185,7 @@ async def PromotionSystem(
                             )
                         except (discord.Forbidden, discord.HTTPException):
                             pass
+
                 await self.db["promotions"].update_one(
                     {"_id": PromotionData.get("_id")}, {"$set": {"new": SkipRole.id}}
                 )
@@ -190,12 +196,18 @@ async def PromotionSystem(
         for Index, CurrentRole in enumerate(SortedRoles):
             if CurrentRole in MemberRoles and Index + 1 < len(SortedRoles):
                 NextRole = SortedRoles[Index + 1]
-                await member.add_roles(
-                    NextRole, reason=f"Staff Promotion in {Department}"
-                )
-                await member.remove_roles(
-                    CurrentRole, reason=f"Replaced by {NextRole.name}"
-                )
+                try:
+                    await member.add_roles(
+                        NextRole, reason=f"Staff Promotion in {Department}"
+                    )
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+                try:
+                    await member.remove_roles(
+                        CurrentRole, reason=f"Replaced by {NextRole.name}"
+                    )
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
                 break
         else:
             if not any(role in MemberRoles for role in SortedRoles):
@@ -216,6 +228,7 @@ async def PromotionSystem(
             await self.db["promotions"].update_one(
                 {"_id": PromotionData.get("_id")}, {"$set": {"new": RoleID}}
             )
+
     if PromoSystemType == "single":
         HierarchyRoles = (
             settings.get("Promo", {})
@@ -243,7 +256,10 @@ async def PromotionSystem(
             SkipRole = guild.get_role(int(SkipTo))
 
             if SkipRole and SkipRole in SortedRoles:
-                await member.add_roles(SkipRole, reason="Staff Promotion (Skipped)")
+                try:
+                    await member.add_roles(SkipRole, reason="Staff Promotion (Skipped)")
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
 
                 for Role in MemberRoles:
                     if Role in SortedRoles and Role != SkipRole:
@@ -253,6 +269,7 @@ async def PromotionSystem(
                             )
                         except (discord.Forbidden, discord.HTTPException):
                             pass
+
                 await self.db["promotions"].update_one(
                     {"_id": PromotionData.get("_id")}, {"$set": {"new": SkipRole.id}}
                 )
@@ -265,12 +282,15 @@ async def PromotionSystem(
                 NextRole = SortedRoles[Index + 1]
                 try:
                     await member.add_roles(NextRole, reason="Staff Promotion")
+                except (discord.Forbidden, discord.HTTPException):
+                    pass
+                try:
                     await member.remove_roles(
                         CurrentRole, reason=f"Replaced by {NextRole.name}"
                     )
-                    break
                 except (discord.Forbidden, discord.HTTPException):
                     pass
+                break
         else:
             if not any(role in MemberRoles for role in SortedRoles):
                 FirstRole = SortedRoles[0]

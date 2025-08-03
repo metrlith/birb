@@ -1,6 +1,9 @@
 import discord
 import traceback
 from utils.emojis import *
+from utils.HelpEmbeds import NotYourPanel
+
+
 class StaffPanelOptions(discord.ui.Select):
     def __init__(self, author: discord.Member):
         super().__init__(
@@ -15,11 +18,10 @@ class StaffPanelOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
@@ -31,7 +33,7 @@ class StaffPanelOptions(discord.ui.Select):
         if Selected == "Customise Embed":
             await interaction.response.defer()
             try:
-                custom = await interaction.client.db['Customisation'].find_one(
+                custom = await interaction.client.db["Customisation"].find_one(
                     {"guild_id": interaction.guild.id, "name": "Staff Panel"}
                 )
                 embed = None
@@ -100,7 +102,7 @@ async def FinalFunction(interaction: discord.Interaction, d=None):
             "name": "Staff Panel",
         }
 
-    await interaction.client.db['Customisation'].update_one(
+    await interaction.client.db["Customisation"].update_one(
         {"guild_id": interaction.guild.id, "name": "Staff Panel"},
         {"$set": data},
         upsert=True,
@@ -137,11 +139,10 @@ class DropDownLabel(discord.ui.Modal):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {"_id": interaction.guild.id, "Staff Utils": {"Label": ""}}

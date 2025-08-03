@@ -23,6 +23,7 @@ from utils.HelpEmbeds import (
     ModuleNotEnabled,
     NoChannelSet,
     Support,
+    NotYourPanel
 )
 
 
@@ -819,11 +820,8 @@ class ImDone(discord.ui.View):
     )
     async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         view = ManagePromotion(self.infraction, self.author)
         if self.infraction.get("voided"):
             view.void.label = "Delete"
@@ -847,11 +845,8 @@ class ManagePromotion(discord.ui.View):
     )
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         view = ImDone(interaction.user, self.promotion)
         view.add_item(EditPromotion(self.promotion, self.author))
         await interaction.response.edit_message(
@@ -865,11 +860,8 @@ class ManagePromotion(discord.ui.View):
     )
     async def void(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         promotion = self.promotion
         if promotion.get("voided", False):
@@ -913,11 +905,8 @@ class EditPromotion(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+             
+            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         if self.values[0] == "reason":
             view = UpdatePromotion(self.infraction, self.author, "reason")

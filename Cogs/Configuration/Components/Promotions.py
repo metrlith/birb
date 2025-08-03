@@ -4,7 +4,7 @@ from utils.emojis import *
 import re
 import typing
 from utils.permissions import premium
-from utils.HelpEmbeds import NoPremium, Support
+from utils.HelpEmbeds import NoPremium, Support, NotYourPanel
 
 
 class PSelect(discord.ui.Select):
@@ -77,14 +77,13 @@ class PSelect(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
-        from Cogs.Configuration.Configuration import ConfigMenu, Options
+        from Cogs.Configuration.Configuration import ConfigMenu, Options, Reset
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         Selected = self.values[0]
 
         if Selected == "Cooldown":
@@ -100,6 +99,11 @@ class PSelect(discord.ui.Select):
                 "Module Options": {},
                 "_id": interaction.guild.id,
             }
+        await Reset(
+            interaction,
+            lambda: PSelect(interaction.user),
+            lambda: ConfigMenu(Options(Config), interaction.user),
+        )            
         if Selected == "Promotion Channel":
             view = discord.ui.View()
             view.add_item(
@@ -118,7 +122,9 @@ class PSelect(discord.ui.Select):
 
         if Selected == "Webhook":
             if not await premium(interaction.guild.id):
-                return await interaction.followup.send(embed=NoPremium(), view=Support())
+                return await interaction.followup.send(
+                    embed=NoPremium(), view=Support()
+                )
 
             embed = await WebhookEmbed(interaction, Config)
             view = WebButton(interaction.user)
@@ -442,11 +448,10 @@ class LogChannel(discord.ui.ChannelSelect):
 
     async def callback(self, interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -492,11 +497,10 @@ class CoolDown(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
             config = {"_id": interaction.guild.id, "Promo": {}}
@@ -612,11 +616,10 @@ class CreateAndDelete(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         if self.values[0] == "create":
             return await interaction.response.send_modal(
@@ -685,11 +688,10 @@ class SingleHierarchy(discord.ui.RoleSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Selected = [RoleID.id for RoleID in self.values]
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -795,11 +797,10 @@ class ModifyDepartment(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
         selected_department = self.values[0]
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -857,11 +858,10 @@ class MultiHierarchy(discord.ui.RoleSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Selected = [role.id for role in self.values]
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -989,11 +989,10 @@ class PromotionChannel(discord.ui.ChannelSelect):
         from Cogs.Configuration.Configuration import ConfigMenu, Options
 
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -1038,11 +1037,10 @@ class WebhookDesign(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
         if not await premium(interaction.guild.id):
             return await interaction.response.send_message(
                 embed=NoPremium(), view=Support()
@@ -1093,11 +1091,10 @@ class WebhookToggle(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            embed = discord.Embed(
-                description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                color=discord.Colour.brand_red(),
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
@@ -1174,10 +1171,10 @@ async def PromotionEmbed(
         interaction.guild.get_channel(Config.get("Promo", {}).get("channel"))
         or "Not Configured"
     )
-    Promo = Config.get('Promo', {})
-    Cooldown = Promo.get('Cooldown')
+    Promo = Config.get("Promo", {})
+    Cooldown = Promo.get("Cooldown")
     Days = f"{Cooldown} Days" if Cooldown is not None else "Not Set"
-    System = Promo.get('System', {}).get('type', 'Default')
+    System = Promo.get("System", {}).get("type", "Default")
     if isinstance(Channel, discord.TextChannel):
         Channel = Channel.mention
 
