@@ -1163,10 +1163,11 @@ class MentionsOnOpen(discord.ui.RoleSelect):
         if interaction.user.id != self.author.id:
              
             return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
-        selected_roles = [role.id for role in self.values]
+        
+        Roles = [role.id for role in self.values] if self.values else None
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
-            {"$set": {"MentionsOnOpen": selected_roles}},
+            {"$set": {"MentionsOnOpen": Roles}},
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** mentions on open updated successfully.",
@@ -1191,7 +1192,7 @@ class AccessControl(discord.ui.RoleSelect):
             return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db["Panels"].update_one(
             {"guild": interaction.guild.id, "type": "single", "name": self.name},
-            {"$set": {"AccessControl": [role.id for role in self.values]}},
+            {"$set": {"AccessControl": [role.id for role in self.values] if self.values else None}},
         )
         await interaction.response.edit_message(
             content=f"{tick} **{interaction.user.display_name},** access control updated successfully.",

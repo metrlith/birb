@@ -54,6 +54,7 @@ class InfractionOption(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
+
         if interaction.user.id != self.author.id:
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
@@ -820,10 +821,7 @@ class InfractionChannel(discord.ui.ChannelSelect):
         self.message = message
 
     async def callback(self, interaction):
-        from Cogs.Configuration.Configuration import ConfigMenu, Options
-
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -876,7 +874,10 @@ class RequiredRoles(discord.ui.RoleSelect):
         config = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": self.Ty}
         )
-        config["RequiredRoles"] = [role.id for role in self.values]
+        if self.values:
+            config["RequiredRoles"] = [role.id for role in self.values]
+        else:
+            config.pop("RequiredRoles", None)
         await interaction.client.db["infractiontypeactions"].update_one(
             {"guild_id": interaction.guild.id, "name": self.Ty},
             {"$set": config},
@@ -1034,8 +1035,10 @@ class LogChannel(discord.ui.ChannelSelect):
             )
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
-
-        config["Infraction"]["LogChannel"] = self.values[0].id
+        if self.values:
+            config["Infraction"]["LogChannel"] = self.values[0].id
+        else:
+            config["Infraction"].pop("LogChannel", None)
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}
         )

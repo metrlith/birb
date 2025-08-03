@@ -23,6 +23,7 @@ class PermissionsUpdate(discord.ui.RoleSelect):
         from Cogs.Configuration.Components.AdvancedPermissions import (
             PermissionsDropdown,
         )
+
         if interaction.user.id != self.author.id:
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
@@ -33,8 +34,10 @@ class PermissionsUpdate(discord.ui.RoleSelect):
             config = {"_id": interaction.guild.id, "Permissions": {}}
         elif "Permissions" not in config:
             config["Permissions"] = {}
-
-        config["Permissions"][self.typed] = [role.id for role in self.values]
+        if self.values:
+            config["Permissions"][self.typed] = [role.id for role in self.values]
+        else:
+            config["Permissions"].pop(self.typed, None)
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}
         )

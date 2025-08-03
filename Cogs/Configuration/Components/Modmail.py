@@ -827,7 +827,10 @@ class ModmailPings(discord.ui.RoleSelect):
             config = {"Modmail": {}, "_id": interaction.guild.id}
         if not config.get("Modmail"):
             config["Modmail"] = {}
-        config["Modmail"]["ping"] = [role.id for role in self.values]
+        if self.values:
+         config["Modmail"]["ping"] = [role.id for role in self.values]
+        else:
+            config["Modmail"].pop("ping", None)
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )

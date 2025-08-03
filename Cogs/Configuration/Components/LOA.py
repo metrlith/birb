@@ -113,8 +113,11 @@ class LogChannel(discord.ui.ChannelSelect):
             config["LOA"] = {}
         elif "LogChannel" not in config.get("Infraction", {}):
             config["LOA"]["LogChannel"] = None
+        if self.values:
+         config["LOA"]["LogChannel"] = self.values[0].id
+        else:
+            config["LOA"].pop("LogChannel", None)
 
-        config["LOA"]["LogChannel"] = self.values[0].id
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}
         )

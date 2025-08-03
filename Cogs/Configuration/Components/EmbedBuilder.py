@@ -904,8 +904,10 @@ class Ping(discord.ui.RoleSelect):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
-
-        self.data["ping"] = [role.id for role in self.values]
+        if self.values:
+         self.data["ping"] = [role.id for role in self.values]
+        else:
+            self.data.pop("ping")
         await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** the ping has been updated.",
             view=None,
@@ -952,8 +954,11 @@ class PermissionRoles(discord.ui.RoleSelect):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
+        if self.values:
+         self.data["permissionroles"] = [role.id for role in self.values]
+        else:
+            self.data.pop("permissionroles")
 
-        self.data["permissionroles"] = [role.id for role in self.values]
         await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** the command has been updated.",
             view=None,

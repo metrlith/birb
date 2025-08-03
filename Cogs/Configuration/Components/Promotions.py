@@ -609,7 +609,7 @@ class CreateAndDelete(discord.ui.Select):
                     label="Modify", value="modify", emoji="<:Pen:1235001839036923996>"
                 ),
             ],
-            min_values=0,
+            min_values=1,
             max_values=1,
         )
         self.author = author
@@ -680,7 +680,7 @@ class SingleHierarchy(discord.ui.RoleSelect):
     def __init__(self, author: discord.Member, roles: list[discord.Role]):
         super().__init__(
             placeholder="Select staff roles",
-            min_values=0,
+            min_values=1,
             max_values=25,
             default_values=roles,
         )
@@ -789,7 +789,7 @@ class ModifyDepartment(discord.ui.Select):
         ]
         super().__init__(
             placeholder="Select a department to modify",
-            min_values=0,
+            min_values=1,
             max_values=1,
             options=options,
         )
@@ -849,7 +849,7 @@ class MultiHierarchy(discord.ui.RoleSelect):
     ):
         super().__init__(
             placeholder="Select department roles",
-            min_values=0,
+            min_values=1,
             max_values=25,
             default_values=roles,
         )
