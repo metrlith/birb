@@ -202,7 +202,7 @@ class on_leave(commands.Cog):
         embed.color = color.get(action, discord.Color.dark_embed())
         embed.timestamp = discord.utils.utcnow()
         if author:
-         embed.set_footer(text=f"@{author.name}", icon_url=author.display_avatar)
+            embed.set_footer(text=f"@{author.name}", icon_url=author.display_avatar)
         if action == "modify":
             embed.title = "Leave Modified"
             embed.add_field(
@@ -669,7 +669,7 @@ class ExtRequest(discord.ui.View):
         label="Accept", style=discord.ButtonStyle.green, row=0, custom_id="accept2"
     )
     async def Accept(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction, defer=False):
+        if not await has_admin_role(interaction):
             return
         await interaction.response.defer(ephemeral=True)
         LOA = await interaction.client.db["ExtRequests"].find_one(
@@ -692,7 +692,7 @@ class ExtRequest(discord.ui.View):
         label="Decline", style=discord.ButtonStyle.red, row=0, custom_id="decline2"
     )
     async def Decline(self, interaction: discord.Interaction, _):
-        if not await has_admin_role(interaction, defer=False):
+        if not await has_admin_role(interaction):
             return
         LOA = await interaction.client.db["ExtRequests"].find_one(
             {"messageid": interaction.message.id}
@@ -720,7 +720,7 @@ class PendingActions(discord.ui.View):
     )
     async def Accept(self, interaction: discord.Interaction, _):
         await interaction.response.defer(ephemeral=True)
-        if not await has_admin_role(interaction, defer=False):
+        if not await has_admin_role(interaction):
             return
         LOA = await interaction.client.db["loa"].find_one(
             {"messageid": interaction.message.id}
@@ -764,8 +764,7 @@ class PendingActions(discord.ui.View):
         label="Decline", style=discord.ButtonStyle.red, row=0, custom_id="decline"
     )
     async def Decline(self, interaction: discord.Interaction, _):
-
-        if not await has_admin_role(interaction, defer=False):
+        if not await has_admin_role(interaction):
             return
         await interaction.response.send_modal(DenialReason())
 

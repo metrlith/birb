@@ -24,6 +24,7 @@ from Cogs.Modules.staff import Staffview
 from Cogs.Events.on_infraction_approval import CaseApproval
 from Cogs.Events.on_ticket import PTicketControl
 from Cogs.Tasks.qotd import *
+from Cogs.Events.on_error import Tree
 from Cogs.Events.modmail import ModmailClosure, Links
 from Cogs.Modules.tickets import ButtonHandler
 
@@ -129,6 +130,7 @@ class Client(commands.AutoShardedBot):
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
                 ),
+                tree_cls=Tree,
             )
         elif environment == "development":
             print("Development Loaded")
@@ -140,6 +142,7 @@ class Client(commands.AutoShardedBot):
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
                 ),
+                tree_cls=Tree,
             )
         else:
             print("Production Loaded")
@@ -150,6 +153,7 @@ class Client(commands.AutoShardedBot):
                 allowed_mentions=discord.AllowedMentions(
                     replied_user=False, everyone=False, roles=False
                 ),
+                tree_cls=Tree,
             )
 
     def _initialize_cogslist(self):

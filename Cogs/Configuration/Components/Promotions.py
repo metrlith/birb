@@ -103,7 +103,7 @@ class PSelect(discord.ui.Select):
             interaction,
             lambda: PSelect(interaction.user),
             lambda: ConfigMenu(Options(Config), interaction.user),
-        )            
+        )
         if Selected == "Promotion Channel":
             view = discord.ui.View()
             view.add_item(
@@ -616,7 +616,6 @@ class CreateAndDelete(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -626,6 +625,8 @@ class CreateAndDelete(discord.ui.Select):
                 CreateDeleteDepartment(interaction.user, "create")
             )
         elif self.values[0] == "modify":
+            await interaction.response.defer()
+
             config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
             )
@@ -644,7 +645,7 @@ class CreateAndDelete(discord.ui.Select):
                 .get("Departments", [])
             )
             if IsEmpty:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     content=f"{no} **{interaction.user.display_name}**, there are no departments to modify.",
                     ephemeral=True,
                 )
@@ -661,19 +662,18 @@ class CreateAndDelete(discord.ui.Select):
                     ],
                 )
             )
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 content=f"{tick} **{interaction.user.display_name}**, select the department to modify.",
                 view=view,
                 embed=None,
             )
+            return
+        
         elif self.values[0] == "delete":
             return await interaction.response.send_modal(
                 CreateDeleteDepartment(interaction.user, "delete")
             )
-        await interaction.client.config.update_one(
-            {"_id": interaction.guild.id}, {"$set": config}
-        )
-        await interaction.response.edit_message(view=self, content=None)
+
 
 
 class SingleHierarchy(discord.ui.RoleSelect):

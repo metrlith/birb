@@ -4,13 +4,43 @@ from datetime import datetime
 from utils.emojis import *
 from discord import app_commands
 import string
+from utils.HelpEmbeds import *
 import random
 import traceback
+
+
+class Tree(app_commands.CommandTree):
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError | Exception,
+    ):
+        if interaction.command:
+            if isinstance(error, app_commands.errors.CommandNotFound):
+
+                await interaction.response.send_message(
+                    embed=discord.Embed(
+                        color=discord.Color.brand_red(),
+                        description="```\nApplication command 'promote' not found\n```",
+                    ).add_field(
+                        name="<:Help:1184535847513624586> How To Fix",
+                        value=(
+                            f"> 1. Wait a bit; the bot may be loading commands. "
+                            f"(Started: <t:{int(self.client.launch_time.timestamp())}:R>)\n"
+                            "> 2. Go to /config -> Modules -> Enable and disable the promotion module."
+                        ),
+                    ),
+                    ephemeral=True,
+                )
+
+        else:
+            await super().on_error(interaction, error)
 
 
 class On_error(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.client = client
+        self.Start = datetime.now()
 
     async def ErrorResponse(self, ctx_or_interaction, error: Exception):
         try:

@@ -231,11 +231,10 @@ class ThreadsChannel(discord.ui.ChannelSelect):
         self.message = message
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"Modmail": {}, "_id": interaction.guild.id}
@@ -248,7 +247,7 @@ class ThreadsChannel(discord.ui.ChannelSelect):
         Updated = await interaction.client.config.find_one(
             {"_id": interaction.guild.id}
         )
-        await interaction.response.edit_message(content=None)
+        await interaction.edit_original_response(content=None)
         try:
             await self.message.edit(
                 embed=await ModmailEmbed(
@@ -320,9 +319,10 @@ class Preferences(discord.ui.View):
     async def ModmailType(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        await interaction.response.defer()
         view = discord.ui.View()
         view.add_item(SelectModmailType(self.author, self.message))
-        await interaction.response.send_message(view=view, ephemeral=True)
+        await interaction.followup.send(view=view, ephemeral=True)
 
 
 class SelectModmailType(discord.ui.Select):
@@ -828,7 +828,7 @@ class ModmailPings(discord.ui.RoleSelect):
         if not config.get("Modmail"):
             config["Modmail"] = {}
         if self.values:
-         config["Modmail"]["ping"] = [role.id for role in self.values]
+            config["Modmail"]["ping"] = [role.id for role in self.values]
         else:
             config["Modmail"].pop("ping", None)
         await interaction.client.config.update_one(

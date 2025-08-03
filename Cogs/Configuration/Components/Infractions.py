@@ -55,11 +55,12 @@ class InfractionOption(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         from Cogs.Configuration.Configuration import Reset, ConfigMenu, Options
 
-        if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
         await interaction.response.defer()
+        if interaction.user.id != self.author.id:
+            return await interaction.followup.send_message(
+                embed=NotYourPanel(), ephemeral=selection
+            )
+
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
             Config = {
@@ -365,11 +366,10 @@ class ApprovalChannel(discord.ui.ChannelSelect):
         self.message = message
 
     async def callback(self, interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -389,7 +389,7 @@ class ApprovalChannel(discord.ui.ChannelSelect):
             {"_id": interaction.guild.id}
         )
 
-        await interaction.response.edit_message(content=None)
+        await interaction.edit_original_response(content=None)
         try:
             await self.message.edit(
                 embed=await InfractionEmbed(
@@ -420,11 +420,9 @@ class ApprovalRole(discord.ui.RoleSelect):
         self.message = message
 
     async def callback(self, interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -444,7 +442,7 @@ class ApprovalRole(discord.ui.RoleSelect):
             {"_id": interaction.guild.id}
         )
 
-        await interaction.response.edit_message(content=None)
+        await interaction.edit_original_response(content=None)
         try:
             await self.message.edit(
                 embed=await InfractionEmbed(
@@ -468,7 +466,6 @@ class ManageReasons(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -501,7 +498,7 @@ class ManageReasons(discord.ui.View):
                 description=f"{redx} **{interaction.user.display_name},** there are no preset reasons to remove!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
@@ -518,11 +515,9 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
         self.add_item(self.reason)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Config:
@@ -539,9 +534,7 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
                     description=f"{redx} **{interaction.user.display_name},** this preset reason already exists!",
                     color=discord.Colour.brand_red(),
                 )
-                return await interaction.response.send_message(
-                    embed=embed, ephemeral=True
-                )
+                return await interaction.followup.send(embed=embed, ephemeral=True)
             Config["Infraction"]["reasons"].append(self.reason.value)
         elif self.type == "remove":
             if self.reason.value not in Config["Infraction"]["reasons"]:
@@ -549,14 +542,12 @@ class AddAndRemove(discord.ui.Modal, title="Preset Reasons"):
                     description=f"{redx} **{interaction.user.display_name},** this preset reason doesn't exist!",
                     color=discord.Colour.brand_red(),
                 )
-                return await interaction.response.send_message(
-                    embed=embed, ephemeral=True
-                )
+                return await interaction.followup.send(embed=embed, ephemeral=True)
             Config["Infraction"]["reasons"].remove(self.reason.value)
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": Config}
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name}**, {self.reason.value} has been {'added' if self.type == 'add' else 'removed'} to the preset reasons!",
             view=None,
         )
@@ -652,7 +643,6 @@ class ManageTypes(discord.ui.Select):  # Infraction Types
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -684,7 +674,9 @@ class ManageTypes(discord.ui.Select):  # Infraction Types
                     description=f"{redx} **{interaction.user.display_name},** there are no infraction types to remove!",
                     color=discord.Colour.brand_red(),
                 )
-                return await interaction.followup.send(embed=embed, ephemeral=True)
+                return await interaction.response.send_message(
+                    embed=embed, ephemeral=True
+                )
 
 
 class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
@@ -706,11 +698,9 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -723,9 +713,7 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
                     description=f"{redx} **{interaction.user.display_name},** this infraction type already exists!",
                     color=discord.Colour.brand_red(),
                 )
-                return await interaction.response.send_message(
-                    embed=embed, ephemeral=True
-                )
+                return await interaction.followup.send(embed=embed, ephemeral=True)
 
         if self.type == "add":
             if config.get("Infraction").get("types") is None:
@@ -739,9 +727,7 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
                         description=f"{redx} **{interaction.user.display_name},** this infraction type doesn't exist.",
                         color=discord.Colour.brand_red(),
                     )
-                    return await interaction.response.send_message(
-                        embed=embed, ephemeral=True
-                    )
+                    return await interaction.followup.send(embed=embed, ephemeral=True)
                 config["Infraction"]["types"].remove(self.name.value)
         view = discord.ui.View()
         await interaction.client.config.update_one(
@@ -753,7 +739,7 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
         if self.type == "add":
             view = NoThanks()
             view.add_item(InfractionTypesAction(self.author, self.name.value))
-            return await interaction.response.edit_message(
+            return await interaction.edit_original_response(
                 content=f"{tick} **{interaction.user.display_name}**, Do you want to add extra stuff to this infraction type?",
                 view=view,
             )
@@ -763,19 +749,17 @@ class InfractionTypeModal(discord.ui.Modal, title="Infraction Type"):
                     description=f"{redx} **{interaction.user.display_name},** there isn't an infraction type named this.",
                     color=discord.Colour.brand_red(),
                 )
-                return await interaction.response.send_message(
-                    embed=embed, ephemeral=True
-                )
+                return await interaction.followup.send(embed=embed, ephemeral=True)
             view = Done()
             view.add_item(InfractionTypesAction(self.author, self.name.value))
-            return await interaction.response.edit_message(
+            return await interaction.edit_original_response(
                 content=f"{tick} **{interaction.user.display_name}**, you are now editing the infraction type.",
                 view=view,
             )
 
         else:
             self.type == "remove"
-            await interaction.response.edit_message(content="")
+            await interaction.edit_original_response(content="")
             try:
                 await self.message.edit(
                     embed=await InfractionEmbed(
@@ -796,7 +780,8 @@ class NoThanks(discord.ui.View):
     async def NahImGood(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        await interaction.response.edit_message(
+        await interaction.response.defer()
+        await interaction.followup.send(
             content=f"{tick} **{interaction.user.display_name},** No problem! I've created the infraction type for you!",
             view=None,
         )
@@ -821,10 +806,9 @@ class InfractionChannel(discord.ui.ChannelSelect):
         self.message = message
 
     async def callback(self, interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if config is None:
@@ -842,7 +826,7 @@ class InfractionChannel(discord.ui.ChannelSelect):
             {"_id": interaction.guild.id}
         )
 
-        await interaction.response.edit_message(content=None)
+        await interaction.edit_original_response(content=None)
         try:
             await self.message.edit(
                 embed=await InfractionEmbed(
@@ -865,15 +849,15 @@ class RequiredRoles(discord.ui.RoleSelect):
         self.Ty = type
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         config = await interaction.client.db["infractiontypeactions"].find_one(
             {"guild_id": interaction.guild.id, "name": self.Ty}
         )
+        if config is None:
+            config = {"guild_id": interaction.guild.id, "name": self.Ty}
         if self.values:
             config["RequiredRoles"] = [role.id for role in self.values]
         else:
@@ -883,7 +867,7 @@ class RequiredRoles(discord.ui.RoleSelect):
             {"$set": config},
             upsert=True,
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )
@@ -904,9 +888,9 @@ class WebhookToggle(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=NotYourPanel(), ephemeral=True
             )
 
@@ -928,7 +912,7 @@ class WebhookToggle(discord.ui.Select):
             await interaction.client.config.update_one(
                 {"_id": interaction.guild.id}, {"$set": Config}
             )
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 embed=await WebhookEmbed(interaction, Config)
             )
 
@@ -938,7 +922,7 @@ class WebhookToggle(discord.ui.Select):
                 {"_id": interaction.guild.id}, {"$set": Config}
             )
 
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 embed=await WebhookEmbed(interaction, Config)
             )
 
@@ -970,13 +954,14 @@ class WebhookDesign(discord.ui.Modal):
         self.add_item(self.AvatarURL)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=NotYourPanel(), ephemeral=True
             )
         if not await premium(interaction.guild.id):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=NoPremium(), view=Support()
             )
         Config = await interaction.client.config.find_one({"_id": interaction.guild.id})
@@ -995,7 +980,7 @@ class WebhookDesign(discord.ui.Modal):
                 description=f"{redx} **{interaction.user.display_name},** the avatar link provided is not a valid image URL!",
                 color=discord.Colour.brand_red(),
             )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+            return await interaction.followup.send(embed=embed, ephemeral=True)
 
         Config["Infraction"]["Webhook"] = {
             "Username": self.username.value,
@@ -1004,7 +989,7 @@ class WebhookDesign(discord.ui.Modal):
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": Config}
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             embed=await WebhookEmbed(interaction, Config)
         )
 
@@ -1028,9 +1013,9 @@ class LogChannel(discord.ui.ChannelSelect):
         self.message = message
 
     async def callback(self, interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=NotYourPanel(), ephemeral=True
             )
 
@@ -1046,7 +1031,7 @@ class LogChannel(discord.ui.ChannelSelect):
             {"_id": interaction.guild.id}
         )
 
-        await interaction.response.edit_message(content=None)
+        await interaction.edit_original_response(content=None)
         try:
             await self.message.edit(
                 embed=await InfractionEmbed(
@@ -1125,20 +1110,21 @@ class InfractionTypesAction(discord.ui.Select):
             await interaction.response.send_modal(Escalate(self.name))
             return
         elif option == "Change Group Role":
+            await interaction.response.defer()
             Roles = await GroupRoles(interaction)
             if Roles == 0:
                 from utils.HelpEmbeds import NotRobloxLinked
 
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=NotRobloxLinked(), ephemeral=True
                 )
             if Roles == 1:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     f"{no} **{interaction.user.display_name},** you don't have access to the group's roles.",
                     ephemeral=True,
                 )
             if Roles == 2:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     f"{no} **{interaction.user.display_name},** a group hasn't been linked.",
                     ephemeral=True,
                 )
@@ -1151,13 +1137,14 @@ class InfractionTypesAction(discord.ui.Select):
                 for role in Roles
             ]
             view.add_item(ChangeGroupRole(self.author, self.name, options))
-            await interaction.response.edit_message(view=view)
+            await interaction.edit_original_response(view=view)
             return
 
         else:
+            await interaction.response.defer()
             if self.values[0] in Action:
                 view.add_item(Action[self.values[0]](self.author, self.name))
-                await interaction.response.edit_message(view=view)
+                await interaction.edit_original_response(view=view)
                 return
 
             await interaction.client.db["infractiontypeactions"].update_one(
@@ -1165,7 +1152,7 @@ class InfractionTypesAction(discord.ui.Select):
                 {"$set": {option.lower().replace(" ", ""): True}},
                 upsert=True,
             )
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
                 view=None,
             )
@@ -1180,15 +1167,16 @@ class Done(discord.ui.View):
             self.author = author
 
         async def callback(self, interaction: discord.Interaction):
+            await interaction.response.defer()
             if interaction.user.id != self.author.id:
-                return await interaction.response.send_message(
+                return await interaction.followup.send(
                     embed=discord.Embed(
                         description=f"{redx} This is not your panel!",
                         color=discord.Color.red(),
                     ),
                     ephemeral=True,
                 )
-            await interaction.response.edit_message(
+            await interaction.edit_original_response(
                 content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
                 view=None,
             )
@@ -1243,8 +1231,9 @@ class TypeChannel(discord.ui.ChannelSelect):
         self.author, self.name = author, name
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=discord.Embed(
                     description=f"{redx} This is not your panel!",
                     color=discord.Color.red(),
@@ -1258,7 +1247,7 @@ class TypeChannel(discord.ui.ChannelSelect):
             {"$set": {"channel": self.values[0].id if self.values else None}},
             upsert=True,
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )
@@ -1270,8 +1259,9 @@ class RemoveRoles(discord.ui.RoleSelect):
         self.author, self.name = author, name
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=discord.Embed(
                     description=f"{redx} This is not your panel!",
                     color=discord.Color.red(),
@@ -1285,7 +1275,7 @@ class RemoveRoles(discord.ui.RoleSelect):
             {"$set": {"removedroles": [role.id for role in self.values]}},
             upsert=True,
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )
@@ -1298,7 +1288,7 @@ class GiveRoles(discord.ui.RoleSelect):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=discord.Embed(
                     description=f"{redx} This is not your panel!",
                     color=discord.Color.red(),
@@ -1312,7 +1302,7 @@ class GiveRoles(discord.ui.RoleSelect):
             {"$set": {"givenroles": [role.id for role in self.values]}},
             upsert=True,
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )
@@ -1326,8 +1316,9 @@ class ChangeGroupRole(discord.ui.Select):
         self.author, self.name = author, name
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=discord.Embed(
                     description=f"{redx} This is not your panel!",
                     color=discord.Color.red(),
@@ -1341,7 +1332,7 @@ class ChangeGroupRole(discord.ui.Select):
             {"$set": {"grouprole": self.values[0]}},
             upsert=True,
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** succesfully updated infraction type.",
             view=None,
         )

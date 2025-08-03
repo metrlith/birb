@@ -66,8 +66,8 @@ class ForumManagent(discord.ui.View):
 
     @discord.ui.button(emoji="<:Pen:1235001839036923996>")
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         view = discord.ui.View()
         Forums = (
@@ -86,18 +86,18 @@ class ForumManagent(discord.ui.View):
             if 25 <= len(Options):
                 break
         if len(Options) == 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** there are no forums.",
                 ephemeral=True,
             )
         view.add_item(ForumSelection(interaction.user, "Edit", Options))
-        await interaction.response.edit_message(view=view, embed=None)
+        await interaction.edit_original_response(view=view, embed=None)
         del Forums
 
     @discord.ui.button(emoji="<:Subtract:1229040262161109003>")
     async def remove(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         view = discord.ui.View()
         Forums = (
@@ -116,12 +116,12 @@ class ForumManagent(discord.ui.View):
             if 25 <= len(Options):
                 break
         if len(Options) == 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** there are no forums.",
                 ephemeral=True,
             )
         view.add_item(ForumSelection(interaction.user, "Remove", Options))
-        await interaction.response.edit_message(view=view, embed=None)
+        await interaction.edit_original_response(view=view, embed=None)
 
 
 class ForumSelection(discord.ui.Select):
@@ -184,11 +184,12 @@ class CreateForum(discord.ui.Modal, title="Create Forum"):
         self.add_item(self.name)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         Forum = await interaction.client.db["Forum Configuration"].find_one(
             {"guild_id": interaction.guild.id, "name": self.name.value}
         )
         if Forum:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** theres already a forum named that.",
                 ephemeral=True,
             )
@@ -205,14 +206,13 @@ class CreateForum(discord.ui.Modal, title="Create Forum"):
         view.remove_item(view.Permissions)
         view.remove_item(view.Content)
 
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=view, embed=discord.Embed(title="Untitled"), content=None
         )
 
 
 async def FinalFunc(interaction: discord.Interaction, datad: dict):
     embed = interaction.message.embeds[0] if interaction.message.embeds else None
-
     if embed:
         if not datad.get("channel_id"):
             await interaction.response.send_message(

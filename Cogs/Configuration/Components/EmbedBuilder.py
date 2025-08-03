@@ -282,9 +282,7 @@ class NoEmbed(discord.ui.View):
                 embed.description = "There are no buttons yet. You can create one below by pressing the **plus button.**"
 
             view = componentmanager(interaction.user, self.data)
-            await interaction.followup.send(
-                view=view, embed=embed, ephemeral=True
-            )
+            await interaction.followup.send(view=view, embed=embed, ephemeral=True)
         else:
             view = Buttons(
                 self.data,
@@ -304,7 +302,9 @@ class NoEmbed(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
         await interaction.response.send_modal(Context(interaction.message.content))
 
     @discord.ui.button(
@@ -522,9 +522,7 @@ class Embed(discord.ui.View):
                 embed.description = "There are no buttons yet. You can create one below by pressing the **plus button.**"
 
             view = componentmanager(interaction.user, self.data)
-            await interaction.followup.send(
-                view=view, embed=embed, ephemeral=True
-            )
+            await interaction.followup.send(view=view, embed=embed, ephemeral=True)
 
         else:
             if not await premium(interaction.guild.id):
@@ -905,7 +903,7 @@ class Ping(discord.ui.RoleSelect):
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         if self.values:
-         self.data["ping"] = [role.id for role in self.values]
+            self.data["ping"] = [role.id for role in self.values]
         else:
             self.data.pop("ping")
         await interaction.edit_original_response(
@@ -955,7 +953,7 @@ class PermissionRoles(discord.ui.RoleSelect):
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         if self.values:
-         self.data["permissionroles"] = [role.id for role in self.values]
+            self.data["permissionroles"] = [role.id for role in self.values]
         else:
             self.data.pop("permissionroles")
 
@@ -1269,6 +1267,7 @@ class Thumbnail(discord.ui.Modal, title="Thumbnail"):
         self.add_item(self.Thumbnaile)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         embed = interaction.message.embeds[0]
         url = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
 
@@ -1277,11 +1276,11 @@ class Thumbnail(discord.ui.Modal, title="Thumbnail"):
 
         try:
             embed.set_thumbnail(url=url)
-            await interaction.response.edit_message(embed=embed)
+            await interaction.edit_original_response(embed=embed)
             self.data["thumb"] = url
 
         except discord.HTTPException:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, this isn't a proper link."
             )
 
@@ -1302,6 +1301,7 @@ class Image(discord.ui.Modal, title="Image"):
         self.add_item(self.Thumbnaile)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         embed = interaction.message.embeds[0]
         url = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
 
@@ -1310,10 +1310,10 @@ class Image(discord.ui.Modal, title="Image"):
 
         try:
             embed.set_image(url=url)
-            await interaction.response.edit_message(embed=embed)
+            await interaction.edit_original_response(embed=embed)
             self.data["image"] = url
         except discord.HTTPException:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, this isn't a proper link."
             )
 
@@ -1345,22 +1345,23 @@ class Author(discord.ui.Modal, title="Author"):
         self.add_item(self.iconUrl)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         embed = interaction.message.embeds[0]
-        author_name = self.authortext.value or ""
-        icon_url = self.iconUrl.value.strip() if self.iconUrl.value else None
+        Author = self.authortext.value or ""
+        Url = self.iconUrl.value.strip() if self.iconUrl.value else None
 
-        if icon_url in ["{author.avatar}", "{staff.avatar}"]:
-            icon_url = str(interaction.user.display_avatar.url)
+        if Url in ["{author.avatar}", "{staff.avatar}"]:
+            Url = str(interaction.user.display_avatar.url)
 
-        if not icon_url and embed.author and embed.author.icon_url:
-            icon_url = embed.author
+        if not Url and embed.author and embed.author.Url:
+            Url = embed.author
 
         try:
-            embed.set_author(name=author_name, icon_url=icon_url)
-            await interaction.response.edit_message(embed=embed)
-            self.data["author_url"] = icon_url
+            embed.set_author(name=Author, icon_url=Url)
+            await interaction.edit_original_response(embed=embed)
+            self.data["author_url"] = Url
         except discord.HTTPException:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, this isn't a proper link."
             )
 
@@ -1398,8 +1399,9 @@ class componentmanager(discord.ui.View):
         interaction: discord.Interaction,
         button: discord.Interaction,
     ):
+        await interaction.response.defer()
         if not self.data.get("components") or len(self.data.get("components")) == 0:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** there are no buttons to remove.",
                 ephemeral=True,
             )
@@ -1412,7 +1414,7 @@ class componentmanager(discord.ui.View):
         ][:25]
         view = discord.ui.View()
         view.add_item(EraseButtons(interaction.user, self.data, options))
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=view,
             embed=None,
             content="<:List:1223063187063308328> Select which components you want to remove.",

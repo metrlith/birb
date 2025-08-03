@@ -23,9 +23,9 @@ class PermissionsUpdate(discord.ui.RoleSelect):
         from Cogs.Configuration.Components.AdvancedPermissions import (
             PermissionsDropdown,
         )
-
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=NotYourPanel(), ephemeral=True
             )
 
@@ -69,7 +69,7 @@ class PermissionsUpdate(discord.ui.RoleSelect):
         )
         view.add_item(PermissionsDropdown(interaction.user))
         view.add_item(ConfigMenu(Options(Updated), interaction.user))
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=view,
             embed=await PermissionsEmbed(
                 interaction, Updated, discord.Embed(color=discord.Color.dark_embed())

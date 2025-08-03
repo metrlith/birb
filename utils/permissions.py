@@ -22,15 +22,19 @@ from utils.HelpEmbeds import (
 )
 
 
-async def has_staff_role(toy, permissions=None):
-    if isinstance(toy, commands.Context):
-        author = toy.author
-        guild = toy.guild
-        send = toy.send
+async def has_staff_role(I: discord.Interaction, permissions=None):
+    if isinstance(I, commands.Context):
+        author = I.author
+        guild = I.guild
+        send = I.send
     else:
-        author = toy.user
-        guild = toy.guild
-        send = toy.response.send_message
+        author = I.user
+        guild = I.guild
+        if I.response.is_done():
+            send = I.followup.send
+
+        else:
+            send = I.response.send_message
 
     blacklists = await blacklist.find_one({"user": author.id})
     if blacklists:
@@ -46,13 +50,13 @@ async def has_staff_role(toy, permissions=None):
         return False
 
     if Config.get("Advanced Permissions", None):
-        if toy.command:
+        if I.command:
             if (
-                toy.command.qualified_name
+                I.command.qualified_name
                 in Config.get("Advanced Permissions", {}).keys()
             ):
                 Permissions = Config.get("Advanced Permissions", {}).get(
-                    toy.command.qualified_name, []
+                    I.command.qualified_name, []
                 )
                 if not isinstance(Permissions, list):
                     Permissions = [Permissions]
@@ -127,15 +131,18 @@ async def check_admin_and_staff(guild: discord.Guild, user: discord.User):
     return False
 
 
-async def has_admin_role(toy, permissions=None, msg=None, defer=True):
-    if isinstance(toy, commands.Context):
-        author = toy.author
-        guild = toy.guild
-        send = toy.send
+async def has_admin_role(I: discord.Interaction, permissions=None, msg=None):
+    if isinstance(I, commands.Context):
+        author = I.author
+        guild = I.guild
+        send = I.send
     else:
-        author = toy.user
-        guild = toy.guild
-        send = toy.followup.send if defer else toy.response.send_message
+        author = I.user
+        guild = I.guild
+        if I.response.is_done():
+            send = I.response.send_message
+        else:
+            send = I.followup.send
 
     if msg:
         send = msg.edit
@@ -153,13 +160,13 @@ async def has_admin_role(toy, permissions=None, msg=None, defer=True):
         return False
 
     if Config.get("Advanced Permissions", None):
-        if toy.command:
+        if I.command:
             if (
-                toy.command.qualified_name
+                I.command.qualified_name
                 in Config.get("Advanced Permissions", {}).keys()
             ):
                 Permissions = Config.get("Advanced Permissions", {}).get(
-                    toy.command.qualified_name, []
+                    I.command.qualified_name, []
                 )
                 if not isinstance(Permissions, list):
                     Permissions = [Permissions]

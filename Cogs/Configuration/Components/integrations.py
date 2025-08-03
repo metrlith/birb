@@ -19,10 +19,9 @@ class Integrations(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction):
-        if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
         await interaction.response.defer()
+        if interaction.user.id != self.author.id:
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         if self.values[0] == "ERM":
 
             code = await GetIdentifier()
@@ -74,7 +73,6 @@ class GroupOptions(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
 
         modal = EnterGroup(self.author)
@@ -92,10 +90,9 @@ class EnterGroup(discord.ui.Modal):
         self.add_item(self.group_id)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
-
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         config = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not config:
             config = {"_id": interaction.guild.id, "groups": {}}
@@ -107,14 +104,14 @@ class EnterGroup(discord.ui.Modal):
 
         group = await GetGroup2(self.group_id.value, interaction.user)
         if not group or not group.get('owner'):
-            return await interaction.response.edit_message(
+            return await interaction.edit_original_response(
                 content=f"{crisis} **{interaction.user.display_name},** I couldn't find the roblox group from your account.",
                 view=None,
                 embed=None,
             )
         user = await GetUser(user=interaction.user)
         if not user:
-            return await interaction.response.edit_message(
+            return await interaction.edit_original_response(
                 embed=NotRobloxLinked(), view=None, content=None
             )
         RobloxID = (
@@ -125,7 +122,7 @@ class EnterGroup(discord.ui.Modal):
 
         OwnerID = int(group.get("owner").split("/")[1])
         if not OwnerID == RobloxID:
-            return await interaction.response.edit_message(
+            return await interaction.edit_original_response(
                 content=f"{crisis} **{interaction.user.display_name},** you aren't the owner of this group. Please get the owner of it to link it.",
                 view=None,
                 embed=None,
@@ -135,7 +132,7 @@ class EnterGroup(discord.ui.Modal):
         await interaction.client.config.update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name}**, group succesfully linked.",
             view=None,
         )
@@ -158,9 +155,10 @@ class KeyButton(discord.ui.View):
         emoji="<:Permissions:1207365901956026368>",
     )
     async def apikey(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         await interaction.client.db['integrations'].update_one(
             {"server": interaction.guild.id},
             {"$set": {"erm": self.key}},
@@ -170,7 +168,7 @@ class KeyButton(discord.ui.View):
             description=f"{greencheck} **API Key has been successfully updated!**",
             color=discord.Colour.brand_green(),
         )
-        await interaction.response.edit_message(embed=embed, view=None)
+        await interaction.edit_original_response(embed=embed, view=None)
 
 
 async def integrationsEmbed(interaction: discord.Interaction, embed: discord.Embed):

@@ -134,10 +134,11 @@ class CaseApproval(discord.ui.View):
         custom_id="AcceptInf:Persistent",
     )
     async def Accept(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         Result = await interaction.client.db['infractions'].find_one({"ApprovalMSG": interaction.message.id})
         Settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Result:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name}**, I couldn't find the data for this."
             )
         Infraction = InfractItem(Result)
@@ -174,7 +175,7 @@ class CaseApproval(discord.ui.View):
         view.Accept.label = "Accepted"
         view.Accept.disabled = True
         view.remove_item(view.Deny)
-        await interaction.response.edit_message(embed=embed, view=view)
+        await interaction.edit_original_response(embed=embed, view=view)
         TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": Infraction.action}
         )
@@ -188,10 +189,11 @@ class CaseApproval(discord.ui.View):
         custom_id="DenyVoid:Persistent",
     )
     async def Deny(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         Result = await interaction.client.db['infractions'].find_one({"ApprovalMSG": interaction.message.id})
         Settings = await interaction.client.config.find_one({"_id": interaction.guild.id})
         if not Result:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name}**, I couldn't find the data for this."
             )
         Infraction = InfractItem(Result)
@@ -228,7 +230,7 @@ class CaseApproval(discord.ui.View):
         view.Deny.label = "Denied"
         view.Deny.disabled = True
         view.remove_item(view.Accept)
-        await interaction.response.edit_message(embed=embed, view=view)
+        await interaction.edit_original_response(embed=embed, view=view)
         await interaction.client.db['infractions'].delete_one({"_id": Result.get("_id")})
 
 

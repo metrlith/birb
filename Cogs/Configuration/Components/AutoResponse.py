@@ -16,11 +16,10 @@ class AutoResponderOptions(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
-        if interaction.user.id != self.author.id:
-
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-
         await interaction.response.defer()
+        if interaction.user.id != self.author.id:
+            return await interaction.followup.send(embed=embed, ephemeral=True)
+
         if self.values[0] == "Manage Responses":
             embed = discord.Embed(color=discord.Color.dark_embed())
             embed.set_author(
@@ -89,11 +88,12 @@ class Create(discord.ui.Modal):
         self.add_item(self.snuzzy)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         result = await interaction.client.db["Auto Responders"].find_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
         if result:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** another response is using the same trigger.",
                 ephemeral=True,
             )
@@ -113,7 +113,7 @@ class Create(discord.ui.Modal):
                 "similarity": sim,
             }
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** response created.",
             embed=None,
             view=None,
@@ -183,11 +183,12 @@ class DeleteByTrigger2(discord.ui.Modal):
         self.add_item(self.trigger)
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         result = await interaction.client.db["Auto Responders"].find_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
         if not result:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** no response found with that trigger.",
                 ephemeral=True,
             )
@@ -195,7 +196,7 @@ class DeleteByTrigger2(discord.ui.Modal):
         await interaction.client.db["Auto Responders"].delete_one(
             {"guild_id": interaction.guild.id, "trigger": self.trigger.value}
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             content=f"{tick} **{interaction.user.display_name},** response deleted.",
             embed=None,
             view=None,

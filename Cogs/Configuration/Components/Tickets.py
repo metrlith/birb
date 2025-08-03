@@ -29,14 +29,16 @@ class Tickets(discord.ui.Select):
         option = self.values[0]
 
         if option == "Panels":
+            await interaction.response.defer()
             view = discord.ui.View()
             view.add_item(CreateDeletePanel(self.author, "single"))
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
 
         elif option == "Multi Panels":
+            await interaction.response.defer()
             view = discord.ui.View()
             view.add_item(CreateDeletePanel(self.author, "multi"))
-            await interaction.response.send_message(view=view, ephemeral=True)
+            await interaction.followup.send(view=view, ephemeral=True)
         elif option == "Quota":
             await interaction.response.send_modal(
                 TicketQuota(

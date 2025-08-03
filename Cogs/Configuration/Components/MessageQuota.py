@@ -197,8 +197,9 @@ class RoleQuotaCreation(discord.ui.View):
         emoji="<:Add:1163095623600447558>", style=discord.ButtonStyle.gray, row=2
     )
     async def Add(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 embed=discord.Embed(
                     description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
                     color=discord.Colour.brand_red(),
@@ -211,7 +212,7 @@ class RoleQuotaCreation(discord.ui.View):
             color=discord.Color.dark_embed(),
             description="Select a role to add a custom quota to.",
         )
-        await interaction.response.edit_message(view=view, embed=embed)
+        await interaction.edit_original_response(view=view, embed=embed)
 
     @discord.ui.button(
         emoji="<:Subtract:1229040262161109003>", style=discord.ButtonStyle.gray, row=2
@@ -235,12 +236,13 @@ class RoleQuotaCreation(discord.ui.View):
             or "Message Quota" not in config
             or "Roles" not in config["Message Quota"]
         ):
-            return await interaction.response.send_message(
-                content=f"{no} **{interaction.user.display_name},** there aren't any roles to delete."
+            return await interaction.followup.send(
+                content=f"{no} **{interaction.user.display_name},** there aren't any roles to delete.",
+                ephemeral=True,
             )
         roles = config["Message Quota"]["Roles"]
         if not roles:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** there aren't any roles to delete.",
                 ephemeral=True,
             )
@@ -339,12 +341,10 @@ class RoleQuotaDelete(discord.ui.Select):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(
-                embed=discord.Embed(
-                    description=f"{redx} **{interaction.user.display_name},** this is not your panel!",
-                    color=discord.Colour.brand_red(),
-                ),
+                embed=NotYourPanel(),
                 ephemeral=True,
             )
 
@@ -356,7 +356,7 @@ class RoleQuotaDelete(discord.ui.Select):
             or "Message Quota" not in config
             or "Roles" not in config["Message Quota"]
         ):
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"{no} **{interaction.user.display_name},** there aren't any roles to delete."
             )
 
@@ -367,7 +367,7 @@ class RoleQuotaDelete(discord.ui.Select):
         await interaction.client.db["Config"].update_one(
             {"_id": interaction.guild.id}, {"$set": config}, upsert=True
         )
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             view=None,
             content=f"{tick} **{interaction.user.display_name},** successfully deleted the role quota.",
             embed=None,
@@ -388,11 +388,10 @@ class MessageQuota(discord.ui.Modal, title="Message Quota"):
         self.message = message
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         try:
             Config = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
@@ -408,7 +407,7 @@ class MessageQuota(discord.ui.Modal, title="Message Quota"):
             Updated = await interaction.client.config.find_one(
                 {"_id": interaction.guild.id}
             )
-            await interaction.response.edit_message(content="")
+            await interaction.edit_original_response(content="")
             try:
                 await self.message.edit(
                     embed=await MessageQuotaEmbed(
@@ -424,7 +423,7 @@ class MessageQuota(discord.ui.Modal, title="Message Quota"):
                 description=f"{redx} **{interaction.user.display_name},** please enter a valid number.",
                 color=discord.Colour.brand_red(),
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 class AutoActivity(discord.ui.Select):
@@ -445,7 +444,6 @@ class AutoActivity(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         selection = self.values[0]
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -471,6 +469,7 @@ class PostDate(discord.ui.Modal, title="How often?"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         days = [
             "sunday",
             "monday",
@@ -484,8 +483,8 @@ class PostDate(discord.ui.Modal, title="How often?"):
         specified_day = self.postdate.value.lower()
 
         if specified_day not in days:
-            await interaction.response.send_message(
-                "Invalid day specified. Please enter a valid day of the week.",
+            await interaction.followup.send(
+                f"{no} **{interaction.user.display_name},** invalid day specified. Please enter a valid day of the week.",
                 ephemeral=True,
             )
             return
@@ -508,7 +507,7 @@ class PostDate(discord.ui.Modal, title="How often?"):
             description=f"**Next Post Date:** <t:{int(NextDate.timestamp())}>",
         )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
 
 class PostChannel(discord.ui.ChannelSelect):
@@ -520,12 +519,10 @@ class PostChannel(discord.ui.ChannelSelect):
         self.author = author
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
-        await interaction.response.defer(ephemeral=True)
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         filter = {"guild_id": interaction.guild.id}
         try:
@@ -553,16 +550,13 @@ class ActivityToggle(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         color = self.values[0]
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
 
-            return await interaction.response.send_message(
-                embed=NotYourPanel(), ephemeral=True
-            )
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
 
         if color == "Enabled":
-            await interaction.response.send_message(
-                content=f"{tick} Enabled", ephemeral=True
-            )
+            await interaction.followup.send(content=f"{tick} Enabled", ephemeral=True)
             await interaction.client.db["auto activity"].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"enabled": True}},
@@ -570,9 +564,7 @@ class ActivityToggle(discord.ui.Select):
             )
 
         if color == "Disabled":
-            await interaction.response.send_message(
-                content=f"{no} Disabled", ephemeral=True
-            )
+            await interaction.followup.send(content=f"{no} Disabled", ephemeral=True)
             await interaction.client.db["auto activity"].update_one(
                 {"guild_id": interaction.guild.id},
                 {"$set": {"enabled": False}},
