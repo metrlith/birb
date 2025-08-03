@@ -26,7 +26,7 @@ class PermissionsDropdown(discord.ui.Select):
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         if interaction.user.id != self.author.id:
-            return await interaction.followup.send(embed=embed, ephemeral=True)
+            return await interaction.followup.send(embed=NotYourPanel(), ephemeral=True)
         Config = await interaction.client.db["Config"].find_one(
             {"_id": interaction.guild.id}
         )

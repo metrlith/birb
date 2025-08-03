@@ -42,6 +42,8 @@ class Tree(app_commands.CommandTree):
                 )
             except discord.HTTPException:
                 pass
+        elif isinstance(error, app_commands.errors.CommandInvokeError):
+            pass
 
         else:
             await super().on_error(interaction, error)

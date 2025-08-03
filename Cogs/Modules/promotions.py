@@ -383,9 +383,9 @@ async def issue(
     new: discord.Role,
     reason: str,
 ):
-    if not await has_admin_role(interaction, "Promotion Permissions"):
-        return
     await interaction.response.defer()
+    if not await has_admin_role(interaction, "Promotion Permissions"):
+        return    
     msg: discord.Message = await interaction.followup.send(
         f"<a:Loading:1167074303905386587> Promoting **@{staff.display_name}**...",
     )
