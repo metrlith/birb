@@ -691,13 +691,6 @@ class promo(commands.Cog):
     @app_commands.describe(id="The id of the promotion.")
     async def view(self, ctx: commands.Context, id: str):
         await ctx.defer()
-
-        if self.client.promotions_maintenance:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the promotions module is currently under maintenance. Please try again later."
-            )
-            return
-
         if not await ModuleCheck(ctx.guild.id, "promotions"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
             return
@@ -725,12 +718,6 @@ class promo(commands.Cog):
     @app_commands.describe(staff="The staff member to view promotions for")
     async def promotions(self, ctx: commands.Context, staff: discord.User):
         await ctx.defer()
-
-        if self.client.promotions_maintenance:
-            await ctx.send(
-                f"{no} **{ctx.author.display_name}**, the promotions module is currently under maintenance. Please try again later."
-            )
-            return
 
         if not await ModuleCheck(ctx.guild.id, "promotions"):
             await ctx.send(embed=ModuleNotEnabled(), view=Support())
