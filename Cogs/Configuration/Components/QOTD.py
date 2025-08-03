@@ -20,6 +20,10 @@ class QOTDOptions(discord.ui.Select):
         option = self.values[0]
         from Cogs.Configuration.Configuration import ConfigMenu, Options, Reset
 
+        Config = await interaction.client.db["Config"].find_one(
+            {"_id": interaction.guild.id}
+        )
+
         await Reset(
             interaction,
             lambda: QOTDOptions(interaction.user, self.options),
