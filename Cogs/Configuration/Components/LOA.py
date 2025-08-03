@@ -208,10 +208,7 @@ class LOARole(discord.ui.RoleSelect):
         self.message = message
 
     async def callback(self, interaction):
-        from Cogs.Configuration.Configuration import ConfigMenu, Options
-
         if interaction.user.id != self.author.id:
-
             return await interaction.response.send_message(
                 embed=NotYourPanel(), ephemeral=True
             )
@@ -229,7 +226,6 @@ class LOARole(discord.ui.RoleSelect):
         Updated = await interaction.client.config.find_one(
             {"_id": interaction.guild.id}
         )
-
         await interaction.response.edit_message(content=None)
         try:
             await self.message.edit(

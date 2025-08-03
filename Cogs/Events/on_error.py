@@ -23,9 +23,9 @@ class Tree(app_commands.CommandTree):
         interaction: discord.Interaction,
         error: app_commands.AppCommandError | Exception,
     ):
-        if interaction.command:
-            if isinstance(error, app_commands.errors.CommandNotFound):
 
+        if isinstance(error, app_commands.errors.CommandNotFound):
+            try:
                 await interaction.response.send_message(
                     embed=discord.Embed(
                         color=discord.Color.brand_red(),
@@ -40,6 +40,8 @@ class Tree(app_commands.CommandTree):
                     ),
                     ephemeral=True,
                 )
+            except discord.HTTPException:
+                pass
 
         else:
             await super().on_error(interaction, error)
