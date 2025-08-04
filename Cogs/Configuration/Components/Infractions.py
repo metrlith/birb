@@ -1286,6 +1286,7 @@ class GiveRoles(discord.ui.RoleSelect):
         self.author, self.name = author, name
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
         if interaction.user.id != self.author.id:
             return await interaction.followup.send(
                 embed=discord.Embed(
