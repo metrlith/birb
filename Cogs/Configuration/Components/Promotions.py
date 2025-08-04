@@ -99,6 +99,7 @@ class PSelect(discord.ui.Select):
                 "Module Options": {},
                 "_id": interaction.guild.id,
             }
+            
         await Reset(
             interaction,
             lambda: PSelect(interaction.user),

@@ -140,9 +140,9 @@ async def has_admin_role(I: discord.Interaction, permissions=None, msg=None):
         author = I.user
         guild = I.guild
         if I.response.is_done():
-            send = I.response.send_message
-        else:
             send = I.followup.send
+        else:
+            send = I.response.send_message
 
     if msg:
         send = msg.edit

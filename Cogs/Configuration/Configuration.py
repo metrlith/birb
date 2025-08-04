@@ -8,10 +8,13 @@ from utils.ui import PMButton
 
 
 async def Reset(i: discord.Interaction, *F):
-    view = discord.ui.View()
-    for E in F:
-        view.add_item(E())
-    await i.edit_original_response(view=view)
+    try:
+        view = discord.ui.View()
+        for E in F:
+            view.add_item(E())
+        await i.edit_original_response(view=view)
+    except:
+        pass
 
 
 class ConfigMenu(discord.ui.Select):
