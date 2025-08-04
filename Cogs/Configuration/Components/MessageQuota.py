@@ -306,7 +306,7 @@ class RoleQuotaModal(discord.ui.Modal):
                 ),
                 ephemeral=True,
             )
-        config = await interaction.client.db["Message Quota"].find_one(
+        config = await interaction.client.db["Config"].find_one(
             {"_id": interaction.guild.id}
         )
         if not config:
