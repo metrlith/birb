@@ -241,7 +241,7 @@ class Voting(discord.ui.View):
         try:
             from utils.permissions import has_admin_role
 
-            if not await has_admin_role(interaction):
+            if not await has_admin_role(interaction, ephemeral=True):
                 print("check")
                 return
 
