@@ -11,6 +11,7 @@ from utils.format import Replace
 import asyncio
 from utils.r2 import upload_file_to_r2, ClearOldFiles
 
+
 async def TicketPermissions(interaction: discord.Interaction):
     t = await interaction.client.db["Tickets"].find_one(
         {"ChannelID": interaction.channel.id}
@@ -346,8 +347,10 @@ class TicketsPublic(commands.Cog):
             and os.getenv("BUCKET")
         ):
             return
-        if os.getenv('ENVIRONMENT') in ["development", "custom"] and (not os.getenv('VIDEO_DAYS') or not os.getenv('IMAGE_DAYS')):
-            return               
+        if os.getenv("ENVIRONMENT") in ["development", "custom"] and (
+            not os.getenv("VIDEO_DAYS") or not os.getenv("IMAGE_DAYS")
+        ):
+            return
         await ClearOldFiles()
 
     @commands.Cog.listener()
@@ -355,6 +358,15 @@ class TicketsPublic(commands.Cog):
         Result = await self.client.db["Tickets"].find_one({"_id": objectID})
         if not Result:
             return logging.critical(f"[TICKETS] Ticket with ID {objectID} not found")
+        P = await self.client.db["Panels"].find_one(
+            {
+                "name": Result.get("panel"),
+                "type": "single",
+                "guild": Result.get("GuildID"),
+            }
+        )
+        if not P:
+            return logging.critical(f"[Tickets] panel is not found.")
         Channel = await self.client.fetch_channel(Result.get("ChannelID"))
         if not Channel:
             return logging.critical(
@@ -365,6 +377,12 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[TICKETS] Message with ID {Result.get('MessageID')} not found"
             )
+        try:
+            author = await self.client.fetch_user(Result.get("UserID"))
+        except (discord.HTTPException, discord.NotFound):
+            return logging.critical(f"[TICKETS] Authors account is not found")
+        if not author:
+            return
         view = PTicketControl()
         view.claim.disabled = False
         view.claim.label = "Claim"
@@ -374,9 +392,25 @@ class TicketsPublic(commands.Cog):
             return logging.critical(
                 f"[on_unclaim] Bot does not have permission to edit the message {Message.id}"
             )
+        name = f"ticket-{author.name}"
+        if P.get("TicketNames", {}).get("Open", None):
+            replacements = {
+                "{author.name}": author.name,
+                "{author.id}": str(author.id),
+                "{user.name}": author.name,
+                "{user.id}": str(author.id),
+            }
+            try:
+                name = Replace(
+                    P.get("TicketNames").get("Open"),
+                    replacements=replacements,
+                )
+            except Exception as e:
+                name = f"ticket-{author.name}"
+
         try:
             await Channel.edit(
-                name=f"ticket-{Channel.name.split('-')[1]}",
+                name=name,
             )
         except discord.Forbidden:
             return logging.critical(
@@ -524,9 +558,24 @@ class TicketsPublic(commands.Cog):
             Overwrites[role] = discord.PermissionOverwrite(
                 read_messages=True, send_messages=True, read_message_history=True
             )
+        name = f"ticket-{author.name}"
+        if P.get("TicketNames", {}).get("Open", None):
+            replacements = {
+                "{author.name}": author.name,
+                "{author.id}": str(author.id),
+                "{user.name}": author.name,
+                "{user.id}": str(author.id),
+            }
+            try:
+                name = Replace(
+                    P.get("TicketNames").get("Open"),
+                    replacements=replacements,
+                )
+            except Exception as e:
+                name = f"claimed-{channel.name.split('-')[1]}"
         try:
             channel = await category.create_text_channel(
-                name=f"ticket-{author.name}", overwrites=Overwrites
+                name=name, overwrites=Overwrites
             )
         except discord.Forbidden as e:
             await self.client.db["Tickets"].update_one(
