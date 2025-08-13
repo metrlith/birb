@@ -21,7 +21,7 @@ from utils.HelpEmbeds import (
     Support,
     ModuleNotSetup,
     NoPremium,
-    NotYourPanel
+    NotYourPanel,
 )
 
 
@@ -300,6 +300,7 @@ class Infractions(commands.Cog):
             "random_string": random_string,
             "annonymous": anonymous,
             "timestamp": datetime.now(),
+            "SkipExec": None,
         }
 
         embeds = []
@@ -343,7 +344,7 @@ class Infractions(commands.Cog):
             if EscFrom:
                 embeds.append(EscFrom)
 
-            view = YesOrNo()
+            view = YesOrNo(Z="Z_Z" if isEscalated else None)
             msg = await msg.edit(
                 embeds=embeds,
                 view=view,
@@ -356,14 +357,17 @@ class Infractions(commands.Cog):
                     view=None,
                     embed=None,
                 )
-            elif view.value:
+            elif view.value is True:
                 pass
-            else:
-                return await msg.edit(
-                    content=f"{no} **{ctx.author.display_name},** infraction cancelled.",
-                    view=None,
-                    embed=None,
-                )
+            elif view.value == "SkipExec":
+                FormeData["action"] = Org
+                FormeData["skipExec"] = True
+        else:
+            return await msg.edit(
+                content=f"{no} **{ctx.author.display_name},** infraction cancelled.",
+                view=None,
+                embed=None,
+            )
 
         if NextType and isEscalated:
             await self.client.db["infractions"].update_many(
@@ -413,7 +417,7 @@ class Infractions(commands.Cog):
         )
 
         await msg.edit(
-            content=f"{tick} **{ctx.author.display_name},** I've successfully infracted **@{staff.display_name}**! {f'(Escalated to {action})' if isEscalated else ''}",
+            content=f"{tick} **{ctx.author.display_name},** I've successfully infracted **@{staff.display_name}**! {f'(Escalated to {action})' if isEscalated and FormeData.get('skipExec') is None else ''}",
             embed=None,
             view=None,
         )
@@ -784,8 +788,10 @@ class ManageInfraction(discord.ui.View):
     )
     async def edit(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-             
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
         view = ImDone(interaction.user, self.infraction)
         view.add_item(EditInfraction(self.infraction, self.author))
         await interaction.response.edit_message(
@@ -799,8 +805,10 @@ class ManageInfraction(discord.ui.View):
     )
     async def void(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-             
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
 
         infraction = self.infraction
         if infraction.get("voided", False):
@@ -845,8 +853,10 @@ class EditInfraction(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-             
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
 
         value = self.values[0]
         if value == "action":
@@ -972,8 +982,10 @@ class ImDone(discord.ui.View):
     )
     async def done(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author.id:
-             
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
         view = ManageInfraction(self.infraction, self.author)
         if self.infraction.get("voided"):
             view.void.label = "Delete"
@@ -1000,8 +1012,10 @@ class UpdateAction(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         if interaction.user.id != self.author.id:
-             
-            return await interaction.response.send_message(embed=NotYourPanel(), ephemeral=True)
+
+            return await interaction.response.send_message(
+                embed=NotYourPanel(), ephemeral=True
+            )
         self.infraction["action"] = self.values[0]
         await interaction.client.db["infractions"].update_one(
             {"_id": self.infraction["_id"]},

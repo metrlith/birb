@@ -1,13 +1,21 @@
 import discord
 
 class YesOrNo(discord.ui.View):
-    def __init__(self):
+    def __init__(self, Z = None):
         super().__init__(timeout=360)
         self.value = None
+        if not Z == "Z_Z":
+            self.remove_item(self.skip)
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
     async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
+        await interaction.response.defer()
+        self.stop()
+    
+    @discord.ui.button(label="Yes + Ignore Escalation", style=discord.ButtonStyle.green)
+    async def skip(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.value = "SkipExec"
         await interaction.response.defer()
         self.stop()
 
@@ -16,6 +24,8 @@ class YesOrNo(discord.ui.View):
         self.value = False
         await interaction.response.defer()
         self.stop()
+
+    
 
 class BasicPaginator(discord.ui.View):
     def __init__(self, author: discord.Member, messages: list = None, embeds: list = None):

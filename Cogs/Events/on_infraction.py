@@ -75,6 +75,7 @@ def InfractItem(data):
         msg_id=data.get("msg_id"),
         webhook_id=data.get("WebhookID"),
         escalated_from=data.get("EscalatedFrom"),
+        skipExec = data.get('skipExec')
     )
 
 
@@ -107,6 +108,7 @@ class InfractionItem:
         msg_id,
         webhook_id,
         escalated_from,
+        skipExec
     ):
         self.staff = staff
         self.management = management
@@ -122,6 +124,7 @@ class InfractionItem:
         self.msg_id = msg_id
         self.webhook_id = webhook_id
         self.escalated_from = escalated_from
+        self.skipExec = skipExec
 
 
 class Embed:
@@ -244,7 +247,7 @@ class on_infractions(commands.Cog):
 
         embeds = [embed]
 
-        if Infraction.escalated_from:
+        if Infraction.escalated_from and not Infraction.skipExec:
             CheckedActions = InfractionData.get('EscalationChain', [])
             Org = Infraction.escalated_from
             action = Infraction.action
