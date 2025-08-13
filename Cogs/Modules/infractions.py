@@ -362,12 +362,12 @@ class Infractions(commands.Cog):
             elif view.value == "SkipExec":
                 FormeData["action"] = Org
                 FormeData["skipExec"] = True
-        else:
-            return await msg.edit(
-                content=f"{no} **{ctx.author.display_name},** infraction cancelled.",
-                view=None,
-                embed=None,
-            )
+            else:
+                return await msg.edit(
+                    content=f"{no} **{ctx.author.display_name},** infraction cancelled.",
+                    view=None,
+                    embed=None,
+                )
 
         if NextType and isEscalated:
             await self.client.db["infractions"].update_many(
