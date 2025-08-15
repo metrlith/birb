@@ -428,7 +428,7 @@ class TicketsPub(commands.Cog):
                 ephemeral=True,
             )
         except discord.HTTPException as e:
-            C = await self.client.db['Config'].find_one({"_id": interaction.guild.id, "features": {"$in": ["DEBUG"]}})
+            C = await self.client.db['Config'].find_one({"_id": interaction.guild.id, "Features": {"$in": ["DEBUG"]}})
             Debug = False
             if C:
                 Debug = True
