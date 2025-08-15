@@ -427,10 +427,22 @@ class TicketsPub(commands.Cog):
                 f"{no} **{interaction.user.display_name},** I don't have permission to send messages in this channel.",
                 ephemeral=True,
             )
-        except discord.HTTPException:
+        except discord.HTTPException as e:
+            C = await self.client.db['Config'].find_one({"_id": interaction.guild.id, "features": {"$in": ["DEBUG"]}})
+            Debug = False
+            if C:
+                Debug = True
+
+
+            embed = discord.Embed(
+                description=f"```{e}```",
+                color=discord.Color.brand_red()
+
+            )
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** I failed to send the panel. Make sure the embed/message is formed correctly.",
                 ephemeral=True,
+                embed=embed if Debug else None
             )
         await interaction.followup.send(
             f"{tick} **{interaction.user.display_name},** I've sent the panel.",
