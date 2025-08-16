@@ -15,8 +15,6 @@ class PermissionsDropdown(discord.ui.Select):
                     value="Manage Permissions",
                     emoji=(
                         "<:Permissions:1207365901956026368>"
-                        if IsSeperateBot()
-                        else None
                     ),
                 )
             ],
