@@ -458,9 +458,7 @@ class APIRoutes:
         self, auth: str, server: int, request: Request, unstringify: bool
     ):
         if not await Validation(auth, server):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Key"
-            )
+            raise HTTPException(status_code=400, detail="Invalid Key")
 
         if not self.HandleRatelimits(auth):
             return
@@ -468,51 +466,18 @@ class APIRoutes:
         try:
             body = await request.json()
         except:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON"
-            )
+            raise HTTPException(status_code=400, detail="Invalid JSON")
 
         guild = self.client.get_guild(server)
         if not guild:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Server not found"
-            )
+            raise HTTPException(status_code=404, detail="Server not found")
+
+        body = {k.lower(): v for k, v in body.items()}
+
         if unstringify:
+            body = self.unstringify_dict(body)
 
-            def unstringify_dict(d):
-                if isinstance(d, dict):
-                    for key, value in d.items():
-                        if isinstance(value, str):
-                            if value.isdigit():
-                                d[key] = int(value)
-                            else:
-                                try:
-                                    d[key] = ast.literal_eval(value)
-                                except (ValueError, SyntaxError):
-                                    pass
-                        elif isinstance(value, list):
-                            d[key] = [
-                                (
-                                    unstringify_dict(item)
-                                    if isinstance(item, dict)
-                                    else (
-                                        int(item)
-                                        if isinstance(item, str) and item.isdigit()
-                                        else (
-                                            ast.literal_eval(item)
-                                            if isinstance(item, str)
-                                            else item
-                                        )
-                                    )
-                                )
-                                for item in value
-                            ]
-                        elif isinstance(value, dict):
-                            unstringify_dict(value)
-                return d
-
-            config = unstringify_dict(body)
-        await config.update_one({"_id": server}, {"$set": body}, upsert=True)
+        await self.config.update_one({"_id": server}, {"$set": body}, upsert=True)
         return {"status": "success"}
 
     async def GET_search(self, auth: str, server: int, user: int):
@@ -969,6 +934,30 @@ class APIRoutes:
 
     def GET_status(self):
         return {"status": "Connected", "uptime": self.Uptime.timestamp()}
+        
+    def unstringify_dict(self, d):
+        if isinstance(d, dict):
+            for key, value in d.items():
+                if isinstance(value, str):
+                    if value.isdigit():
+                        d[key] = int(value)
+                    else:
+                        try:
+                            d[key] = ast.literal_eval(value)
+                        except (ValueError, SyntaxError):
+                            pass
+                elif isinstance(value, list):
+                    d[key] = [
+                        self.unstringify_dict(item) if isinstance(item, dict) else (
+                            int(item) if isinstance(item, str) and item.isdigit() else (
+                                ast.literal_eval(item) if isinstance(item, str) else item
+                            )
+                        )
+                        for item in value
+                    ]
+                elif isinstance(value, dict):
+                    self.unstringify_dict(value)
+        return d
 
 
 class APICog(commands.Cog):
