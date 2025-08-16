@@ -457,7 +457,7 @@ class APIRoutes:
     async def POST_config(
         self, auth: str, server: int, request: Request, unstringify: bool
     ):
-        if not await Validation(auth, server):
+        if not await RestrictedValidation(auth, server):
             raise HTTPException(status_code=400, detail="Invalid Key")
 
         if not self.HandleRatelimits(auth):
