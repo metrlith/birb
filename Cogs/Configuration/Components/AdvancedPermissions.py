@@ -13,9 +13,8 @@ class PermissionsDropdown(discord.ui.Select):
                 discord.SelectOption(
                     label="Manage Permissions",
                     value="Manage Permissions",
-                    emoji=(
-                        "<:Permissions:1207365901956026368>"
-                    ),
+                    emoji="<:Permissions:1207365901956026368>"
+                
                 )
             ],
         )
