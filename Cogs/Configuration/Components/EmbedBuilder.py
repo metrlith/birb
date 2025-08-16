@@ -1269,7 +1269,8 @@ class Thumbnail(discord.ui.Modal, title="Thumbnail"):
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer()
         embed = interaction.message.embeds[0]
-        url = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
+        org = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
+        url = org
 
         if url in ["{author.avatar}", "{staff.avatar}"]:
             url = str(interaction.user.display_avatar.url)
@@ -1277,7 +1278,7 @@ class Thumbnail(discord.ui.Modal, title="Thumbnail"):
         try:
             embed.set_thumbnail(url=url)
             await interaction.edit_original_response(embed=embed)
-            self.data["thumb"] = url
+            self.data["thumb"] = org
 
         except discord.HTTPException:
             return await interaction.followup.send(
@@ -1303,15 +1304,16 @@ class Image(discord.ui.Modal, title="Image"):
     async def on_submit(self, interaction: discord.Interaction):
         await interaction.response.defer()
         embed = interaction.message.embeds[0]
-        url = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
+        org = self.Thumbnaile.value.strip() if self.Thumbnaile.value else None
+        url = org
 
-        if url in ["{author.avatar}", "{staff.avatar}"]:
+        if org in ["{author.avatar}", "{staff.avatar}"]:
             url = str(interaction.user.display_avatar.url)
 
         try:
             embed.set_image(url=url)
             await interaction.edit_original_response(embed=embed)
-            self.data["image"] = url
+            self.data["image"] = org
         except discord.HTTPException:
             return await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, this isn't a proper link."
@@ -1348,18 +1350,19 @@ class Author(discord.ui.Modal, title="Author"):
         await interaction.response.defer()
         embed = interaction.message.embeds[0]
         Author = self.authortext.value or ""
-        Url = self.iconUrl.value.strip() if self.iconUrl.value else None
+        Org = self.iconUrl.value
+        Url = Org
 
-        if Url in ["{author.avatar}", "{staff.avatar}"]:
+        if self.iconUrl.value in ["{author.avatar}", "{staff.avatar}"]:
             Url = str(interaction.user.display_avatar.url)
 
-        if not Url and embed.author and embed.author.Url:
-            Url = embed.author
+        if not Url and embed.author and getattr(embed.author, "icon_url", None):
+            Url = embed.author.icon_url
 
         try:
             embed.set_author(name=Author, icon_url=Url)
             await interaction.edit_original_response(embed=embed)
-            self.data["author_url"] = Url
+            self.data["author_url"] = Org
         except discord.HTTPException:
             return await interaction.followup.send(
                 content=f"{crisis} **{interaction.user.display_name}**, this isn't a proper link."
