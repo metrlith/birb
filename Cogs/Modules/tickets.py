@@ -386,10 +386,10 @@ class TicketsPub(commands.Cog):
 
                 buttons.append(
                     {
+                        "custom_id": sub.get("custom_id"),
                         "label": sub.get("label"),
                         "style": sub.get("style"),
                         "emoji": sub.get("emoji"),
-                        "custom_id": sub.get("custom_id"),
                     }
                 )
                 view = ButtonHandler()
@@ -428,21 +428,20 @@ class TicketsPub(commands.Cog):
                 ephemeral=True,
             )
         except discord.HTTPException as e:
-            C = await self.client.db['Config'].find_one({"_id": interaction.guild.id, "Features": {"$in": ["DEBUG"]}})
+            C = await self.client.db["Config"].find_one(
+                {"_id": interaction.guild.id, "Features": {"$in": ["DEBUG"]}}
+            )
             Debug = False
             if C:
                 Debug = True
 
-
             embed = discord.Embed(
-                description=f"```{e}```",
-                color=discord.Color.brand_red()
-
+                description=f"```{e}```", color=discord.Color.brand_red()
             )
             return await interaction.followup.send(
                 f"{no} **{interaction.user.display_name},** I failed to send the panel. Make sure the embed/message is formed correctly.",
                 ephemeral=True,
-                embed=embed if Debug else None
+                embed=embed if Debug else None,
             )
         await interaction.followup.send(
             f"{tick} **{interaction.user.display_name},** I've sent the panel.",
@@ -1005,7 +1004,7 @@ class TicketsPub(commands.Cog):
         TotalMessagesSent = 0
         for Ticket in ClaimedTickets:
             OpenedTime = datetime.fromtimestamp(Ticket["opened"])
-            ClaimedTime = Ticket["claimed"]["claimedAt"]
+            ClaimedTime = datetime.fromtimestamp(Ticket["claimed"]["claimedAt"])
             TotalResponseTime += ClaimedTime - OpenedTime
             Transcript = Ticket.get("transcript", [])
             for entry in Transcript:
