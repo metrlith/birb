@@ -28,7 +28,7 @@ async def CaseEmbed(data: str, staff: discord.Member, guild: discord.Guild):
     )
     embed.add_field(
         name="Case Information",
-        value=f"> **Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
+        value=f"> \n> **Manager:** <@{data.get('management')}>\n**Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
         inline=False,
     )
 
@@ -171,6 +171,7 @@ class CaseApproval(discord.ui.View):
             return
         embed: discord.Embed = await CaseEmbed(Result, staff, guild)
         embed.color = discord.Color.brand_green()
+        embed.set_footer(text=f"Accepted by @{interaction.user.name}", icon_url=interaction.user.display_avatar)
         view = CaseApproval()
         view.Accept.label = "Accepted"
         view.Accept.disabled = True
@@ -225,6 +226,7 @@ class CaseApproval(discord.ui.View):
             )
             return
         embed: discord.Embed = await CaseEmbed(Result, staff, guild)
+        embed.set_footer(text=f"Denied by @{interaction.user.name}", icon_url=interaction.user.display_avatar)
         embed.color = discord.Color.brand_red()
         view = CaseApproval()
         view.Deny.label = "Denied"
