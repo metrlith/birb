@@ -82,7 +82,7 @@ class APIRoutes:
         self.ratelimits = {}
         for i in dir(self):
             if any(
-                [i.startswith(a) for a in ("GET_", "POST_", "PATCH_", "DELETE_")]
+                i.startswith(a) for a in ("GET_", "POST_", "PATCH_", "DELETE_")
             ) and not i.startswith("_"):
                 x = i.split("_")[0]
                 self.router.add_api_route(
