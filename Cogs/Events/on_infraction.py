@@ -441,10 +441,10 @@ class on_infractions(commands.Cog):
 
             if data.get("dbremoval", False) is True:
                 OriginalData = await self.client.db["staff database"].find_one(
-                    {"staff_id": staff.id}
+                    {"staff_id": staff.id, "guild_id": staff.guild.id}
                 )
                 await self.client.db["staff database"].delete_one(
-                    {"staff_id": staff.id}
+                    {"staff_id": staff.id, "guild_id": staff.guild.id}
                 )
                 Actions["DbRemoval"] = OriginalData
             if data.get("channel"):
