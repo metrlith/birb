@@ -29,10 +29,13 @@ Birb is designed to simplify tasks related to managing staff, staff punishment, 
 * !!sync (Owner Only)
 
 
-## Licensing
-Birb is licensed under the Attribution-NonCommercial-ShareAlike (CC BY-NC-SA) license. This license allows for the copy, distribution, and creation of adaptations of the material for non-commercial purposes, as long as proper attribution is given to the original creator and any adaptations are licensed under the same terms.
+## License
 
-The CC BY-NC-SA license requires the following elements:
-* BY: Credit must be given to the original creator
-* NC: The material can only be used for non-commercial purposes
-* SA: Adaptations must be licensed under the same terms
+Birb © 2023 Bugsbirb  
+Licensed under the **Creative Commons Attribution–NonCommercial–ShareAlike 4.0 International** (CC BY-NC-SA 4.0) license.
+
+- **Attribution (BY):** Credit must be given to the original creator.  
+- **NonCommercial (NC):** No commercial use.  
+- **ShareAlike (SA):** Adaptations must be licensed under identical terms.
+
+See the full license text in [`LICENSE`](./LICENSE).
