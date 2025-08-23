@@ -28,7 +28,7 @@ async def CaseEmbed(data: str, staff: discord.Member, guild: discord.Guild):
     )
     embed.add_field(
         name="Case Information",
-        value=f"> \n> **Manager:** <@{data.get('management')}>\n**Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
+        value=f"> **Manager:** <@{data.get('management')}>\n**Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
         inline=False,
     )
 
