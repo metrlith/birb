@@ -490,10 +490,10 @@ async def QOTDEMbed(interaction: discord.Interaction, embed: discord.Embed):
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's QOTD settings! QOTD is a way for members to answer a question of the day. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's QOTD settings! QOTD is a way for members to answer a question of the day. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/qotd)."
     embed.add_field(
         name="<:settings:1207368347931516928> Daily Questions",
-        value=f"{replytop} `Channel:` {channel}\n{replymiddle} `Ping`: {ping}\n{replybottom} `Next Date:` {NextDate} (Not 100% accurate)\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"{replytop} `Channel:` {channel}\n{replymiddle} `Ping`: {ping}\n{replybottom} `Next Date:` {NextDate} (Not 100% accurate)\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/qotd).",
         inline=False,
     )
     return embed

@@ -6,6 +6,6 @@ async def StaffListEmbed(interaction: discord.Interaction, embed: discord.Embed)
     embed.description = (
         "> The Staff Panel displays a list of staff members, sorted by rank. "
         "You can view individual staff details, including their roles and join dates. "
-        "For more information, visit [the documentation](https://docs.astrobirb.dev/)."
+        "For more information, visit [the documentation](https://docs.astrobirb.dev/Modules/stafflist)."
     )
     return embed

@@ -587,10 +587,10 @@ async def MessageQuotaEmbed(
         )
         or "Not Configured"
     )
-    embed.description = "> This is where you can manage your server's message quota! If you wanna know more about what this does head to the [message quota page](https://docs.astrobirb.dev/Modules/quota) on the [documentation](https:/docs.astrobirb.dev)\n"
+    embed.description = "> This is where you can manage your server's message quota! You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/quota).\n"
     embed.add_field(
         name="<:settings:1207368347931516928> Message Quota",
-        value=f"{replytop} `Quota:` {Config.get('Message Quota', {}).get('quota', 'Not Configured')}\n{replybottom} `Ignored Channels:` {IgnoredChannels}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"{replytop} `Quota:` {Config.get('Message Quota', {}).get('quota', 'Not Configured')}\n{replybottom} `Ignored Channels:` {IgnoredChannels}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/quota)",
         inline=False,
     )
     return embed

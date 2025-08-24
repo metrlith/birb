@@ -268,10 +268,10 @@ async def LOAEmbed(
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's LOA settings! LOA is a way for staff members to take a break from their duties. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's LOA settings! LOA is a way for staff members to take a break from their duties. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/loa)."
     embed.add_field(
         name="<:settings:1207368347931516928> LOA",
-        value=f"{replytop} `LOA Channel:` {Channel}\n{replymiddle} `LOA Audit Channel`: {LogChannel}\n{replybottom} `LOA Role:` {Role}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"{replytop} `LOA Channel:` {Channel}\n{replymiddle} `LOA Audit Channel`: {LogChannel}\n{replybottom} `LOA Role:` {Role}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/loa)",
         inline=False,
     )
     return embed

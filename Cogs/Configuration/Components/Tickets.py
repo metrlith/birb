@@ -864,7 +864,7 @@ async def TicketsEmbed(interaction: discord.Interaction, embed: discord.Embed):
     embed.description = (
         "> The Tickets Panel allows users to create and manage tickets for support, "
         "inquiries, or reports. You can customize ticket categories, forms, and permissions. "
-        "Learn more at [the documentation](https://docs.astrobirb.dev/)."
+        "Learn more at [the documentation](https://docs.astrobirb.dev/Modules/tickets)."
     )
     return embed
 

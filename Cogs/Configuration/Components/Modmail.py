@@ -975,12 +975,12 @@ async def ModmailEmbed(
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's modmail settings! Modmail is a way for users to contact staff. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's modmail settings! Modmail is a way for users to contact staff. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/modmail)."
     if config.get("Module Options", {}).get("ModmailType", "channel") == "channel":
-        value = f"{replytop} `Category:` {Category}\n{replymiddle} `Transcripts:` {Transcripts}\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
+        value = f"{replytop} `Category:` {Category}\n{replymiddle} `Transcripts:` {Transcripts}\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/modmail)."
 
     else:
-        value = f"{replytop} `Threads Channel:` <#{config.get('Modmail', {}).get('threads', 'Not Configured')}>\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"
+        value = f"{replytop} `Threads Channel:` <#{config.get('Modmail', {}).get('threads', 'Not Configured')}>\n{replybottom} `Roles:` {ModmailRoles}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/modmail)."
 
     embed.add_field(
         name="<:settings:1207368347931516928> Modmail",

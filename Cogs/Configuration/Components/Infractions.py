@@ -1382,7 +1382,7 @@ async def InfractionEmbed(
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's infraction settings! Infractions are a way to punish staff members. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's infraction settings! Infractions are a way to punish staff members. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/infractions)."
     Types = Config.get("Infraction", {}).get(
         "types",
         [
@@ -1395,7 +1395,7 @@ async def InfractionEmbed(
         ],
     )
     Reasons = Config.get("Infraction", {}).get("reasons", [])
-    value = f"{replytop} `Infraction Channel:` {Channel}\n{replymiddle} `Audit Log Channel`:  {Audit}\n{replymiddle} `Types:` {', '.join(Types)}\n{replybottom} `Reasons:` {', '.join(Reasons) if Reasons else 'Not Configured'}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)"[
+    value = f"{replytop} `Infraction Channel:` {Channel}\n{replymiddle} `Audit Log Channel`:  {Audit}\n{replymiddle} `Types:` {', '.join(Types)}\n{replybottom} `Reasons:` {', '.join(Reasons) if Reasons else 'Not Configured'}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/infractions)"[
         :1024
     ]
 

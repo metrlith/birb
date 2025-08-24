@@ -375,10 +375,10 @@ async def SuggestionsEmbed(
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's suggestions settings! Suggestions is a way for members to give suggestions to the server. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's suggestions settings! Suggestions is a way for members to give suggestions to the server. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/suggestions)."
     embed.add_field(
         name="<:settings:1207368347931516928> Suggestions",
-        value=f"> `Suggestions Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"> `Suggestions Channel:` {Channel}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/suggestions).",
         inline=False,
     )
     return embed

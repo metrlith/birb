@@ -1181,10 +1181,10 @@ async def PromotionEmbed(
 
     embed.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon)
     embed.set_thumbnail(url=interaction.guild.icon)
-    embed.description = "> This is where you can manage your server's promotion settings! Promotions are a way to give staff members more power. You can find out more at [the documentation](https://docs.astrobirb.dev/)."
+    embed.description = "> This is where you can manage your server's promotion settings! Promotions are a way to give staff members more power. You can find out more at [the documentation](https://docs.astrobirb.dev/Modules/promotions)."
     embed.add_field(
         name="<:settings:1207368347931516928> Promotions",
-        value=f"> {replytop} `System:` {System}\n> {replymiddle} `Promotion Channel:` {Channel}\n> {replybottom} `Cooldown:` {Days}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev)",
+        value=f"> {replytop} `System:` {System}\n> {replymiddle} `Promotion Channel:` {Channel}\n> {replybottom} `Cooldown:` {Days}\n\nIf you need help either go to the [support server](https://discord.gg/36xwMFWKeC) or read the [documentation](https://docs.astrobirb.dev/Modules/promotions).",
         inline=False,
     )
     return embed

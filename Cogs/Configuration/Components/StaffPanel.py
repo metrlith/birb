@@ -165,6 +165,6 @@ async def StaffPanelEmbed(interaction: discord.Interaction, embed: discord.Embed
     embed.description = (
         "> The Staff Panel provides an overview of all staff members, including their roles, "
         "joining dates, and introductions. Select a staff member to view detailed information. "
-        "Learn more in [the documentation](https://docs.astrobirb.dev/)."
+        "Learn more in [the documentation](https://docs.astrobirb.dev/Modules/Staffdb)."
     )
     return embed
