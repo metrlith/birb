@@ -28,7 +28,7 @@ async def CaseEmbed(data: str, staff: discord.Member, guild: discord.Guild):
     )
     embed.add_field(
         name="Case Information",
-        value=f"> **Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
+        value=f"> **Manager:** <@{data.get('management')}>\n**Action:** {data.get('action')}\n> **Reason:** {data.get('reason')}\n",
         inline=False,
     )
 
@@ -171,11 +171,13 @@ class CaseApproval(discord.ui.View):
             return
         embed: discord.Embed = await CaseEmbed(Result, staff, guild)
         embed.color = discord.Color.brand_green()
+        embed.set_footer(text=f"Accepted by @{interaction.user.name}", icon_url=interaction.user.display_avatar)
         view = CaseApproval()
         view.Accept.label = "Accepted"
         view.Accept.disabled = True
         view.remove_item(view.Deny)
         await interaction.edit_original_response(embed=embed, view=view)
+        await interaction.client.db['infractions'].update_one({"_id": Result.get("_id")}, {"$set": {"ApprovalStatus": False}})
         TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": Infraction.action}
         )
@@ -225,6 +227,7 @@ class CaseApproval(discord.ui.View):
             )
             return
         embed: discord.Embed = await CaseEmbed(Result, staff, guild)
+        embed.set_footer(text=f"Denied by @{interaction.user.name}", icon_url=interaction.user.display_avatar)
         embed.color = discord.Color.brand_red()
         view = CaseApproval()
         view.Deny.label = "Denied"
