@@ -170,6 +170,8 @@ class Infractions(commands.Cog):
         TypeActions = await self.client.db["infractiontypeactions"].find_one(
             {"guild_id": ctx.guild.id, "name": action}
         )
+
+
         if not await self.TypePerms(ctx.author, TypeActions):
             return await ctx.send(
                 f"{no} **{ctx.author.display_name},** you don't have permission to use this shift type."
@@ -185,6 +187,11 @@ class Infractions(commands.Cog):
                 f"{no} **{ctx.author.display_name}**, this user can not be found.",
             )
             return
+        isApproval = bool(
+            Config.get("Infraction", {}).get("Approval", None)
+            and Config.get("Infraction", {}).get("Approval", {}).get("channel")
+            is not None
+        )
 
         msg = await ctx.send(
             content=f"<a:Loading:1167074303905386587> **{ctx.author.display_name},** hold on while I infract this staff member.",
@@ -302,9 +309,10 @@ class Infractions(commands.Cog):
             "timestamp": datetime.now(),
             "SkipExec": None,
         }
-
         embeds = []
         EscFrom = None
+        if isApproval:
+            FormeData["ApprovalStatus"] = True
         if NextType and isEscalated:
             FormeData["EscalatedFrom"] = Org
             FormeData["EscalationChain"] = list(CheckedActions)
@@ -386,11 +394,7 @@ class Infractions(commands.Cog):
                 content=f"{crisis} **{ctx.author.display_name},** hi I had a issue submitting this infraction please head to support!",
             )
             return
-        if (
-            Config.get("Infraction", {}).get("Approval", None)
-            and Config.get("Infraction", {}).get("Approval", {}).get("channel")
-            is not None
-        ):
+        if isApproval:
             try:
                 channel = await self.client.fetch_channel(
                     int(Config.get("Infraction", {}).get("channel"))
@@ -447,11 +451,15 @@ class Infractions(commands.Cog):
             "guild_id": ctx.guild.id,
             **({"staff": staff.id} if staff else {}),
             "voided": (
-                True
-                if scope == "Voided"
-                else {"$ne": True} if scope != "Expired" else None
+            True
+            if scope == "Voided"
+            else {"$ne": True} if scope != "Expired" else None
             ),
             "expired": True if scope == "Expired" else None,
+            "$or": [
+                {"ApprovalStatus": {"$exists": False}},
+                {"ApprovalStatus": False}
+            ]
         }
         filter = {k: v for k, v in filter.items() if v is not None}
 

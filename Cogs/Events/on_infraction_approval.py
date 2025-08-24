@@ -177,6 +177,7 @@ class CaseApproval(discord.ui.View):
         view.Accept.disabled = True
         view.remove_item(view.Deny)
         await interaction.edit_original_response(embed=embed, view=view)
+        await interaction.client.db['infractions'].update_one({"_id": Result.get("_id")}, {"$set": {"ApprovalStatus": False}})
         TypeActions = await interaction.client.db['infractiontypeactions'].find_one(
             {"guild_id": interaction.guild.id, "name": Infraction.action}
         )
